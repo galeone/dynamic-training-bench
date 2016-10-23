@@ -35,17 +35,16 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = CURRENT_DIR + "/log"
 
 
-def keep_prob_decay(
-        validation_accuracy,
-        keep_prob,
-        min_keep_prob,
-        global_step,
-        decay_steps,  #
-        decay_rate,
-        name=None):
+def keep_prob_decay(validation_accuracy,
+                    keep_prob,
+                    min_keep_prob,
+                    global_step,
+                    decay_steps,
+                    decay_rate,
+                    name=None):
     """ Decay keep_prob until it reaches min_keep_prob.
     The update rule is: max(min_keep_prob, keep_prob - floor(global_step / decay_step))
-    where decay_step  = 
+    where decay_step  =
     """
     if global_step is None:
         raise ValueError("global_step is required for keep_prob_decay")
@@ -67,10 +66,10 @@ def keep_prob_decay(
                           keep_prob - tf.floor(global_step / decay_step))
 
 
-def eval_once(summary_writer, global_step):
+def get_accuracy(validation_log, global_step):
     """Run Eval once.
     Args:
-        summary_writer: summary writer
+        validation_log: summary writer
         global_step: current training step
     """
 
@@ -88,11 +87,10 @@ def eval_once(summary_writer, global_step):
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
         accuracy_value_ = tf.placeholder(tf.float32, shape=[])
-        accuracy_summary = tf.scalar_summary('validation_accuracy',
-                                             accuracy_value_)
+        accuracy_summary = tf.scalar_summary('accuracy', accuracy_value_)
 
         saver = tf.train.Saver()
-
+        accuracy = 0.0
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True)) as sess:
             ckpt = tf.train.get_checkpoint_state(LOG_DIR)
@@ -123,21 +121,22 @@ def eval_once(summary_writer, global_step):
                     true_count += np.sum(predictions)
                     step += 1
 
-                # Compute precision @ 1.
-                precision = true_count / total_sample_count
-                print('%s: precision @ 1 = %.3f' % (datetime.now(), precision))
+                accuracy = true_count / total_sample_count
+                print('%s: validation accuracy = %.3f' %
+                      (datetime.now(), accuracy))
 
-                summary_writer.add_summary(
+                validation_log.add_summary(
                     sess.run(accuracy_summary,
-                             feed_dict={accuracy_value_: precision}),
+                             feed_dict={accuracy_value_: accuracy}),
                     global_step=global_step)
-                summary_writer.flush()
+                validation_log.flush()
 
             except Exception as e:  # pylint: disable=broad-except
                 coord.request_stop(e)
 
             coord.request_stop()
             coord.join(threads, stop_grace_period_secs=10)
+        return accuracy
 
 
 def train():
@@ -153,17 +152,24 @@ def train():
         keep_prob_, logits = vgg.get_model(images, train_phase=True)
 
         # Calculate loss.
-        loss = vgg.loss(logits, labels)
+        loss_summary, loss = vgg.loss(logits, labels)
 
         # Build a Graph that trains the model with one batch of examples and
         # updates the model parameters.
-        train_op = vgg.train(loss, global_step)
+        learning_rate_summary, train_op = vgg.train(loss, global_step)
 
         # Create a saver.
-        saver = tf.train.Saver(tf.all_variables())
+        saver = tf.train.Saver(tf.trainable_variables() + [global_step])
 
-        # Build the summary operation based on the TF collection of Summaries.
-        summary_op = tf.merge_all_summaries()
+        # Train accuracy ops
+        top_k_op = tf.nn.in_top_k(logits, labels, 1)
+        accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
+        accuracy_summary = tf.scalar_summary('accuracy', accuracy)
+
+        # merge loss_summary and learning_rate_summary
+        # these 2 ops gets executed every iteration
+        every_step_summaries = tf.merge_summary(
+            [learning_rate_summary, loss_summary])
 
         # Build an initialization operation to run below.
         init = tf.initialize_all_variables()
@@ -175,17 +181,25 @@ def train():
 
             # Start the queue runners.
             tf.train.start_queue_runners(sess=sess)
-            summary_writer = tf.train.SummaryWriter(LOG_DIR, sess.graph)
+            train_log = tf.train.SummaryWriter(LOG_DIR + "/train", sess.graph)
+            validation_log = tf.train.SummaryWriter(LOG_DIR + "/validation",
+                                                    sess.graph)
 
-            for step in range(MAX_STEPS):
+            # Extract previous global step value
+            old_gs = sess.run(global_step)
+
+            # Restart from where we were
+            for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
-                _, loss_value = sess.run([train_op, loss],
-                                         feed_dict={keep_prob_: 1.0})
+                _, loss_value, summary_lines = sess.run(
+                    [train_op, loss, every_step_summaries],
+                    feed_dict={keep_prob_: 1.0})
                 duration = time.time() - start_time
 
                 assert not np.isnan(
                     loss_value), 'Model diverged with loss = NaN'
 
+                # update logs every 10 iterations
                 if step % 10 == 0:
                     num_examples_per_step = BATCH_SIZE
                     examples_per_sec = num_examples_per_step / duration
@@ -196,19 +210,25 @@ def train():
                         'sec/batch)')
                     print(format_str % (datetime.now(), step, loss_value,
                                         examples_per_sec, sec_per_batch))
-
-                if step % 100 == 0:
-                    summary_str = sess.run(summary_op,
-                                           feed_dict={keep_prob_: 1.0})
-                    summary_writer.add_summary(summary_str, step)
+                    # log loss value
+                    train_log.add_summary(summary_lines, global_step=step)
 
                 # Save the model checkpoint at the end of every epoch
+                # evaluate train and validation performance
                 if (step > 0 and
                         step % STEP_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     saver.save(sess, checkpoint_path, global_step=step)
-                    # evaluate model accuracy
-                    eval_once(summary_writer, global_step=step)
+
+                    # validation accuracy
+                    validation_accuracy = get_accuracy(
+                        validation_log, global_step=step)
+                    # train accuracy
+                    train_accuracy, summary_line = sess.run(
+                        [accuracy, accuracy_summary])
+                    train_log.add_summary(summary_line, global_step=step)
+                    print('%s: train accuracy = %.3f' %
+                          (datetime.now(), train_accuracy))
 
 
 def main():
