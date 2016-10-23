@@ -94,7 +94,7 @@ def read(filename_queue):
     image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32)
 
     # RBG -> YUV
-    image = utils.rgb2yuv(image)
+    #image = utils.rgb2yuv(image)
 
     # Subtract off the mean and divide by the variance of the pixels.
     result["image"] = tf.image.per_image_whitening(image)
