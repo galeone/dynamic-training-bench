@@ -26,22 +26,6 @@ WD_PENALTY = 5e-4  # L2(weights) penalty
 INITIAL_LEARNING_RATE = 1e-2  # Initial learning rate.
 
 
-def _activation_summary(x):
-    """Helper to create summaries for activations.
-
-  Creates a summary that provides a histogram of activations.
-  Creates a summary that measures the sparsity of activations.
-
-  Args:
-    x: Tensor
-  Returns:
-    nothing
-  """
-    tensor_name = x.op.name
-    tf.histogram_summary(tensor_name + '/activations', x)
-    tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
-
-
 def weight(name,
            shape,
            initializer=tf.contrib.layers.variance_scaling_initializer(
@@ -108,13 +92,11 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv1 = tf.nn.dropout(conv1, keep_prob)
                 conv1 = tf.nn.dropout(conv1, 1 - 0.3)
-            _activation_summary(conv1)
 
         with tf.variable_scope('conv2'):
             conv2 = tf.nn.relu(
                 conv_layer(
                     conv1, [3, 3, 64, 64], 1, 'SAME', wd=WD_PENALTY))
-            _activation_summary(conv2)
 
     with tf.variable_scope('pool1'):
         pool1 = tf.nn.max_pool(
@@ -129,13 +111,11 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv3 = tf.nn.dropout(conv3, keep_prob)
                 conv3 = tf.nn.dropout(conv3, 1 - 0.4)
-            _activation_summary(conv3)
 
         with tf.variable_scope('conv4'):
             conv4 = tf.nn.relu(
                 conv_layer(
                     conv3, [3, 3, 128, 128], 1, 'SAME', wd=WD_PENALTY))
-            _activation_summary(conv4)
 
     with tf.variable_scope('pool2'):
         pool2 = tf.nn.max_pool(
@@ -150,7 +130,6 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv5 = tf.nn.dropout(conv5, keep_prob)
                 conv5 = tf.nn.dropout(conv5, 1 - 0.4)
-            _activation_summary(conv5)
 
         with tf.variable_scope('conv6'):
             conv6 = tf.nn.relu(
@@ -160,13 +139,11 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv6 = tf.nn.dropout(conv6, keep_prob)
                 conv6 = tf.nn.dropout(conv6, 1 - 0.4)
-            _activation_summary(conv6)
 
         with tf.variable_scope('conv7'):
             conv7 = tf.nn.relu(
                 conv_layer(
                     conv6, [3, 3, 256, 256], 1, 'SAME', wd=WD_PENALTY))
-            _activation_summary(conv7)
 
     with tf.variable_scope('pool3'):
         pool3 = tf.nn.max_pool(
@@ -181,7 +158,6 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv8 = tf.nn.dropout(conv8, keep_prob)
                 conv8 = tf.nn.dropout(conv8, 1 - 0.4)
-            _activation_summary(conv8)
 
         with tf.variable_scope('conv9'):
             conv9 = tf.nn.relu(
@@ -191,13 +167,11 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv9 = tf.nn.dropout(conv9, keep_prob)
                 conv9 = tf.nn.dropout(conv9, 1 - 0.4)
-            _activation_summary(conv9)
 
         with tf.variable_scope('conv10'):
             conv10 = tf.nn.relu(
                 conv_layer(
                     conv9, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
-            _activation_summary(conv10)
 
     with tf.variable_scope('pool4'):
         pool4 = tf.nn.max_pool(
@@ -212,7 +186,6 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv11 = tf.nn.dropout(conv11, keep_prob)
                 conv11 = tf.nn.dropout(conv11, 1 - 0.4)
-            _activation_summary(conv11)
 
         with tf.variable_scope('conv12'):
             conv12 = tf.nn.relu(
@@ -222,13 +195,11 @@ def inference(images, keep_prob, train_phase=False):
             if train_phase:
                 #conv12 = tf.nn.dropout(conv12, keep_prob)
                 conv12 = tf.nn.dropout(conv12, 1 - 0.4)
-            _activation_summary(conv12)
 
         with tf.variable_scope('conv13'):
             conv13 = tf.nn.relu(
                 conv_layer(
                     conv12, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
-            _activation_summary(conv13)
 
     with tf.variable_scope('pool5'):
         pool5 = tf.nn.max_pool(
@@ -246,26 +217,23 @@ def inference(images, keep_prob, train_phase=False):
         if train_phase:
             #fc1 = tf.nn.dropout(fc1, keep_prob)
             fc1 = tf.nn.dropout(fc1, 0.5)
-        _activation_summary(fc1)
 
     with tf.variable_scope('softmax_linear'):
         logits = fc_layer(fc1, [512, cifar10.NUM_CLASSES], wd=WD_PENALTY)
-        _activation_summary(logits)
     return logits
 
 
 def loss(logits, labels):
     """Add L2Loss to all the trainable variables.
+    Args:
+      logits: Logits from inference().
+      labels: Labels from distorted_inputs or inputs(). 1-D tensor
+              of shape [batch_size]
 
-  Add summary for "Loss" and "Loss/avg".
-  Args:
-    logits: Logits from inference().
-    labels: Labels from distorted_inputs or inputs(). 1-D tensor
-            of shape [batch_size]
-
-  Returns:
-    Loss tensor of type float.
-  """
+    Returns:
+      loss summary,
+      Loss tensor of type float.
+    """
     # Calculate the average cross entropy loss across the batch.
     labels = tf.cast(labels, tf.int64)
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -275,86 +243,39 @@ def loss(logits, labels):
 
     # The total loss is defined as the cross entropy loss plus all of the weight
     # decay terms (L2 loss).
-    return tf.add_n(tf.get_collection('losses'), name='total_loss')
-
-
-def _add_loss_summaries(total_loss):
-    """Add summaries for losses in CIFAR-10 model.
-
-  Generates moving average for all losses and associated summaries for
-  visualizing the performance of the network.
-
-  Args:
-    total_loss: Total loss from loss().
-  Returns:
-    loss_averages_op: op for generating moving averages of losses.
-  """
-    # Compute the moving average of all individual losses and the total loss.
-    loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
-    losses = tf.get_collection('losses')
-    loss_averages_op = loss_averages.apply(losses + [total_loss])
-
-    # Attach a scalar summary to all individual losses and the total loss; do the
-    # same for the averaged version of the losses.
-    for l in losses + [total_loss]:
-        # Name each loss as '(raw)' and name the moving average version of the loss
-        # as the original loss name.
-        tf.scalar_summary(l.op.name + ' (raw)', l)
-        tf.scalar_summary(l.op.name, loss_averages.average(l))
-
-    return loss_averages_op
+    error = tf.add_n(tf.get_collection('losses'), name='total_loss')
+    return tf.scalar_summary('loss', error), error
 
 
 def train(total_loss, global_step):
-    """Train CIFAR-10 model.
+    """Train model.
+    Create an optimizer and apply to all trainable variables.
 
-  Create an optimizer and apply to all trainable variables. Add moving
-  average for all trainable variables.
-
-  Args:
-    total_loss: Total loss from loss().
-    global_step: Integer Variable counting the number of training steps
-      processed.
-  Returns:
-    train_op: op for training.
-  """
+    Args:
+      total_loss: Total loss from loss().
+      global_step: Integer Variable counting the number of training steps
+        processed.
+    Returns:
+      learning_rate_summary: learning ratey summary
+      train_op: op for training.
+    """
     # Variables that affect learning rate.
     num_batches_per_epoch = cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / BATCH_SIZE
     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
 
     # Decay the learning rate exponentially based on the number of steps.
-    lr = tf.train.exponential_decay(
+    learning_rate = tf.train.exponential_decay(
         INITIAL_LEARNING_RATE,
         global_step,
         decay_steps,
         LEARNING_RATE_DECAY_FACTOR,
         staircase=True)
-    tf.scalar_summary('learning_rate', lr)
 
-    # Generate moving averages of all losses and associated summaries.
-    loss_averages_op = _add_loss_summaries(total_loss)
+    learning_rate_summary = tf.scalar_summary('learning_rate', learning_rate)
+    opt = tf.train.MomentumOptimizer(learning_rate, MOMENTUM)
+    train_op = opt.minimize(total_loss, global_step=global_step)
 
-    # Compute gradients.
-    with tf.control_dependencies([loss_averages_op]):
-        opt = tf.train.MomentumOptimizer(lr, MOMENTUM)
-        grads = opt.compute_gradients(total_loss)
-
-    # Apply gradients.
-    apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
-
-    # Add histograms for trainable variables.
-    for var in tf.trainable_variables():
-        tf.histogram_summary(var.op.name, var)
-
-    # Add histograms for gradients.
-    for grad, var in grads:
-        if grad is not None:
-            tf.histogram_summary(var.op.name + '/gradients', grad)
-
-    with tf.control_dependencies([apply_gradient_op]):
-        train_op = tf.no_op(name='train')
-
-    return train_op
+    return learning_rate_summary, train_op
 
 
 def get_model(images, train_phase):
