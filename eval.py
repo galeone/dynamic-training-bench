@@ -24,6 +24,7 @@ import train
 import vgg
 
 EVAL_DIR = train.CURRENT_DIR + '/eval'
+BATCH_SIZE = 50
 
 
 def eval_once(saver, summary_writer, top_k_op, summary_op):
@@ -60,9 +61,9 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
 
             num_iter = int(
                 math.ceil(cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
-                          train.BATCH_SIZE))
+                          BATCH_SIZE))
             true_count = 0  # Counts the number of correct predictions.
-            total_sample_count = num_iter * train.BATCH_SIZE
+            total_sample_count = num_iter * BATCH_SIZE
             step = 0
             while step < num_iter and not coord.should_stop():
                 predictions = sess.run([top_k_op])
@@ -90,8 +91,7 @@ def evaluate():
     with tf.Graph().as_default() as graph, tf.device('/gpu:1'):
         # Get images and labels for CIFAR-10.
         # Use batch_size multiple of train set size and big enough to stay in GPU
-        images, labels = cifar10.inputs(
-            eval_data=True, batch_size=train.BATCH_SIZE)
+        images, labels = cifar10.inputs(eval_data=True, batch_size=BATCH_SIZE)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
