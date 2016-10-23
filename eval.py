@@ -90,7 +90,8 @@ def evaluate():
     with tf.Graph().as_default() as graph, tf.device('/gpu:1'):
         # Get images and labels for CIFAR-10.
         # Use batch_size multiple of train set size and big enough to stay in GPU
-        images, labels = cifar10.inputs(eval_data=True, batch_size=train.BATCH_SIZE)
+        images, labels = cifar10.inputs(
+            eval_data=True, batch_size=train.BATCH_SIZE)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.

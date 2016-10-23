@@ -234,8 +234,9 @@ def inference(images, keep_prob, train_phase=False):
         pool5 = tf.nn.max_pool(
             conv13, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
         # dropout on max-pooling, mfw
-        #pool5 = tf.nn.dropout(pool5, keep_prob)
-        pool5 = tf.nn.dropout(pool5, 0.5)
+        if train_phase:
+            #pool5 = tf.nn.dropout(pool5, keep_prob)
+            pool5 = tf.nn.dropout(pool5, 0.5)
 
         pool5 = tf.reshape(pool5, [-1, 512])
 
