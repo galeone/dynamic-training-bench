@@ -77,7 +77,8 @@ def eval_once(summary_writer, global_step):
     with tf.Graph().as_default(), tf.device('/gpu:1'):
         # Get images and labels for CIFAR-10.
         # Use batch_size multiple of train set size and big enough to stay in GPU
-        images, labels = cifar10.inputs(eval_data=True, batch_size=200)
+        batch_size = 200
+        images, labels = cifar10.inputs(eval_data=True, batch_size=batch_size)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
@@ -113,9 +114,9 @@ def eval_once(summary_writer, global_step):
 
                 num_iter = int(
                     math.ceil(cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
-                              BATCH_SIZE))
+                              batch_size))
                 true_count = 0  # Counts the number of correct predictions.
-                total_sample_count = num_iter * BATCH_SIZE
+                total_sample_count = num_iter * batch_size
                 step = 0
                 while step < num_iter and not coord.should_stop():
                     predictions = sess.run([top_k_op])
