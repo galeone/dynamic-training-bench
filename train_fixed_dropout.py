@@ -17,48 +17,18 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from models import model1 as vgg
-from inputs import cifar10
+from models import model2 as vgg
+from inputs import cifar10 as dataset
 
 BATCH_SIZE = 128
-STEP_PER_EPOCH = math.ceil(cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
+STEP_PER_EPOCH = math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
                            BATCH_SIZE)
 MAX_EPOCH = 300
 MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = CURRENT_DIR + "/log/" + vgg.NAME
-
-
-def keep_prob_decay(validation_accuracy,
-                    keep_prob,
-                    min_keep_prob,
-                    global_step,
-                    decay_steps,
-                    decay_rate,
-                    name=None):
-    """ Decay keep_prob until it reaches min_keep_prob.
-    The update rule is: max(min_keep_prob, keep_prob - floor(global_step / decay_step))
-    where decay_step  =
-    """
-    if global_step is None:
-        raise ValueError("global_step is required for keep_prob_decay")
-
-    with tf.name_scope(
-            name, "KeepProbDecay",
-        [keep_prob, global_step, decay_steps, decay_rate]) as name:
-        keep_prob = tf.convert_to_tensor(
-            keep_prob, name="keep_prob", dtype=tf.float32)
-        min_keep_prob = tf.convert_to_tensor(
-            min_keep_prob, name="min_keep_prob", dtype=tf.float32)
-        global_step = tf.cast(global_step, dtype=tf.float32)
-        decay_steps = tf.cast(decay_steps, dtype=tf.float32)
-        decay_rate = tf.cast(decay_rate, dtype=tf.float32)
-        # TODO: define decay_step in function of past validation accuracies
-        with tf.control_dependencies([validation_accuracy]):
-            pass
-        return tf.maximum(min_keep_prob,
-                          keep_prob - tf.floor(global_step / decay_step))
+LOG_DIR = CURRENT_DIR + "/log/" + vgg.NAME + '/fixed_keep_prob'
+FIXED_KEEP_PROB = 1.0
 
 
 def get_accuracy(validation_log, global_step):
@@ -72,7 +42,7 @@ def get_accuracy(validation_log, global_step):
         # Get images and labels for CIFAR-10.
         # Use batch_size multiple of train set size and big enough to stay in GPU
         batch_size = 200
-        images, labels = cifar10.inputs(eval_data=True, batch_size=batch_size)
+        images, labels = dataset.inputs(eval_data=True, batch_size=batch_size)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
@@ -106,7 +76,7 @@ def get_accuracy(validation_log, global_step):
                             sess, coord=coord, daemon=True, start=True))
 
                 num_iter = int(
-                    math.ceil(cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
+                    math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
                               batch_size))
                 true_count = 0  # Counts the number of correct predictions.
                 total_sample_count = num_iter * batch_size
@@ -141,18 +111,18 @@ def train():
         global_step = tf.Variable(0, trainable=False)
 
         # Get images and labels for CIFAR-10.
-        images, labels = cifar10.distorted_inputs(BATCH_SIZE)
+        images, labels = dataset.distorted_inputs(BATCH_SIZE)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
         keep_prob_, logits = vgg.get_model(images, train_phase=True)
 
         # Calculate loss.
-        loss_summary, loss = vgg.loss(logits, labels)
+        loss = vgg.loss(logits, labels)
 
         # Build a Graph that trains the model with one batch of examples and
         # updates the model parameters.
-        learning_rate_summary, train_op = vgg.train(loss, global_step)
+        train_op = vgg.train(loss, global_step)
 
         # Create a saver.
         saver = tf.train.Saver(tf.trainable_variables() + [global_step])
@@ -162,10 +132,8 @@ def train():
         accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
         accuracy_summary = tf.scalar_summary('accuracy', accuracy)
 
-        # merge loss_summary and learning_rate_summary
-        # these 2 ops gets executed every iteration
-        every_step_summaries = tf.merge_summary(
-            [learning_rate_summary, loss_summary])
+        train_summaries = tf.merge_summary(
+            tf.get_collection_ref('train_summaries'))
 
         # Build an initialization operation to run below.
         init = tf.initialize_all_variables()
@@ -188,8 +156,8 @@ def train():
             for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
                 _, loss_value, summary_lines = sess.run(
-                    [train_op, loss, every_step_summaries],
-                    feed_dict={keep_prob_: 1.0})
+                    [train_op, loss, train_summaries],
+                    feed_dict={keep_prob_: FIXED_KEEP_PROB})
                 duration = time.time() - start_time
 
                 assert not np.isnan(
@@ -219,16 +187,18 @@ def train():
                     # validation accuracy
                     validation_accuracy = get_accuracy(
                         validation_log, global_step=step)
+
                     # train accuracy
                     train_accuracy, summary_line = sess.run(
-                        [accuracy, accuracy_summary])
+                        [accuracy, accuracy_summary],
+                        feed_dict={keep_prob_: FIXED_KEEP_PROB})
                     train_log.add_summary(summary_line, global_step=step)
                     print('%s: train accuracy = %.3f' %
                           (datetime.now(), train_accuracy))
 
 
 def main():
-    cifar10.maybe_download_and_extract()
+    dataset.maybe_download_and_extract()
     if tf.gfile.Exists(LOG_DIR):
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
