@@ -56,3 +56,8 @@ def fc_layer(input_x, shape, wd=0.0):
     weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
     return tf.nn.bias_add(tf.matmul(input_x, W), b)
+
+
+def log(summary):
+    """Add summary to train_summaries collection"""
+    tf.add_to_collection('train_summaries', summary)

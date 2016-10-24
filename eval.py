@@ -14,7 +14,7 @@ from datetime import datetime
 import math
 import numpy as np
 import tensorflow as tf
-from inputs import cifar10
+from inputs import cifar10 as dataset
 import train
 # evaluate current training model
 # therefore we can use every model
@@ -53,7 +53,7 @@ def get_acuracy(top_k_op):
                         sess, coord=coord, daemon=True, start=True))
 
             num_iter = int(
-                math.ceil(cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
+                math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
                           BATCH_SIZE))
             true_count = 0  # Counts the number of correct predictions.
             total_sample_count = num_iter * BATCH_SIZE
@@ -79,7 +79,7 @@ def evaluate():
     with tf.Graph().as_default(), tf.device('/gpu:1'):
         # Get images and labels for CIFAR-10.
         # Use batch_size multiple of train set size and big enough to stay in GPU
-        images, labels = cifar10.inputs(eval_data=True, batch_size=BATCH_SIZE)
+        images, labels = dataset.inputs(eval_data=True, batch_size=BATCH_SIZE)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
@@ -93,7 +93,7 @@ def evaluate():
 
 def main():
     """ main function """
-    cifar10.maybe_download_and_extract()
+    dataset.maybe_download_and_extract()
     evaluate()
     return 0
 

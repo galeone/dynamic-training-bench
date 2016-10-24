@@ -8,7 +8,7 @@
 """Builds the VGG-like network."""
 
 import tensorflow as tf
-from inputs import cifar10
+from inputs import cifar10 as dataset
 from . import utils
 
 # Model name
@@ -168,7 +168,7 @@ def inference(images, keep_prob, train_phase=False):
             fc1 = tf.nn.dropout(fc1, 0.5)
 
     with tf.variable_scope('softmax_linear'):
-        logits = utils.fc_layer(fc1, [512, cifar10.NUM_CLASSES], wd=WD_PENALTY)
+        logits = utils.fc_layer(fc1, [512, dataset.NUM_CLASSES], wd=WD_PENALTY)
     return logits
 
 
@@ -180,7 +180,6 @@ def loss(logits, labels):
               of shape [batch_size]
 
     Returns:
-      loss summary,
       Loss tensor of type float.
     """
     # Calculate the average cross entropy loss across the batch.
@@ -193,7 +192,8 @@ def loss(logits, labels):
     # The total loss is defined as the cross entropy loss plus all of the weight
     # decay terms (L2 loss).
     error = tf.add_n(tf.get_collection('losses'), name='total_loss')
-    return tf.scalar_summary('loss', error), error
+    utils.log(tf.scalar_summary('loss', error))
+    return error
 
 
 def train(total_loss, global_step):
@@ -205,11 +205,10 @@ def train(total_loss, global_step):
       global_step: Integer Variable counting the number of training steps
         processed.
     Returns:
-      learning_rate_summary: learning ratey summary
       train_op: op for training.
     """
     # Variables that affect learning rate.
-    num_batches_per_epoch = cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / BATCH_SIZE
+    num_batches_per_epoch = dataset.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / BATCH_SIZE
     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
 
     # Decay the learning rate exponentially based on the number of steps.
@@ -220,14 +219,14 @@ def train(total_loss, global_step):
         LEARNING_RATE_DECAY_FACTOR,
         staircase=True)
 
-    learning_rate_summary = tf.scalar_summary('learning_rate', learning_rate)
+    utils.log(tf.scalar_summary('learning_rate', learning_rate))
     opt = tf.train.MomentumOptimizer(learning_rate, MOMENTUM)
     train_op = opt.minimize(total_loss, global_step=global_step)
 
-    return learning_rate_summary, train_op
+    return train_op
 
 
-def get_model(images, train_phase):
+def get_model(images, train_phase=False):
     """ define the model with its inputs.
     Use this function to define the model in training and when exporting the model
     in the protobuf format.
