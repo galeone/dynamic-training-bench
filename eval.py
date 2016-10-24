@@ -1,18 +1,13 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+#Copyright (C) 2016 Paolo Galeone <nessuno@nerdz.eu>
+# Based on Tensorflow cifar10_eval.py file
+# https://github.com/tensorflow/tensorflow/blob/r0.11/tensorflow/models/image/cifar10/cifar10_eval.py
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or iamplied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Evaluation for CIFAR-10."""
+#This Source Code Form is subject to the terms of the Mozilla Public
+#License, v. 2.0. If a copy of the MPL was not distributed with this
+#file, you can obtain one at http://mozilla.org/MPL/2.0/.
+#Exhibit B is not attached; this software is compatible with the
+#licenses expressed under Section 1.12 of the MPL v2.
+"""Evaluate the model"""
 
 import sys
 from datetime import datetime
@@ -21,31 +16,29 @@ import numpy as np
 import tensorflow as tf
 from inputs import cifar10
 import train
-import vgg
+# evaluate current training model
+# therefore we can use every model
+# because the structure of each model, differs just in
+# the training phase. We use train.LOG_DIR because it points
+# to the current training model logs (and checkpoints)
+# like ./log/model<N>
+from models import model1 as vgg
 
-EVAL_DIR = train.CURRENT_DIR + '/eval'
 BATCH_SIZE = 50
 
 
-def eval_once(saver, summary_writer, top_k_op, summary_op):
+def get_acuracy(top_k_op):
     """Run Eval once.
 
-  Args:
-    saver: Saver.
-    summary_writer: Summary writer.
-    top_k_op: Top K op.
-    summary_op: Summary op.
-  """
+    Args:
+      top_k_op: Top K op.
+    """
+    saver = tf.train.Saver()
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         ckpt = tf.train.get_checkpoint_state(train.LOG_DIR)
         if ckpt and ckpt.model_checkpoint_path:
             # Restores from checkpoint
             saver.restore(sess, ckpt.model_checkpoint_path)
-            # Assuming model_checkpoint_path looks something like:
-            #   /my-favorite-path/cifar10_train/model.ckpt-0,
-            # extract global_step from it.
-            global_step = ckpt.model_checkpoint_path.split('/')[-1].split('-')[
-                -1]
         else:
             print('No checkpoint file found')
             return
@@ -70,25 +63,20 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
                 true_count += np.sum(predictions)
                 step += 1
 
-            # Compute precision @ 1.
-            precision = true_count / total_sample_count
-            print('%s: precision @ 1 = %.3f' % (datetime.now(), precision))
-
-            summary = tf.Summary()
-            summary.ParseFromString(sess.run(summary_op))
-            summary.value.add(tag='Precision @ 1', simple_value=precision)
-            summary_writer.add_summary(summary, global_step)
-        except Exception as e:  # pylint: disable=broad-except
+            accuracy = true_count / total_sample_count
+            print('%s: accuracy @ 1 = %.3f' % (datetime.now(), accuracy))
+        except Exception as e:
             coord.request_stop(e)
+        finally:
+            coord.request_stop()
 
-        coord.request_stop()
-        coord.join(threads, stop_grace_period_secs=10)
+        coord.join(threads)
 
 
 def evaluate():
-    """Eval CIFAR-10 for a number of steps."""
+    """Eval the model"""
 
-    with tf.Graph().as_default() as graph, tf.device('/gpu:1'):
+    with tf.Graph().as_default(), tf.device('/gpu:1'):
         # Get images and labels for CIFAR-10.
         # Use batch_size multiple of train set size and big enough to stay in GPU
         images, labels = cifar10.inputs(eval_data=True, batch_size=BATCH_SIZE)
@@ -100,20 +88,12 @@ def evaluate():
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
-        # saver
-        saver = tf.train.Saver()
-
-        # Build the summary operation based on the TF collection of Summaries.
-        summary_op = tf.merge_all_summaries()
-        summary_writer = tf.train.SummaryWriter(EVAL_DIR, graph)
-        eval_once(saver, summary_writer, top_k_op, summary_op)
+        get_acuracy(top_k_op)
 
 
 def main():
+    """ main function """
     cifar10.maybe_download_and_extract()
-    if tf.gfile.Exists(EVAL_DIR):
-        tf.gfile.DeleteRecursively(EVAL_DIR)
-    tf.gfile.MakeDirs(EVAL_DIR)
     evaluate()
     return 0
 

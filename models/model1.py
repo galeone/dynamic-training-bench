@@ -1,21 +1,18 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+#Copyright (C) 2016 Paolo Galeone <nessuno@nerdz.eu>
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
+#This Source Code Form is subject to the terms of the Mozilla Public
+#License, v. 2.0. If a copy of the MPL was not distributed with this
+#file, you can obtain one at http://mozilla.org/MPL/2.0/.
+#Exhibit B is not attached; this software is compatible with the
+#licenses expressed under Section 1.12 of the MPL v2.
 """Builds the VGG-like network."""
 
 import tensorflow as tf
 from inputs import cifar10
+from . import utils
+
+# Model name
+NAME = 'model1'
 
 # Constants describing the training process.
 BATCH_SIZE = 128
@@ -24,54 +21,6 @@ LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
 MOMENTUM = 0.9  # Momentum
 WD_PENALTY = 5e-4  # L2(weights) penalty
 INITIAL_LEARNING_RATE = 1e-2  # Initial learning rate.
-
-
-def weight(name,
-           shape,
-           initializer=tf.contrib.layers.variance_scaling_initializer(
-               factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32)):
-    """ weight returns a tensor with the requested shape, initialized
-      using the provided intitializer (default: He init)."""
-    return tf.get_variable(
-        name, shape=shape, initializer=initializer, dtype=tf.float32)
-
-
-def bias(name, shape, initializer=tf.constant_initializer(value=0.0)):
-    """Returns a bias variabile initializeted wuth the provided initializer"""
-    return weight(name, shape, initializer)
-
-
-def conv_layer(input_x, shape, stride, padding, wd=0.0):
-    """ Define a conv layer.
-    Args:
-         input_x: a 4D tensor
-         shape: weight shape
-         stride: a single value supposing equal stride along X and Y
-         padding: 'VALID' or 'SAME'
-         wd: weight decay
-    Rerturns the conv2d op"""
-    W = weight("W", shape)
-    b = bias("b", [shape[3]])
-    # Add weight decay to W
-    weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection('losses', weight_decay)
-    return tf.nn.bias_add(
-        tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding), b)
-
-
-def fc_layer(input_x, shape, wd=0.0):
-    """ Define a fully connected layer.
-    Args:
-        input_x: a 4d tensor
-        shape: weight shape
-        wd: weight decay
-    Returns the fc layer"""
-    W = weight("W", shape)
-    b = bias("b", [shape[1]])
-    # Add weight decay to W
-    weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection('losses', weight_decay)
-    return tf.nn.bias_add(tf.matmul(input_x, W), b)
 
 
 def inference(images, keep_prob, train_phase=False):
@@ -87,7 +36,7 @@ def inference(images, keep_prob, train_phase=False):
     with tf.variable_scope('64'):
         with tf.variable_scope('conv1'):
             conv1 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     images, [3, 3, 3, 64], 1, 'SAME', wd=WD_PENALTY))
             if train_phase:
                 #conv1 = tf.nn.dropout(conv1, keep_prob)
@@ -95,7 +44,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv2'):
             conv2 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv1, [3, 3, 64, 64], 1, 'SAME', wd=WD_PENALTY))
 
     with tf.variable_scope('pool1'):
@@ -105,7 +54,7 @@ def inference(images, keep_prob, train_phase=False):
     with tf.variable_scope('128'):
         with tf.variable_scope('conv3'):
             conv3 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     pool1, [3, 3, 64, 128], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -114,7 +63,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv4'):
             conv4 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv3, [3, 3, 128, 128], 1, 'SAME', wd=WD_PENALTY))
 
     with tf.variable_scope('pool2'):
@@ -124,7 +73,7 @@ def inference(images, keep_prob, train_phase=False):
     with tf.variable_scope('256'):
         with tf.variable_scope('conv5'):
             conv5 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     pool2, [3, 3, 128, 256], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -133,7 +82,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv6'):
             conv6 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv5, [3, 3, 256, 256], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -142,7 +91,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv7'):
             conv7 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv6, [3, 3, 256, 256], 1, 'SAME', wd=WD_PENALTY))
 
     with tf.variable_scope('pool3'):
@@ -152,7 +101,7 @@ def inference(images, keep_prob, train_phase=False):
     with tf.variable_scope('512'):
         with tf.variable_scope('conv8'):
             conv8 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     pool3, [3, 3, 256, 512], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -161,7 +110,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv9'):
             conv9 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv8, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -170,7 +119,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv10'):
             conv10 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv9, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
 
     with tf.variable_scope('pool4'):
@@ -180,7 +129,7 @@ def inference(images, keep_prob, train_phase=False):
     with tf.variable_scope('512b2'):
         with tf.variable_scope('conv11'):
             conv11 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     pool4, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -189,7 +138,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv12'):
             conv12 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv11, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
 
             if train_phase:
@@ -198,7 +147,7 @@ def inference(images, keep_prob, train_phase=False):
 
         with tf.variable_scope('conv13'):
             conv13 = tf.nn.relu(
-                conv_layer(
+                utils.conv_layer(
                     conv12, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY))
 
     with tf.variable_scope('pool5'):
@@ -212,14 +161,14 @@ def inference(images, keep_prob, train_phase=False):
         pool5 = tf.reshape(pool5, [-1, 512])
 
     with tf.variable_scope('fc'):
-        fc1 = tf.nn.relu(fc_layer(pool5, [512, 512], wd=WD_PENALTY))
+        fc1 = tf.nn.relu(utils.fc_layer(pool5, [512, 512], wd=WD_PENALTY))
 
         if train_phase:
             #fc1 = tf.nn.dropout(fc1, keep_prob)
             fc1 = tf.nn.dropout(fc1, 0.5)
 
     with tf.variable_scope('softmax_linear'):
-        logits = fc_layer(fc1, [512, cifar10.NUM_CLASSES], wd=WD_PENALTY)
+        logits = utils.fc_layer(fc1, [512, cifar10.NUM_CLASSES], wd=WD_PENALTY)
     return logits
 
 

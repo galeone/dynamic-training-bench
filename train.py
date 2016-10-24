@@ -1,18 +1,13 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+#Copyright (C) 2016 Paolo Galeone <nessuno@nerdz.eu>
+# Based on Tensorflow cifar10_train.py file
+# https://github.com/tensorflow/tensorflow/blob/r0.11/tensorflow/models/image/cifar10/cifar10_train.py
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""A binary to train CIFAR-10 using a single GPU."""
+#This Source Code Form is subject to the terms of the Mozilla Public
+#License, v. 2.0. If a copy of the MPL was not distributed with this
+#file, you can obtain one at http://mozilla.org/MPL/2.0/.
+#Exhibit B is not attached; this software is compatible with the
+#licenses expressed under Section 1.12 of the MPL v2.
+""" Train model with a single GPU. Evaluate it on the second one"""
 
 import sys
 from datetime import datetime
@@ -22,7 +17,7 @@ import math
 
 import numpy as np
 import tensorflow as tf
-import vgg
+from models import model1 as vgg
 from inputs import cifar10
 
 BATCH_SIZE = 128
@@ -32,7 +27,7 @@ MAX_EPOCH = 300
 MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = CURRENT_DIR + "/log"
+LOG_DIR = CURRENT_DIR + "/log/" + vgg.NAME
 
 
 def keep_prob_decay(validation_accuracy,
@@ -131,11 +126,12 @@ def get_accuracy(validation_log, global_step):
                     global_step=global_step)
                 validation_log.flush()
 
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e:
                 coord.request_stop(e)
+            finally:
+                coord.request_stop()
 
-            coord.request_stop()
-            coord.join(threads, stop_grace_period_secs=10)
+            coord.join(threads)
         return accuracy
 
 
