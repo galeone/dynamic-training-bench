@@ -62,12 +62,16 @@ def keep_prob_decay(validation_accuracy_,
             validation_accuracy_,
             name="validation_accuracy_",
             dtype=tf.float32)
-        keep_prob = tf.convert_to_tensor(
-            keep_prob, name="keep_prob", dtype=tf.float32)
-        min_keep_prob = tf.convert_to_tensor(
-            min_keep_prob, name="min_keep_prob", dtype=tf.float32)
         decay_amount = tf.convert_to_tensor(
             decay_amount, name="decay_amount", dtype=tf.float32)
+        # initialize keep_prob with keep_prob + decay_amount
+        # to handle the case of the first decay
+        # that always happen because of the constant ratio
+        # of va/rolling_avg = va/va
+        keep_prob = tf.convert_to_tensor(
+            keep_prob, name="keep_prob", dtype=tf.float32) + decay_amount
+        min_keep_prob = tf.convert_to_tensor(
+            min_keep_prob, name="min_keep_prob", dtype=tf.float32)
 
         # crate a tensor with num_updates value, to accumulte validation accuracies
         accumulator = tf.Variable(
