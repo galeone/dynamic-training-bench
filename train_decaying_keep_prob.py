@@ -104,9 +104,7 @@ def keep_prob_decay(validation_accuracy_,
             # calculate cumulative rolling average
             rolling_avg = tf.reduce_sum(accumulator) / denominator
             # trigger value
-            eps = 1e-3
-            trigger = 1.0 - tf.floor(0.5 - eps + (validation_accuracy /
-                                                  rolling_avg))
+            trigger = -(tf.ceil(validation_accuracy / rolling_avg) - 2.0)
             # sum number of triggered decays
             trigger_tot = tf.assign_add(trigger_tot, trigger)
             new_keep_prob = tf.maximum(
