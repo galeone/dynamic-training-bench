@@ -39,19 +39,8 @@ def keep_prob_decay(validation_accuracy_,
                     num_updates,
                     decay_amount,
                     name=None):
-    """ Decay keep_prob until it reaches min_keep_prob.
-    First calculates the trigger rule: decay keep prob only if
-    trigger = floor(va/ (sum_{i=0}^{num_updates}{va_i} + va)/num_updates)
-    that equals 0 if va is increasing, 1 if is constant or is decreasing.
-
-    On every call to the function the trigger value is added to
-    trigger_tot.
-    This variable contains the number of decays to execute on the next step
-
-    Then:
-    keep_prob = max(min_keep_prob, keep_prob - decay_amount * trigger_tot * trigger)
-
-    Every validation accuracy update do this computation
+    """ Decay keep_prob until it reaches min_keep_pro. Computation
+    based on validation_accuracy_ variations
     """
 
     with tf.name_scope(name, "KeepProbDecay", [
@@ -64,12 +53,15 @@ def keep_prob_decay(validation_accuracy_,
             dtype=tf.float32)
         decay_amount = tf.convert_to_tensor(
             decay_amount, name="decay_amount", dtype=tf.float32)
+        keep_prob = tf.convert_to_tensor(
+            keep_prob, name="keep_prob", dtype=tf.float32)
         # initialize keep_prob with keep_prob + decay_amount
         # to handle the case of the first decay
         # that always happen because of the constant ratio
         # of va/rolling_avg = va/va
-        keep_prob = tf.convert_to_tensor(
-            keep_prob, name="keep_prob", dtype=tf.float32) + decay_amount
+        # Maintains the state of the computation.
+        internal_keep_prob = tf.Variable(
+            keep_prob + decay_amount, dtype=tf.float32, trainable=False)
         min_keep_prob = tf.convert_to_tensor(
             min_keep_prob, name="min_keep_prob", dtype=tf.float32)
 
@@ -79,7 +71,6 @@ def keep_prob_decay(validation_accuracy_,
                 [num_updates], dtype=tf.float32), trainable=False)
         position = tf.Variable(0, dtype=tf.int32, trainable=False)
         accumulated = tf.Variable(0, dtype=tf.float32, trainable=False)
-        trigger_tot = tf.Variable(0, dtype=tf.float32, trainable=False)
 
         # convert num_updates to a tensor
         num_updates = tf.convert_to_tensor(
@@ -107,14 +98,15 @@ def keep_prob_decay(validation_accuracy_,
 
             # calculate cumulative rolling average
             rolling_avg = tf.reduce_sum(accumulator) / denominator
-            # trigger value
-            trigger = -(tf.ceil(validation_accuracy / rolling_avg) - 2.0)
-            # sum number of triggered decays
-            trigger_tot = tf.assign_add(trigger_tot, trigger)
-            new_keep_prob = tf.maximum(
-                min_keep_prob,
-                keep_prob - decay_amount * trigger_tot * trigger)
-            return new_keep_prob
+            # trigger value: 0 (nop) or 1 (trigger)
+            trigger = tf.abs(
+                (tf.ceil(validation_accuracy / rolling_avg) - 2.0))
+
+            internal_keep_prob = tf.assign(
+                internal_keep_prob,
+                tf.maximum(min_keep_prob,
+                           internal_keep_prob - decay_amount * trigger))
+            return internal_keep_prob
 
 
 def train():
@@ -231,6 +223,7 @@ def train():
                         feed_dict={
                             validation_accuracy_: validation_accuracy_value
                         })
+
                     train_log.add_summary(summary_line, global_step=step)
 
                     # train accuracy
