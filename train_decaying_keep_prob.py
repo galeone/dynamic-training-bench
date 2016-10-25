@@ -92,7 +92,7 @@ def keep_prob_decay(validation_accuracy_,
                 position, tf.cast(tf.mod(accumulated, num_updates), tf.int32))
             # update value
             accumulator = tf.scatter_update(accumulator, position,
-                                            validation_accuracy_)
+                                            validation_accuracy)
             # update the amount of accumulated value of the whole train process
             accumulated = tf.assign_add(accumulated, 1)
 
@@ -104,7 +104,9 @@ def keep_prob_decay(validation_accuracy_,
             # calculate cumulative rolling average
             rolling_avg = tf.reduce_sum(accumulator) / denominator
             # trigger value
-            trigger = tf.floor(0.5 + (validation_accuracy / rolling_avg))
+            eps = 1e-3
+            trigger = 1.0 - tf.floor(0.5 - eps + (validation_accuracy /
+                                                  rolling_avg))
             # sum number of triggered decays
             trigger_tot = tf.assign_add(trigger_tot, trigger)
             new_keep_prob = tf.maximum(
