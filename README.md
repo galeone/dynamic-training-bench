@@ -28,4 +28,5 @@ Different models have been evaluated, each one has been trained using Gradient D
 
 No. | L2 | Dropout | BN | Accuracy
 --- | --- | --- | --- | ---
-1   | 5e-4 | see blog post | no | 0.829
+Original | 5e-4 | see blog post | no | 0.829
+Original | 5e-4 | no | no | 0.859
