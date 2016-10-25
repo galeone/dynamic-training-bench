@@ -111,9 +111,6 @@ def keep_prob_decay(validation_accuracy_,
             new_keep_prob = tf.maximum(
                 min_keep_prob,
                 keep_prob - decay_amount * trigger_tot * trigger)
-
-            utils.log(tf.scalar_summary('keep_prob', new_keep_prob))
-
             return new_keep_prob
 
 
@@ -146,9 +143,6 @@ def train():
         accuracy_value_ = tf.placeholder(tf.float32, shape=())
         accuracy_summary = tf.scalar_summary('accuracy', accuracy_value_)
 
-        train_summaries = tf.merge_summary(
-            tf.get_collection_ref('train_summaries'))
-
         # Initialize decay_keep_prob op
         # va placeholder required for keep_prob_decay
         validation_accuracy_ = tf.placeholder(
@@ -159,6 +153,12 @@ def train():
             min_keep_prob=0.4,
             num_updates=3,
             decay_amount=0.1)
+        keep_prob_summary = tf.scalar_summary('keep_prob', get_keep_prob)
+
+        # read collection after keep_prob_decay that adds
+        # the keep_prob summary
+        train_summaries = tf.merge_summary(
+            tf.get_collection_ref('train_summaries'))
 
         # Build an initialization operation to run below.
         init = tf.initialize_all_variables()
@@ -223,11 +223,12 @@ def train():
                     validation_log.add_summary(summary_line, global_step=step)
 
                     # update keep_prob using new validation accuracy
-                    keep_prob = sess.run(get_keep_prob,
-                                         feed_dict={
-                                             validation_accuracy_:
-                                             validation_accuracy_value
-                                         })
+                    keep_prob, summary_line = sess.run(
+                        [get_keep_prob, keep_prob_summary],
+                        feed_dict={
+                            validation_accuracy_: validation_accuracy_value
+                        })
+                    train_log.add_summary(summary_line, global_step=step)
 
                     # train accuracy
                     train_accuracy_value = sess.run(
