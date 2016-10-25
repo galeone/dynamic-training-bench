@@ -18,7 +18,6 @@ import math
 import numpy as np
 import tensorflow as tf
 from models import model2 as vgg
-from models import utils
 from inputs import cifar10 as dataset
 import evaluate
 
@@ -107,7 +106,7 @@ def keep_prob_decay(validation_accuracy_,
             # trigger value
             trigger = tf.floor(0.5 + (validation_accuracy / rolling_avg))
             # sum number of triggered decays
-            trigger_top = tf.assign_add(trigger_tot, trigger)
+            trigger_tot = tf.assign_add(trigger_tot, trigger)
             new_keep_prob = tf.maximum(
                 min_keep_prob,
                 keep_prob - decay_amount * trigger_tot * trigger)
