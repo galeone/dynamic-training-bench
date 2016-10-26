@@ -28,7 +28,8 @@ MAX_EPOCH = 300
 MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = CURRENT_DIR + "/log/" + vgg.NAME + '/keep_prob_decay'
+LOG_DIR = os.path.join(CURRENT_DIR, 'log', vgg.NAME, 'keep_prob_decay')
+BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
 
 MAX_KEEP_PROB = 1.0
 
@@ -157,8 +158,11 @@ def train():
         # updates the model parameters.
         train_op = vgg.train(loss, global_step)
 
-        # Create a saver.
-        saver = tf.train.Saver(tf.trainable_variables() + [global_step])
+        # Create the train saver.
+        variables_to_save = tf.trainable_variables() + [global_step]
+        train_saver = tf.train.Saver(variables_to_save)
+        # Create the best model saver.
+        best_saver = tf.train.Saver(variables_to_save)
 
         # Train accuracy ops
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -203,6 +207,8 @@ def train():
 
             # set initial keep_prob
             keep_prob = MAX_KEEP_PROB
+            # set best_validation_accuracy, used by best_saver
+            best_validation_accuracy = 0.0
 
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
@@ -234,7 +240,7 @@ def train():
                 if (step > 0 and
                         step % STEP_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
-                    saver.save(sess, checkpoint_path, global_step=step)
+                    train_saver.save(sess, checkpoint_path, global_step=step)
 
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_validation_accuracy(
@@ -266,6 +272,14 @@ def train():
                         '{}: train accuracy = {:.3f} validation accuracy = {:.3f}'.
                         format(datetime.now(), train_accuracy_value,
                                validation_accuracy_value))
+                    # save best model
+                    if validation_accuracy_value > best_validation_accuracy:
+                        best_validation_accuracy = validation_accuracy_value
+                        # fixed global_step, the best model is only one
+                        best_saver.save(
+                            sess,
+                            os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
+                            global_step=0)
 
 
 def main():
@@ -274,6 +288,8 @@ def main():
     if tf.gfile.Exists(LOG_DIR):
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
+    if not tf.gfile.Exists(BEST_MODEL_DIR):
+        tf.gfile.MakeDirs(BEST_MODEL_DIR)
     train()
     return 0
 
