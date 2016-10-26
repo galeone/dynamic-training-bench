@@ -28,7 +28,7 @@ MAX_EPOCH = 300
 MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = CURRENT_DIR + "/log/" + vgg.NAME + '/fixed_keep_prob'
+LOG_DIR = os.path.join(CURRENT_DIR, 'log', vgg.NAME, 'fixed_keep_prob')
 FIXED_KEEP_PROB = 1.0
 
 
