@@ -70,11 +70,12 @@ def keep_prob_decay(validation_accuracy_,
             tf.zeros(
                 [num_updates], dtype=tf.float32), trainable=False)
         position = tf.Variable(0, dtype=tf.int32, trainable=False)
-        accumulated = tf.Variable(0, dtype=tf.float32, trainable=False)
+        accumulated = tf.Variable(0, dtype=tf.int32, trainable=False)
 
-        # convert num_updates to a tensor
-        num_updates = tf.convert_to_tensor(
-            num_updates, name="num_updates", dtype=tf.float32)
+        # create a separate variable for num_updates tensor
+        # that's not a python variabile
+        num_updates_tensor = tf.convert_to_tensor(
+            num_updates, name="num_updates", dtype=tf.int32)
 
         validation_accuracy = tf.Variable(0.0)
         validation_accuracy = tf.assign(validation_accuracy,
@@ -83,18 +84,23 @@ def keep_prob_decay(validation_accuracy_,
         with tf.control_dependencies([validation_accuracy]):
             # calculate right position in the accumulator vector
             # where we put the va value
-            position = tf.assign(
-                position, tf.cast(tf.mod(accumulated, num_updates), tf.int32))
+            position_op = tf.cast(
+                tf.mod(accumulated, num_updates_tensor), tf.int32)
+            position = tf.assign(position, position_op)
             # update value
-            accumulator = tf.scatter_update(accumulator, position,
-                                            validation_accuracy)
+            accumulator_op = tf.scatter_update(accumulator, position,
+                                               validation_accuracy)
+            accumulator = accumulator_op
             # update the amount of accumulated value of the whole train process
-            accumulated = tf.assign_add(accumulated, 1)
+            accumulated_op = tf.assign_add(accumulated, 1)
+            accumulated = accumulated_op
 
             # get the denominator
-            denominator = tf.cond(
-                tf.greater_equal(accumulated, num_updates),
-                lambda: num_updates, lambda: accumulated)
+            denominator = tf.cast(
+                tf.cond(
+                    tf.greater_equal(accumulated, num_updates_tensor),
+                    lambda: num_updates_tensor, lambda: accumulated),
+                tf.float32)
 
             # calculate cumulative rolling average
             rolling_avg = tf.reduce_sum(accumulator) / denominator
@@ -102,6 +108,29 @@ def keep_prob_decay(validation_accuracy_,
             trigger = tf.abs(
                 (tf.ceil(validation_accuracy / rolling_avg) - 2.0))
 
+            with tf.control_dependencies([trigger]):
+                # if triggered, reset
+                position = tf.cond(
+                    tf.equal(trigger, 1), lambda: tf.assign(position, 0),
+                    lambda: position_op)
+
+                def reset_accumulator():
+                    """set past validation accuracies to 0 and place actual validation accuracy in position 0
+                    of the accumulator"""
+                    return tf.scatter_update(
+                        accumulator, [i for i in range(num_updates)],
+                        [validation_accuracy] +
+                        [0.0 for i in range(1, num_updates)])
+
+                accumulator = tf.cond(
+                    tf.equal(trigger, 1), reset_accumulator,
+                    lambda: accumulator_op)
+
+                accumulated = tf.cond(
+                    tf.equal(trigger, 1), lambda: tf.assign(accumulated, 1),
+                    lambda: accumulated_op)
+
+            # status variable
             internal_keep_prob = tf.assign(
                 internal_keep_prob,
                 tf.maximum(min_keep_prob,
@@ -146,7 +175,7 @@ def train():
             validation_accuracy_,
             keep_prob=MAX_KEEP_PROB,
             min_keep_prob=0.4,
-            num_updates=3,
+            num_updates=10,
             decay_amount=0.1)
         keep_prob_summary = tf.scalar_summary('keep_prob', get_keep_prob)
 
@@ -223,7 +252,6 @@ def train():
                         feed_dict={
                             validation_accuracy_: validation_accuracy_value
                         })
-
                     train_log.add_summary(summary_line, global_step=step)
 
                     # train accuracy
