@@ -52,17 +52,16 @@ def keep_prob_decay(validation_accuracy_,
             validation_accuracy_,
             name="validation_accuracy_",
             dtype=tf.float32)
+
         decay_amount = tf.convert_to_tensor(
             decay_amount, name="decay_amount", dtype=tf.float32)
+
         keep_prob = tf.convert_to_tensor(
             keep_prob, name="keep_prob", dtype=tf.float32)
-        # initialize keep_prob with keep_prob + decay_amount
-        # to handle the case of the first decay
-        # that always happen because of the constant ratio
-        # of va/rolling_avg = va/va
+
         # Maintains the state of the computation.
         internal_keep_prob = tf.Variable(
-            keep_prob + decay_amount, dtype=tf.float32, trainable=False)
+            keep_prob, dtype=tf.float32, trainable=False)
         min_keep_prob = tf.convert_to_tensor(
             min_keep_prob, name="min_keep_prob", dtype=tf.float32)
 
@@ -83,34 +82,25 @@ def keep_prob_decay(validation_accuracy_,
                                         validation_accuracy_)
 
         with tf.control_dependencies([validation_accuracy]):
-            # calculate right position in the accumulator vector
-            # where we put the va value
-            position_op = tf.cast(
-                tf.mod(accumulated, num_updates_tensor), tf.int32)
-            position = tf.assign(position, position_op)
-            # update value
-            accumulator_op = tf.scatter_update(accumulator, position,
-                                               validation_accuracy)
-            accumulator = accumulator_op
-            # update the amount of accumulated value of the whole train process
-            accumulated_op = tf.assign_add(accumulated, 1)
-            accumulated = accumulated_op
-
-            # get the denominator
-            denominator = tf.cast(
-                tf.cond(
-                    tf.greater_equal(accumulated, num_updates_tensor),
-                    lambda: num_updates_tensor, lambda: accumulated),
-                tf.float32)
-
-            # calculate cumulative rolling average
-            rolling_avg = tf.reduce_sum(accumulator) / denominator
             # trigger value: 0 (nop) or 1 (trigger)
-            trigger = tf.abs(
-                (tf.ceil(validation_accuracy / rolling_avg) - 2.0))
+            trigger = 1.0 - tf.ceil(validation_accuracy - tf.reduce_sum(
+                accumulator) / num_updates)
 
             with tf.control_dependencies([trigger]):
-                # if triggered, reset
+                # calculate right position in the accumulator vector
+                # where we put the va value
+                position_op = tf.cast(
+                    tf.mod(accumulated, num_updates_tensor), tf.int32)
+                position = tf.assign(position, position_op)
+                # update value
+                accumulator_op = tf.scatter_update(accumulator, position,
+                                                   validation_accuracy)
+                accumulator = accumulator_op
+                # update the amount of accumulated value of the whole train process
+                accumulated_op = tf.assign_add(accumulated, 1)
+                accumulated = accumulated_op
+
+                # if triggered (trigger = 1):
                 position = tf.cond(
                     tf.equal(trigger, 1), lambda: tf.assign(position, 0),
                     lambda: position_op)
