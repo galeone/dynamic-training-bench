@@ -83,7 +83,9 @@ def keep_prob_decay(validation_accuracy_,
 
         with tf.control_dependencies([validation_accuracy]):
             # trigger value: 0 (nop) or 1 (trigger)
-            trigger = 1.0 - tf.ceil(validation_accuracy - tf.reduce_sum(
+            # precision = eps
+            eps = 1e-2
+            trigger = 1 - tf.ceil(validation_accuracy - eps - tf.reduce_sum(
                 accumulator) / num_updates)
 
             with tf.control_dependencies([trigger]):
@@ -106,8 +108,8 @@ def keep_prob_decay(validation_accuracy_,
                     lambda: position_op)
 
                 def reset_accumulator():
-                    """set past validation accuracies to 0 and place actual validation accuracy in position 0
-                    of the accumulator"""
+                    """set past validation accuracies to 0 and place actual
+                    validation accuracy in position 0"""
                     return tf.scatter_update(
                         accumulator, [i for i in range(num_updates)],
                         [validation_accuracy] +
@@ -168,7 +170,7 @@ def train():
         get_keep_prob = keep_prob_decay(
             validation_accuracy_,
             keep_prob=MAX_KEEP_PROB,
-            min_keep_prob=0.4,
+            min_keep_prob=0.5,
             num_updates=10,
             decay_amount=0.1)
         keep_prob_summary = tf.scalar_summary('keep_prob', get_keep_prob)
