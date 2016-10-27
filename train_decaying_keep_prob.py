@@ -79,58 +79,57 @@ def keep_prob_decay(validation_accuracy_,
             num_updates, name="num_updates", dtype=tf.int32)
 
         validation_accuracy = tf.Variable(0.0)
-        # keep only the specified precision of vaidation_accuracy_
+        # keep only the specified precision of validation_accuracy_
         validation_accuracy = tf.assign(
             validation_accuracy,
-            tf.round(validation_accuracy_ / precision) * precision)
+            tf.ceil(validation_accuracy_ / precision) * precision)
 
         with tf.control_dependencies([validation_accuracy]):
             # trigger value: 0 (nop) or 1 (trigger)
-            trigger = 1 - tf.ceil(validation_accuracy - tf.reduce_sum(
-                accumulator) / num_updates)
+            mean = tf.ceil(
+                tf.reduce_sum(accumulator) /
+                (num_updates * precision)) * precision
+            trigger = 1 - tf.ceil(validation_accuracy - mean)
 
-            with tf.control_dependencies([trigger]):
-                # operations to run when decay is not triggered:
-
-                # calculate right position in the accumulator vector
-                # where we put the va value
-                position_op = tf.cast(
-                    tf.mod(accumulated, num_updates_tensor), tf.int32)
-                # update value
-                accumulator_op = tf.scatter_update(accumulator, position,
-                                                   validation_accuracy)
-
-                # update the amount of accumulated value of the whole train process
-                accumulated_op = tf.assign_add(accumulated, 1)
-
-                # assing the right operations to position, accumulator, and
-                # accumulated tensors, basing the decision on the trigger value
-
-                position = tf.cond(
-                    tf.equal(trigger, 1), lambda: tf.assign(position, 0),
-                    lambda: position_op)
-
-                def reset_accumulator():
-                    """set past validation accuracies to 0 and place actual
-                    validation accuracy in position 0"""
-                    return tf.scatter_update(
-                        accumulator, [i for i in range(num_updates)],
-                        [validation_accuracy] +
-                        [0.0 for i in range(1, num_updates)])
-
-                accumulator = tf.cond(
-                    tf.equal(trigger, 1), reset_accumulator,
-                    lambda: accumulator_op)
-
-                accumulated = tf.cond(
-                    tf.equal(trigger, 1), lambda: tf.assign(accumulated, 1),
-                    lambda: accumulated_op)
-
-            # status variable
+            # compute next keep prob
             keep_prob = tf.assign(
                 keep_prob,
                 tf.maximum(min_keep_prob, keep_prob - decay_amount * trigger))
-            return keep_prob
+
+            # update values for the next execution
+            with tf.control_dependencies([trigger, keep_prob]):
+                # update position
+
+                # if trigger, pos = 0, else accumulated % num_updates
+                position = tf.cond(
+                    tf.equal(trigger, 1), lambda: tf.assign(position, 0),
+                    lambda: tf.cast(tf.mod(accumulated, num_updates_tensor), tf.int32))
+
+                # execute only after position update
+                with tf.control_dependencies([position]):
+
+                    def reset_accumulator():
+                        """set past validation accuracies to 0 and place actual
+                        validation accuracy in position 0"""
+                        return tf.scatter_update(
+                            accumulator, [i for i in range(num_updates)],
+                            [validation_accuracy] +
+                            [0.0 for i in range(1, num_updates)])
+
+                    # update accumulator
+                    # if trigger: reset_acculator, else accumulator[position] = va
+                    accumulator = tf.cond(
+                        tf.equal(trigger, 1), reset_accumulator,
+                        lambda: tf.scatter_update(accumulator, position, validation_accuracy)
+                    )
+                    # update accumulated (for current prob)
+                    # if trigger; accumulated = 1, else accumulated +=1
+                    accumulated = tf.cond(
+                        tf.equal(trigger, 1),
+                        lambda: tf.assign(accumulated, 1),
+                        lambda: tf.assign_add(accumulated, 1))
+
+        return keep_prob
 
 
 def train():
