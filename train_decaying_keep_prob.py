@@ -35,17 +35,18 @@ MAX_KEEP_PROB = 1.0
 
 
 def keep_prob_decay(validation_accuracy_,
-                    keep_prob,
+                    max_keep_prob,
                     min_keep_prob,
                     num_updates,
                     decay_amount,
+                    precision=1e-2,
                     name=None):
     """ Decay keep_prob until it reaches min_keep_pro. Computation
     based on validation_accuracy_ variations
     """
 
     with tf.name_scope(name, "KeepProbDecay", [
-            validation_accuracy_, keep_prob, min_keep_prob, num_updates,
+            validation_accuracy_, max_keep_prob, min_keep_prob, num_updates,
             decay_amount
     ]) as name:
         validation_accuracy_ = tf.convert_to_tensor(
@@ -56,12 +57,12 @@ def keep_prob_decay(validation_accuracy_,
         decay_amount = tf.convert_to_tensor(
             decay_amount, name="decay_amount", dtype=tf.float32)
 
-        keep_prob = tf.convert_to_tensor(
-            keep_prob, name="keep_prob", dtype=tf.float32)
+        max_keep_prob = tf.convert_to_tensor(
+            max_keep_prob, name="max_keep_prob", dtype=tf.float32)
 
         # Maintains the state of the computation.
-        internal_keep_prob = tf.Variable(
-            keep_prob, dtype=tf.float32, trainable=False)
+        keep_prob = tf.Variable(
+            max_keep_prob, dtype=tf.float32, trainable=False, name="keep_prob")
         min_keep_prob = tf.convert_to_tensor(
             min_keep_prob, name="min_keep_prob", dtype=tf.float32)
 
@@ -78,14 +79,14 @@ def keep_prob_decay(validation_accuracy_,
             num_updates, name="num_updates", dtype=tf.int32)
 
         validation_accuracy = tf.Variable(0.0)
-        validation_accuracy = tf.assign(validation_accuracy,
-                                        validation_accuracy_)
+        # keep only the specified precision of vaidation_accuracy_
+        validation_accuracy = tf.assign(
+            validation_accuracy,
+            tf.round(validation_accuracy_ / precision) * precision)
 
         with tf.control_dependencies([validation_accuracy]):
             # trigger value: 0 (nop) or 1 (trigger)
-            # precision = eps
-            eps = 1e-2
-            trigger = 1 - tf.ceil(validation_accuracy - eps - tf.reduce_sum(
+            trigger = 1 - tf.ceil(validation_accuracy - tf.reduce_sum(
                 accumulator) / num_updates)
 
             with tf.control_dependencies([trigger]):
@@ -124,11 +125,10 @@ def keep_prob_decay(validation_accuracy_,
                     lambda: accumulated_op)
 
             # status variable
-            internal_keep_prob = tf.assign(
-                internal_keep_prob,
-                tf.maximum(min_keep_prob,
-                           internal_keep_prob - decay_amount * trigger))
-            return internal_keep_prob
+            keep_prob = tf.assign(
+                keep_prob,
+                tf.maximum(min_keep_prob, keep_prob - decay_amount * trigger))
+            return keep_prob
 
 
 def train():
@@ -169,7 +169,7 @@ def train():
             tf.float32, shape=(), name="validation_accuracy_")
         get_keep_prob = keep_prob_decay(
             validation_accuracy_,
-            keep_prob=MAX_KEEP_PROB,
+            max_keep_prob=MAX_KEEP_PROB,
             min_keep_prob=0.5,
             num_updates=10,
             decay_amount=0.1)
