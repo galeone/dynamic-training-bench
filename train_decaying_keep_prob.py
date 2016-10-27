@@ -48,7 +48,7 @@ def keep_prob_decay(validation_accuracy_,
     with tf.name_scope(name, "KeepProbDecay", [
             validation_accuracy_, max_keep_prob, min_keep_prob, num_updates,
             decay_amount
-    ]) as name:
+    ]) as name, tf.device('/cpu:0'):
         validation_accuracy_ = tf.convert_to_tensor(
             validation_accuracy_,
             name="validation_accuracy_",
@@ -78,13 +78,13 @@ def keep_prob_decay(validation_accuracy_,
         num_updates_tensor = tf.convert_to_tensor(
             num_updates, name="num_updates", dtype=tf.int32)
 
-        validation_accuracy = tf.Variable(0.0)
         # keep only the specified precision of validation_accuracy_
-        validation_accuracy = tf.assign(
-            validation_accuracy,
-            tf.ceil(validation_accuracy_ / precision) * precision)
-
-        with tf.control_dependencies([validation_accuracy]):
+        validation_accuracy = tf.Variable(0.0)
+        with tf.control_dependencies([
+                tf.assign(validation_accuracy,
+                          tf.ceil(validation_accuracy_ / precision) *
+                          precision)
+        ]):
             # trigger value: 0 (nop) or 1 (trigger)
             mean = tf.ceil(
                 tf.reduce_sum(accumulator) /
@@ -92,17 +92,21 @@ def keep_prob_decay(validation_accuracy_,
             trigger = 1 - tf.ceil(validation_accuracy - mean)
 
             # compute next keep prob
-            keep_prob = tf.assign(
-                keep_prob,
-                tf.maximum(min_keep_prob, keep_prob - decay_amount * trigger))
-
-            # update values for the next execution
-            with tf.control_dependencies([trigger, keep_prob]):
-                # update position
-
+            with tf.control_dependencies([
+                    mean, trigger,
+                    tf.assign(keep_prob,
+                              tf.maximum(min_keep_prob,
+                                         keep_prob - decay_amount * trigger))
+            ]):
                 # if trigger, pos = 0, else accumulated % num_updates
+                def reset_position():
+                    """ reset accumulator vector position """
+                    # side effect insided the function
+                    with tf.control_dependencies([tf.assign(position, 0)]):
+                        return tf.identity(position)
+
                 position = tf.cond(
-                    tf.equal(trigger, 1), lambda: tf.assign(position, 0),
+                    tf.equal(trigger, 1), reset_position,
                     lambda: tf.cast(tf.mod(accumulated, num_updates_tensor), tf.int32))
 
                 # execute only after position update
@@ -111,23 +115,46 @@ def keep_prob_decay(validation_accuracy_,
                     def reset_accumulator():
                         """set past validation accuracies to 0 and place actual
                         validation accuracy in position 0"""
-                        return tf.scatter_update(
-                            accumulator, [i for i in range(num_updates)],
-                            [validation_accuracy] +
-                            [0.0 for i in range(1, num_updates)])
+                        with tf.control_dependencies([
+                                tf.scatter_update(
+                                    accumulator,
+                                    [i for i in range(num_updates)],
+                                    [validation_accuracy] +
+                                    [0.0 for i in range(1, num_updates)])
+                        ]):
+                            return tf.identity(accumulator)
+
+                    def update_accumulator():
+                        """ add the new VA value into the accumulator """
+                        with tf.control_dependencies([
+                                tf.scatter_update(accumulator, position,
+                                                  validation_accuracy)
+                        ]):
+                            return tf.identity(accumulator)
 
                     # update accumulator
                     # if trigger: reset_acculator, else accumulator[position] = va
                     accumulator = tf.cond(
                         tf.equal(trigger, 1), reset_accumulator,
-                        lambda: tf.scatter_update(accumulator, position, validation_accuracy)
-                    )
+                        update_accumulator)
+
+                    def reset_accumulated():
+                        """ reset accumulated counter """
+                        with tf.control_dependencies(
+                            [tf.assign(accumulated, 1)]):
+                            return tf.identity(accumulated)
+
+                    def update_accumulated():
+                        """ add 1 to accumulated counter """
+                        with tf.control_dependencies(
+                            [tf.assign_add(accumulated, 1)]):
+                            return tf.identity(accumulated)
+
                     # update accumulated (for current prob)
                     # if trigger; accumulated = 1, else accumulated +=1
                     accumulated = tf.cond(
-                        tf.equal(trigger, 1),
-                        lambda: tf.assign(accumulated, 1),
-                        lambda: tf.assign_add(accumulated, 1))
+                        tf.equal(trigger, 1), reset_accumulated,
+                        update_accumulated)
 
         return keep_prob
 
@@ -171,7 +198,7 @@ def train():
         get_keep_prob = keep_prob_decay(
             validation_accuracy_,
             max_keep_prob=MAX_KEEP_PROB,
-            min_keep_prob=0.5,
+            min_keep_prob=0.4,
             num_updates=10,
             decay_amount=0.1)
         keep_prob_summary = tf.scalar_summary('keep_prob', get_keep_prob)
@@ -251,6 +278,7 @@ def train():
                         feed_dict={
                             validation_accuracy_: validation_accuracy_value
                         })
+
                     train_log.add_summary(summary_line, global_step=step)
 
                     # train accuracy
