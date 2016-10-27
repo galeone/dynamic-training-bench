@@ -90,20 +90,22 @@ def keep_prob_decay(validation_accuracy_,
                 accumulator) / num_updates)
 
             with tf.control_dependencies([trigger]):
+                # operations to run when decay is not triggered:
+
                 # calculate right position in the accumulator vector
                 # where we put the va value
                 position_op = tf.cast(
                     tf.mod(accumulated, num_updates_tensor), tf.int32)
-                position = tf.assign(position, position_op)
                 # update value
                 accumulator_op = tf.scatter_update(accumulator, position,
                                                    validation_accuracy)
-                accumulator = accumulator_op
+
                 # update the amount of accumulated value of the whole train process
                 accumulated_op = tf.assign_add(accumulated, 1)
-                accumulated = accumulated_op
 
-                # if triggered (trigger = 1):
+                # assing the right operations to position, accumulator, and
+                # accumulated tensors, basing the decision on the trigger value
+
                 position = tf.cond(
                     tf.equal(trigger, 1), lambda: tf.assign(position, 0),
                     lambda: position_op)
