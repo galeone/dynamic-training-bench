@@ -9,6 +9,8 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Train model with a single GPU. Evaluate it on the second one"""
 
+import argparse
+import importlib
 import sys
 from datetime import datetime
 import os.path
@@ -17,19 +19,7 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from models import model2 as vgg
-from inputs import cifar10 as dataset
 import evaluate
-
-BATCH_SIZE = 128
-STEP_PER_EPOCH = math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
-                           BATCH_SIZE)
-MAX_EPOCH = 300
-MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
-
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.path.join(CURRENT_DIR, 'log', vgg.NAME, 'fixed_keep_prob')
-FIXED_KEEP_PROB = 1.0
 
 
 def train():
@@ -38,18 +28,18 @@ def train():
         global_step = tf.Variable(0, trainable=False)
 
         # Get images and labels for CIFAR-10.
-        images, labels = dataset.distorted_inputs(BATCH_SIZE)
+        images, labels = DATASET.distorted_inputs(BATCH_SIZE)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        keep_prob_, logits = vgg.get_model(images, train_phase=True)
+        keep_prob_, logits = MODEL.get_model(images, train_phase=True)
 
         # Calculate loss.
-        loss = vgg.loss(logits, labels)
+        loss = MODEL.loss(logits, labels)
 
         # Build a Graph that trains the model with one batch of examples and
         # updates the model parameters.
-        train_op = vgg.train(loss, global_step)
+        train_op = MODEL.train(loss, global_step)
 
         # Create a saver.
         saver = tf.train.Saver(tf.trainable_variables() + [global_step])
@@ -138,7 +128,7 @@ def train():
 
 def main():
     """main function"""
-    dataset.maybe_download_and_extract()
+    DATASET.maybe_download_and_extract()
     if tf.gfile.Exists(LOG_DIR):
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
@@ -147,4 +137,25 @@ def main():
 
 
 if __name__ == '__main__':
+    # CLI arguments
+    PARSER = argparse.ArgumentParser(description="Train the model")
+    PARSER.add_argument("--model", required=True)
+    PARSER.add_argument("--dataset", required=True)
+    ARGS = PARSER.parse_args()
+
+    # Load required model and dataset
+    MODEL = importlib.import_module("models." + ARGS.model)
+    DATASET = importlib.import_module("inputs." + ARGS.dataset)
+
+    # Training constants
+    BATCH_SIZE = 128
+    STEP_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
+                               BATCH_SIZE)
+    MAX_EPOCH = 300
+    MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
+
+    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+    LOG_DIR = os.path.join(CURRENT_DIR, 'log', MODEL.NAME, 'fixed_keep_prob')
+    FIXED_KEEP_PROB = 1.0
+
     sys.exit(main())

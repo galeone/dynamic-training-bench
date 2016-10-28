@@ -10,6 +10,7 @@
 """ Evaluate the model """
 
 import argparse
+import importlib
 from datetime import datetime
 import math
 
@@ -19,8 +20,8 @@ import tensorflow as tf
 # because we remove everything related to the training process
 # and we fill an empty structure from the saved values
 # in the latest checkpoint file
-from models import model2 as vgg
-from inputs import cifar10 as dataset
+from models import model2 as MODEL
+from inputs import cifar10 as DATASET
 
 
 def get_validation_accuracy(checkpoint_dir):
@@ -34,11 +35,11 @@ def get_validation_accuracy(checkpoint_dir):
         # Get images and labels from the dataset
         # Use batch_size multiple of train set size and big enough to stay in GPU
         batch_size = 200
-        images, labels = dataset.inputs(eval_data=True, batch_size=batch_size)
+        images, labels = DATASET.inputs(eval_data=True, batch_size=batch_size)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        _, logits = vgg.get_model(images, train_phase=False)
+        _, logits = MODEL.get_model(images, train_phase=False)
 
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -66,7 +67,7 @@ def get_validation_accuracy(checkpoint_dir):
                             sess, coord=coord, daemon=True, start=True))
 
                 num_iter = int(
-                    math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
+                    math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
                               batch_size))
                 true_count = 0  # Counts the number of correct predictions.
                 total_sample_count = num_iter * batch_size
@@ -87,9 +88,17 @@ def get_validation_accuracy(checkpoint_dir):
 
 
 if __name__ == '__main__':
+    # CLI arguments
     PARSER = argparse.ArgumentParser(description="Evaluate the model")
+    PARSER.add_argument("--model", required=True)
+    PARSER.add_argument("--dataset", required=True)
     PARSER.add_argument("--checkpoint_dir", required=True)
     ARGS = PARSER.parse_args()
-    dataset.maybe_download_and_extract()
+
+    # Load required model and dataset, ovverides default
+    MODEL = importlib.import_module("models." + ARGS.model)
+    DATASET = importlib.import_module("inputs." + ARGS.dataset)
+
+    DATASET.maybe_download_and_extract()
     print('{}: accuracy = {:.3f}'.format(datetime.now(
     ), get_validation_accuracy(ARGS.checkpoint_dir)))
