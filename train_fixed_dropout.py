@@ -116,11 +116,9 @@ def train():
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_validation_accuracy(
                         LOG_DIR)
-                    summary_line = sess.run(accuracy_summary,
-                                            feed_dict={
-                                                accuracy_value_:
-                                                validation_accuracy_value
-                                            })
+                    summary_line = sess.run(
+                        accuracy_summary,
+                        feed_dict={accuracy_value_: validation_accuracy_value})
                     validation_log.add_summary(summary_line, global_step=step)
                     validation_log.flush()
 
