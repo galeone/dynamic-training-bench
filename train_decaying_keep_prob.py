@@ -35,55 +35,37 @@ MAX_KEEP_PROB = 1.0
 
 
 def keep_prob_decay(validation_accuracy_,
-                    max_keep_prob,
-                    min_keep_prob,
-                    num_updates,
-                    decay_amount,
+                    max_keep_prob=1.0,
+                    min_keep_prob=0.4,
+                    num_updates=5,
+                    decay_amount=0.05,
                     precision=1e-2,
                     name=None):
     """ Decay keep_prob until it reaches min_keep_pro. Computation
-    based on validation_accuracy_ variations
+    based on validation_accuracy_ variations.
     """
 
     with tf.name_scope(name, "KeepProbDecay", [
             validation_accuracy_, max_keep_prob, min_keep_prob, num_updates,
             decay_amount
     ]) as name, tf.device('/cpu:0'):
-        validation_accuracy_ = tf.convert_to_tensor(
-            validation_accuracy_,
-            name="validation_accuracy_",
-            dtype=tf.float32)
-
-        decay_amount = tf.convert_to_tensor(
-            decay_amount, name="decay_amount", dtype=tf.float32)
-
-        max_keep_prob = tf.convert_to_tensor(
-            max_keep_prob, name="max_keep_prob", dtype=tf.float32)
-
-        # Maintains the state of the computation.
+        # Maintains the state of the computation. Initialized with max_keep_prob
         keep_prob = tf.Variable(
             max_keep_prob, dtype=tf.float32, trainable=False, name="keep_prob")
-        min_keep_prob = tf.convert_to_tensor(
-            min_keep_prob, name="min_keep_prob", dtype=tf.float32)
 
-        # crate a tensor with num_updates value, to accumulte validation accuracies
+        num_updates = int(num_updates)
+        # crate a tensor with num_updates values, to accumulate validation accuracies
         accumulator = tf.Variable(
             tf.zeros(
                 [num_updates], dtype=tf.float32), trainable=False)
         position = tf.Variable(0, dtype=tf.int32, trainable=False)
         accumulated = tf.Variable(0, dtype=tf.int32, trainable=False)
 
-        # create a separate variable for num_updates tensor
-        # that's not a python variabile
-        num_updates_tensor = tf.convert_to_tensor(
-            num_updates, name="num_updates", dtype=tf.int32)
-
         # keep only the specified precision of validation_accuracy_
         validation_accuracy = tf.Variable(0.0)
         with tf.control_dependencies([
                 tf.assign(validation_accuracy,
-                          tf.ceil(validation_accuracy_ / precision) *
-                          precision)
+                          tf.ceil(validation_accuracy_ / precision) * precision)
         ]):
             # trigger value: 0 (nop) or 1 (trigger)
             mean = tf.ceil(
@@ -107,7 +89,7 @@ def keep_prob_decay(validation_accuracy_,
 
                 position = tf.cond(
                     tf.equal(trigger, 1), reset_position,
-                    lambda: tf.cast(tf.mod(accumulated, num_updates_tensor), tf.int32))
+                    lambda: tf.mod(accumulated, num_updates))
 
                 # execute only after position update
                 with tf.control_dependencies([position]):
@@ -156,7 +138,7 @@ def keep_prob_decay(validation_accuracy_,
                         tf.equal(trigger, 1), reset_accumulated,
                         update_accumulated)
 
-        return keep_prob
+                    return keep_prob
 
 
 def train():
@@ -195,13 +177,9 @@ def train():
         # va placeholder required for keep_prob_decay
         validation_accuracy_ = tf.placeholder(
             tf.float32, shape=(), name="validation_accuracy_")
-        get_keep_prob = keep_prob_decay(
-            validation_accuracy_,
-            max_keep_prob=MAX_KEEP_PROB,
-            min_keep_prob=0.4,
-            num_updates=10,
-            decay_amount=0.1)
-        keep_prob_summary = tf.scalar_summary('keep_prob', get_keep_prob)
+        decay_keep_prob = keep_prob_decay(
+            validation_accuracy_, max_keep_prob=MAX_KEEP_PROB)
+        keep_prob_summary = tf.scalar_summary('keep_prob', decay_keep_prob)
 
         # read collection after keep_prob_decay that adds
         # the keep_prob summary
@@ -265,20 +243,17 @@ def train():
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_validation_accuracy(
                         LOG_DIR)
-                    summary_line = sess.run(accuracy_summary,
-                                            feed_dict={
-                                                accuracy_value_:
-                                                validation_accuracy_value
-                                            })
+                    summary_line = sess.run(
+                        accuracy_summary,
+                        feed_dict={accuracy_value_: validation_accuracy_value})
                     validation_log.add_summary(summary_line, global_step=step)
 
                     # update keep_prob using new validation accuracy
                     keep_prob, summary_line = sess.run(
-                        [get_keep_prob, keep_prob_summary],
+                        [decay_keep_prob, keep_prob_summary],
                         feed_dict={
                             validation_accuracy_: validation_accuracy_value
                         })
-
                     train_log.add_summary(summary_line, global_step=step)
 
                     # train accuracy
