@@ -133,11 +133,12 @@ def keep_prob_decay(validation_accuracy_,
                         tf.equal(trigger, 1), reset_accumulated,
                         update_accumulated)
 
-                    updated_keep_prob = tf.assign(
-                        keep_prob,
-                        tf.maximum(min_keep_prob,
-                                   keep_prob - decay_amount * trigger))
-                    return updated_keep_prob
+                    with tf.control_dependencies([accumulator, accumulated]):
+                        updated_keep_prob = tf.assign(
+                            keep_prob,
+                            tf.maximum(min_keep_prob,
+                                       keep_prob - decay_amount * trigger))
+                        return updated_keep_prob
 
 
 def train():
