@@ -74,12 +74,7 @@ def keep_prob_decay(validation_accuracy_,
             trigger = 1 - tf.ceil(validation_accuracy - mean)
 
             # compute next keep prob
-            with tf.control_dependencies([
-                    mean, trigger,
-                    tf.assign(keep_prob,
-                              tf.maximum(min_keep_prob,
-                                         keep_prob - decay_amount * trigger))
-            ]):
+            with tf.control_dependencies([mean, trigger]):
                 # if trigger, pos = 0, else accumulated % num_updates
                 def reset_position():
                     """ reset accumulator vector position """
@@ -138,7 +133,11 @@ def keep_prob_decay(validation_accuracy_,
                         tf.equal(trigger, 1), reset_accumulated,
                         update_accumulated)
 
-                    return keep_prob
+                    updated_keep_prob = tf.assign(
+                        keep_prob,
+                        tf.maximum(min_keep_prob,
+                                   keep_prob - decay_amount * trigger))
+                    return updated_keep_prob
 
 
 def train():
@@ -264,10 +263,11 @@ def train():
                         feed_dict={accuracy_value_: train_accuracy_value})
                     train_log.add_summary(summary_line, global_step=step)
 
-                    print(
-                        '{}: train accuracy = {:.3f} validation accuracy = {:.3f}'.
-                        format(datetime.now(), train_accuracy_value,
-                               validation_accuracy_value))
+                    print(('{}: train accuracy = {:.3f}\n'
+                           'validation accuracy = {:.3f}\n'
+                           'keep_prob = {:.2f}').format(datetime.now(
+                           ), train_accuracy_value, validation_accuracy_value,
+                                                        keep_prob))
                     # save best model
                     if validation_accuracy_value > best_validation_accuracy:
                         best_validation_accuracy = validation_accuracy_value
