@@ -54,8 +54,8 @@ def yuv2rgb(yuv):
     return temp
 
 
-def generate_image_and_label_batch(image, label, min_queue_examples,
-                                   batch_size, shuffle):
+def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
+                                   shuffle):
     """Construct a queued batch of images and labels.
 
   Args:

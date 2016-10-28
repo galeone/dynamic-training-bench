@@ -158,8 +158,7 @@ def inputs(eval_data, batch_size):
   """
     if not eval_data:
         filenames = [
-            os.path.join(DATA_DIR,
-                         'cifar-10-batches-bin/data_batch_%d.bin' % i)
+            os.path.join(DATA_DIR, 'cifar-10-batches-bin/data_batch_%d.bin' % i)
             for i in range(1, 6)
         ]
         num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
