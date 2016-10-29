@@ -20,113 +20,8 @@ import math
 import numpy as np
 import tensorflow as tf
 import evaluate
-
-
-def keep_prob_decay(validation_accuracy_,
-                    max_keep_prob=1.0,
-                    min_keep_prob=0.4,
-                    num_updates=5,
-                    decay_amount=0.05,
-                    precision=1e-2,
-                    name=None):
-    """ Decay keep_prob until it reaches min_keep_pro. Computation
-    based on validation_accuracy_ variations.
-    """
-
-    with tf.name_scope(name, "KeepProbDecay", [
-            validation_accuracy_, max_keep_prob, min_keep_prob, num_updates,
-            decay_amount
-    ]) as name, tf.device('/cpu:0'):
-        # Maintains the state of the computation. Initialized with max_keep_prob
-        keep_prob = tf.Variable(
-            max_keep_prob, dtype=tf.float32, trainable=False, name="keep_prob")
-
-        num_updates = int(num_updates)
-        # crate a tensor with num_updates values, to accumulate validation accuracies
-        accumulator = tf.Variable(
-            tf.zeros(
-                [num_updates], dtype=tf.float32), trainable=False)
-        position = tf.Variable(0, dtype=tf.int32, trainable=False)
-        accumulated = tf.Variable(0, dtype=tf.int32, trainable=False)
-
-        # keep only the specified precision of validation_accuracy_
-        validation_accuracy = tf.Variable(0.0)
-        with tf.control_dependencies([
-                tf.assign(validation_accuracy,
-                          tf.ceil(validation_accuracy_ / precision) * precision)
-        ]):
-            # trigger value: 0 (nop) or 1 (trigger)
-            mean = tf.ceil(
-                tf.reduce_sum(accumulator) /
-                (num_updates * precision)) * precision
-            trigger = 1 - tf.ceil(validation_accuracy - mean)
-
-            # compute next keep prob
-            with tf.control_dependencies([mean, trigger]):
-                # if trigger, pos = 0, else accumulated % num_updates
-                def reset_position():
-                    """ reset accumulator vector position """
-                    # side effect insided the function
-                    with tf.control_dependencies([tf.assign(position, 0)]):
-                        return tf.identity(position)
-
-                position = tf.cond(
-                    tf.equal(trigger, 1), reset_position,
-                    lambda: tf.mod(accumulated, num_updates))
-
-                # execute only after position update
-                with tf.control_dependencies([position]):
-
-                    def reset_accumulator():
-                        """set past validation accuracies to 0 and place actual
-                        validation accuracy in position 0"""
-                        with tf.control_dependencies([
-                                tf.scatter_update(
-                                    accumulator,
-                                    [i for i in range(num_updates)],
-                                    [validation_accuracy] +
-                                    [0.0 for i in range(1, num_updates)])
-                        ]):
-                            return tf.identity(accumulator)
-
-                    def update_accumulator():
-                        """ add the new VA value into the accumulator """
-                        with tf.control_dependencies([
-                                tf.scatter_update(accumulator, position,
-                                                  validation_accuracy)
-                        ]):
-                            return tf.identity(accumulator)
-
-                    # update accumulator
-                    # if trigger: reset_acculator, else accumulator[position] = va
-                    accumulator = tf.cond(
-                        tf.equal(trigger, 1), reset_accumulator,
-                        update_accumulator)
-
-                    def reset_accumulated():
-                        """ reset accumulated counter """
-                        with tf.control_dependencies(
-                            [tf.assign(accumulated, 1)]):
-                            return tf.identity(accumulated)
-
-                    def update_accumulated():
-                        """ add 1 to accumulated counter """
-                        with tf.control_dependencies(
-                            [tf.assign_add(accumulated, 1)]):
-                            return tf.identity(accumulated)
-
-                    # update accumulated (for current prob)
-                    # if trigger; accumulated = 1, else accumulated +=1
-                    accumulated = tf.cond(
-                        tf.equal(trigger, 1), reset_accumulated,
-                        update_accumulated)
-
-                    with tf.control_dependencies([accumulator, accumulated]):
-                        updated_keep_prob = tf.assign(
-                            keep_prob,
-                            tf.maximum(min_keep_prob,
-                                       keep_prob - decay_amount * trigger))
-                        return updated_keep_prob
+from models import utils
+from decay import supervised_parameter_decay
 
 
 def train():
@@ -139,14 +34,23 @@ def train():
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        keep_prob_, logits = MODEL.get_model(images, train_phase=True)
+        keep_prob_, logits = MODEL.get_model(
+            images, DATASET.NUM_CLASSES, train_phase=True)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
 
-        # Build a Graph that trains the model with one batch of examples and
-        # updates the model parameters.
-        train_op = MODEL.train(loss, global_step)
+        # Decay the learning rate exponentially based on the number of steps.
+        learning_rate = tf.train.exponential_decay(
+            INITIAL_LEARNING_RATE,
+            global_step,
+            STEPS_PER_EPOCH,
+            LEARNING_RATE_DECAY_FACTOR,
+            staircase=True)
+
+        utils.log(tf.scalar_summary('learning_rate', learning_rate))
+        train_op = tf.train.MomentumOptimizer(learning_rate, MOMENTUM).minimize(
+            loss, global_step=global_step)
 
         # Create the train saver.
         variables_to_save = tf.trainable_variables() + [global_step]
@@ -162,11 +66,11 @@ def train():
         accuracy_summary = tf.scalar_summary('accuracy', accuracy_value_)
 
         # Initialize decay_keep_prob op
-        # va placeholder required for keep_prob_decay
+        # va placeholder required for supervised_parameter_decay
         validation_accuracy_ = tf.placeholder(
             tf.float32, shape=(), name="validation_accuracy_")
-        decay_keep_prob = keep_prob_decay(
-            validation_accuracy_, max_keep_prob=MAX_KEEP_PROB)
+        decay_keep_prob = supervised_parameter_decay(
+            validation_accuracy_, initial_parameter_value=MAX_KEEP_PROB)
         keep_prob_summary = tf.scalar_summary('keep_prob', decay_keep_prob)
 
         # read collection after keep_prob_decay that adds
@@ -224,13 +128,13 @@ def train():
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
                 if (step > 0 and
-                        step % STEP_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
+                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_validation_accuracy(
-                        LOG_DIR)
+                        LOG_DIR, DATASET.NUM_CLASSES)
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: validation_accuracy_value})
@@ -292,13 +196,20 @@ if __name__ == '__main__':
 
     # Training constants
     BATCH_SIZE = 128
-    STEP_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
-                               BATCH_SIZE)
+    STEPS_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
+                                BATCH_SIZE)
     MAX_EPOCH = 300
-    MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
+    MAX_STEPS = STEPS_PER_EPOCH * MAX_EPOCH
+
+    MOMENTUM = 0.9
+
+    # Learning rate decay constants
+    INITIAL_LEARNING_RATE = 1e-2
+    NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
+    LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
 
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    LOG_DIR = os.path.join(CURRENT_DIR, 'log', MODEL.NAME, 'keep_prob_decay')
+    LOG_DIR = os.path.join(CURRENT_DIR, 'log', MODEL.NAME, 'kp_decay')
     BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
 
     MAX_KEEP_PROB = 1.0

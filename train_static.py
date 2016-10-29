@@ -20,6 +20,7 @@ import math
 import numpy as np
 import tensorflow as tf
 import evaluate
+from models import utils
 
 
 def train():
@@ -32,14 +33,23 @@ def train():
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        keep_prob_, logits = MODEL.get_model(images, train_phase=True)
+        keep_prob_, logits = MODEL.get_model(
+            images, DATASET.NUM_CLASSES, train_phase=True)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
 
-        # Build a Graph that trains the model with one batch of examples and
-        # updates the model parameters.
-        train_op = MODEL.train(loss, global_step)
+        # Decay the learning rate exponentially based on the number of steps.
+        learning_rate = tf.train.exponential_decay(
+            INITIAL_LEARNING_RATE,
+            global_step,
+            STEPS_PER_EPOCH,
+            LEARNING_RATE_DECAY_FACTOR,
+            staircase=True)
+
+        utils.log(tf.scalar_summary('learning_rate', learning_rate))
+        train_op = tf.train.MomentumOptimizer(learning_rate, MOMENTUM).minimize(
+            loss, global_step=global_step)
 
         # Create a saver.
         saver = tf.train.Saver(tf.trainable_variables() + [global_step])
@@ -99,13 +109,13 @@ def train():
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
                 if (step > 0 and
-                        step % STEP_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
+                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     saver.save(sess, checkpoint_path, global_step=step)
 
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_validation_accuracy(
-                        LOG_DIR)
+                        LOG_DIR, DATASET.NUM_CLASSES)
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: validation_accuracy_value})
@@ -149,13 +159,20 @@ if __name__ == '__main__':
 
     # Training constants
     BATCH_SIZE = 128
-    STEP_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
-                               BATCH_SIZE)
+    STEPS_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
+                                BATCH_SIZE)
     MAX_EPOCH = 300
-    MAX_STEPS = STEP_PER_EPOCH * MAX_EPOCH
+    MAX_STEPS = STEPS_PER_EPOCH * MAX_EPOCH
+
+    MOMENTUM = 0.9
+
+    # Learning rate decay constants
+    INITIAL_LEARNING_RATE = 1e-2
+    NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
+    LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
 
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    LOG_DIR = os.path.join(CURRENT_DIR, 'log', MODEL.NAME, 'fixed_keep_prob')
+    LOG_DIR = os.path.join(CURRENT_DIR, 'log', MODEL.NAME, 'static')
     FIXED_KEEP_PROB = 1.0
 
     sys.exit(main())
