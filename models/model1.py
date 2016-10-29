@@ -8,27 +8,22 @@
 """Builds the VGG-like network."""
 
 import tensorflow as tf
-from inputs import cifar10 as dataset
 from . import utils
 
 # Model name
 NAME = 'model1'
 
-# Constants describing the training process.
-BATCH_SIZE = 128
-NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
-LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
-MOMENTUM = 0.9  # Momentum
 WD_PENALTY = 5e-4  # L2(weights) penalty
-INITIAL_LEARNING_RATE = 1e-2  # Initial learning rate.
 
 
-def inference(images, keep_prob, train_phase=False):
+def inference(images, num_classes, keep_prob, train_phase=False):
     """Build the CIFAR-10 VGG model.
 
   Args:
     images: Images returned from distorted_inputs() or inputs().
+    num_classes: Number of classes to predict
     keep_prob: tensor for the dropout probability of keep neurons active
+    train_phase: Boolean to enable/disable train elements
 
   Returns:
     Logits.
@@ -168,7 +163,7 @@ def inference(images, keep_prob, train_phase=False):
             fc1 = tf.nn.dropout(fc1, 0.5)
 
     with tf.variable_scope('softmax_linear'):
-        logits = utils.fc_layer(fc1, [512, dataset.NUM_CLASSES], wd=WD_PENALTY)
+        logits = utils.fc_layer(fc1, [512, num_classes], wd=WD_PENALTY)
     return logits
 
 
@@ -196,43 +191,14 @@ def loss(logits, labels):
     return error
 
 
-def train(total_loss, global_step):
-    """Train model.
-    Create an optimizer and apply to all trainable variables.
-
-    Args:
-      total_loss: Total loss from loss().
-      global_step: Integer Variable counting the number of training steps
-        processed.
-    Returns:
-      train_op: op for training.
-    """
-    # Variables that affect learning rate.
-    num_batches_per_epoch = dataset.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / BATCH_SIZE
-    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
-
-    # Decay the learning rate exponentially based on the number of steps.
-    learning_rate = tf.train.exponential_decay(
-        INITIAL_LEARNING_RATE,
-        global_step,
-        decay_steps,
-        LEARNING_RATE_DECAY_FACTOR,
-        staircase=True)
-
-    utils.log(tf.scalar_summary('learning_rate', learning_rate))
-    opt = tf.train.MomentumOptimizer(learning_rate, MOMENTUM)
-    train_op = opt.minimize(total_loss, global_step=global_step)
-
-    return train_op
-
-
-def get_model(images, train_phase=False):
+def get_model(images, num_classes, train_phase=False):
     """ define the model with its inputs.
     Use this function to define the model in training and when exporting the model
     in the protobuf format.
 
     Args:
         images: model input
+        num_classes: number of classes to predict
         train_phase: set it to True when defining the model, during train
 
     Return:
@@ -241,6 +207,6 @@ def get_model(images, train_phase=False):
     """
     keep_prob_ = tf.placeholder(tf.float32, shape=(), name="keep_prob_")
     # build a graph that computes the logits predictions from the images
-    logits = inference(images, keep_prob_, train_phase=train_phase)
+    logits = inference(images, num_classes, keep_prob_, train_phase=train_phase)
 
     return keep_prob_, logits
