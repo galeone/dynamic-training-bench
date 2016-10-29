@@ -44,7 +44,7 @@ def train():
         learning_rate = tf.train.exponential_decay(
             INITIAL_LEARNING_RATE,
             global_step,
-            STEPS_PER_EPOCH,
+            STEPS_PER_DECAY,
             LEARNING_RATE_DECAY_FACTOR,
             staircase=True)
 
@@ -207,6 +207,7 @@ if __name__ == '__main__':
     INITIAL_LEARNING_RATE = 1e-2
     NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
     LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
+    STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
 
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     LOG_DIR = os.path.join(CURRENT_DIR, 'log', MODEL.NAME, 'kp_decay')
