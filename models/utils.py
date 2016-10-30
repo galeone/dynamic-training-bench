@@ -9,6 +9,10 @@
 
 import tensorflow as tf
 
+# name of the collection that holds non trainable
+# but required variables for the current model
+REQUIRED_NON_TRAINABLES = 'required_vars_collection'
+
 
 def weight(name,
            shape,
@@ -58,6 +62,44 @@ def fc_layer(input_x, shape, wd=0.0):
     return tf.nn.bias_add(tf.matmul(input_x, W), b)
 
 
+def batch_norm(layer_output, is_training_):
+    """Applies batch normalization to the layer output.
+    Args:
+        layer_output: 4-d tensor, output of a FC/convolutional layer
+        is_training_: placeholder or boolean variable to set to True when training
+    """
+    return tf.contrib.layers.batch_norm(
+        layer_output,
+        decay=0.999,
+        center=True,
+        scale=True,
+        epsilon=1e-3,
+        activation_fn=None,
+        # update moving mean and variance in place
+        updates_collections=None,
+        is_training=is_training_,
+        reuse=None,
+        # create a collections of varialbes to save
+        # (moving mean and moving variance)
+        variables_collections=[REQUIRED_NON_TRAINABLES],
+        outputs_collections=None,
+        trainable=True,
+        scope=None)
+
+
 def log(summary):
     """Add summary to train_summaries collection"""
     tf.add_to_collection('train_summaries', summary)
+
+
+def variables_to_save(addlist):
+    """Create a list of all trained variables and required variables of the model.
+    Appends to the list, the addlist passed as argument.
+
+    Args:
+        addlist: (list, of, variables, to, save)
+    Returns:
+        a a list of variables"""
+
+    return tf.trainable_variables() + tf.get_collection_ref(
+        REQUIRED_NON_TRAINABLES) + addlist
