@@ -36,7 +36,7 @@ def get_validation_accuracy(checkpoint_dir, model, dataset):
         # Build a Graph that computes the logits predictions from the
         # inference model.
         _, logits = model.get_model(
-            images, DATASET.NUM_CLASSES, train_phase=False)
+            images, dataset.NUM_CLASSES, train_phase=False)
 
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
