@@ -8,7 +8,6 @@
 """Builds the VGG-like network."""
 
 import tensorflow as tf
-from inputs import cifar10 as dataset
 from . import utils
 
 WD_PENALTY = 5e-4  # L2(weights) penalty
