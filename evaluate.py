@@ -16,31 +16,27 @@ import math
 
 import numpy as np
 import tensorflow as tf
-# The loaded model is indifferent
-# because we remove everything related to the training process
-# and we fill an empty structure from the saved values
-# in the latest checkpoint file
-from models import model2 as MODEL
-from inputs import cifar10 as DATASET
 
 
-def get_validation_accuracy(checkpoint_dir, num_classes):
+def get_validation_accuracy(checkpoint_dir, model, dataset):
     """
     Read latest saved checkpoint and use it to evaluate the model
     Args:
         checkpoint_dir: checkpoint folder
-        num_classes: number of classes to predict
+        model: python package containing the model to save
+        dataset: python package containing the dataset to use
     """
 
     with tf.Graph().as_default(), tf.device('/gpu:1'):
         # Get images and labels from the dataset
         # Use batch_size multiple of train set size and big enough to stay in GPU
         batch_size = 200
-        images, labels = DATASET.inputs(eval_data=True, batch_size=batch_size)
+        images, labels = dataset.inputs(eval_data=True, batch_size=batch_size)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        _, logits = MODEL.get_model(images, num_classes, train_phase=False)
+        _, logits = model.get_model(
+            images, DATASET.NUM_CLASSES, train_phase=False)
 
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -68,7 +64,7 @@ def get_validation_accuracy(checkpoint_dir, num_classes):
                             sess, coord=coord, daemon=True, start=True))
 
                 num_iter = int(
-                    math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
+                    math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
                               batch_size))
                 true_count = 0  # Counts the number of correct predictions.
                 total_sample_count = num_iter * batch_size
@@ -102,4 +98,4 @@ if __name__ == '__main__':
 
     DATASET.maybe_download_and_extract()
     print('{}: accuracy = {:.3f}'.format(datetime.now(
-    ), get_validation_accuracy(ARGS.checkpoint_dir, DATASET.NUM_CLASSES)))
+    ), get_validation_accuracy(ARGS.checkpoint_dir, MODEL, DATASET)))

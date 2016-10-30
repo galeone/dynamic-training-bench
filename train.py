@@ -148,7 +148,7 @@ def train(lr_decay, kp_decay):
 
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_validation_accuracy(
-                        LOG_DIR, DATASET.NUM_CLASSES)
+                        LOG_DIR, MODEL, DATASET)
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: validation_accuracy_value})
