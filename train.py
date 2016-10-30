@@ -60,7 +60,7 @@ def train(lr_decay, kp_decay):
             loss, global_step=global_step)
 
         # Create the train saver.
-        variables_to_save = tf.trainable_variables() + [global_step]
+        variables_to_save = utils.variables_to_save([global_step])
         train_saver = tf.train.Saver(variables_to_save)
         # Create the best model saver.
         best_saver = tf.train.Saver(variables_to_save)
@@ -202,7 +202,8 @@ def method_name(args):
 if __name__ == '__main__':
     # CLI arguments
     PARSER = argparse.ArgumentParser(description="Train the model")
-    PARSER.add_argument("--model", required=True, choices=["model1", "model2"])
+    PARSER.add_argument(
+        "--model", required=True, choices=["model1", "model2", "model3"])
     PARSER.add_argument(
         "--dataset", required=True, choices=["cifar10", "cifar100"])
     PARSER.add_argument("--kp_decay", action="store_true")
