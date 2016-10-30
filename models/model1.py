@@ -10,9 +10,6 @@
 import tensorflow as tf
 from . import utils
 
-# Model name
-NAME = 'model1'
-
 WD_PENALTY = 5e-4  # L2(weights) penalty
 
 

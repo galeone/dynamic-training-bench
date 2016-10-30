@@ -46,12 +46,22 @@ When using (mini-batch) SGD + Momentum, the following parameters has been used w
 
 Dropout layers at the beginning of every block of convolutional filters with the same number of outputs (64 features, 128 fatures, ...) and FC layers. *Same* keep probability for every layer.
 
-### keep_prob decay
+### keep_prob decay and learning rate decay
 
-- number of measurement: 5
-- precision: 1e-2
+- number of measurement: 10
+- precision: 1e-3
 - initial keep prob: 1.0
 - final keep_prob: 0.4
 - decay: 0.05
 
-*best validation accuracy*: 0.8788
+*best validation accuracy*: 0.8709
+
+### keep_prob decay only
+
+- number of measurement: 10
+- precision: 1e-3
+- initial keep prob: 1.0
+- final keep_prob: 0.4
+- decay: 0.05
+
+*best validation accuracy*: 0.888

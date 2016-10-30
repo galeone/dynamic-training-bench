@@ -11,16 +11,7 @@ import tensorflow as tf
 from inputs import cifar10 as dataset
 from . import utils
 
-# Model name
-NAME = 'model2'
-
-# Constants describing the training process.
-BATCH_SIZE = 128
-NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
-LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
-MOMENTUM = 0.9  # Momentum
 WD_PENALTY = 5e-4  # L2(weights) penalty
-INITIAL_LEARNING_RATE = 1e-2  # Initial learning rate.
 
 
 def inference(images, num_classes, keep_prob, train_phase=False):
