@@ -25,7 +25,7 @@ When using (mini-batch) SGD + Momentum, the following parameters has been used w
 - Train for 300 epochs
 - Weight decay: 5e-4
 
-When *keep_prob decay* is specified, the following parametershas been used:
+When *keep_prob decay* is specified, the following parameters has been used:
 
 - the dropout keep probability is the *same* for every dropout layer
 - the keep probability is decreased by a factor of 0.05 using the supervised parameter decay, using the validation accuracy as evaluation metric
@@ -41,7 +41,7 @@ The following tests have been made on the original architecture. This means that
 ## Test 1
 
 ```
-python --model model1 --dataset cifar10 --lr_decay
+python train.py --model model1 --dataset cifar10 --lr_decay
 ```
 
 - Dropout layers in the same position with the same keep probabilities
@@ -53,7 +53,7 @@ python --model model1 --dataset cifar10 --lr_decay
 ## Test 2
 
 ```
-python --model model3 --dataset cifar10 --lr_decay
+python train.py --model model3 --dataset cifar10 --lr_decay
 ```
 
 - No dropout
@@ -65,7 +65,7 @@ python --model model3 --dataset cifar10 --lr_decay
 ## Test 3
 
 ```
-python --model model2 --dataset cifar10 --lr_decay
+python train.py --model model2 --dataset cifar10 --lr_decay
 ```
 
 - No Dropout
@@ -82,7 +82,7 @@ This architecture is equal to the original one, the only difference is the posit
 ## Test 1
 
 ```
-python --model model2 --dataset cifar10 --lr_decay --kp_decay
+python train.py --model model2 --dataset cifar10 --lr_decay --kp_decay
 ```
 
 - Dropout: keep_prob decay
@@ -95,7 +95,7 @@ python --model model2 --dataset cifar10 --lr_decay --kp_decay
 ## Test 2
 
 ```
-python --model model2 --dataset cifar10 --kp_decay
+python train.py --model model2 --dataset cifar10 --kp_decay
 ```
 
 - Dropout: keep_prob decay
