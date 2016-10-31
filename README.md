@@ -7,18 +7,15 @@ The base model is the one described in
 That's a VGG-like model, whose input is a 32x32x3 image. The author claims to achieve 92.45% on CIFAR-10, using Torch.
 
 # Preprocessing
-Instead of converting input images from RGB to YUV colorspace, we use RGB.
+- No conversion from RGB to YUV has been done.
+- No normalization over the whole train set has been done: no means where colected.
+- The images are singularly whitened (each channel is normalized).
 
-The images are singularly whitened (each channel is normalized).
-
-No normalization over the whole train set has been done: no means where colected.
-
-# Data Augmentation
+## Data Augmentation
 The only data augmentation done is the horizontal flip.
 
 # Measurements
-
-Different models have been evaluated.
+Different training procedures have been evaluated.
 When using (mini-batch) SGD + Momentum, the following parameters has been used when no otherwise specified.
 
 - Momentum: 0.9
@@ -28,40 +25,89 @@ When using (mini-batch) SGD + Momentum, the following parameters has been used w
 - Train for 300 epochs
 - Weight decay: 5e-4
 
+When *keep_prob decay* is specified, the following parametershas been used:
+
+- the dropout keep probability is the *same* for every dropout layer
+- the keep probability is decreased by a factor of 0.05 using the supervised parameter decay, using the validation accuracy as evaluation metric
+- initial keep probability: 1.0
+- precision: 1e-3
+- number of measurement: 10
+
+
+# Original architecture
+
+The following tests have been made on the original architecture. This means that batch normalization layers (when presents) and dropout layers (if presents) are in the same position of the original architecture.
+
 ## Test 1
+
+```
+python --model model1 --dataset cifar10 --lr_decay
+```
 
 - Dropout layers in the same position with the same keep probabilities
 - No BN
+- LR decay
 
 *Best validation accuracy*: 0.829
 
 ## Test 2
 
-- No Dropout
-- No BN
+```
+python --model model3 --dataset cifar10 --lr_decay
+```
 
-*Best validation accuracy*: 0.859
+- No dropout
+- BN
+- LR decay
+
+*best validation accuracy*: 0.8798
 
 ## Test 3
 
-Dropout layers at the beginning of every block of convolutional filters with the same number of outputs (64 features, 128 fatures, ...) and FC layers. *Same* keep probability for every layer.
+```
+python --model model2 --dataset cifar10 --lr_decay
+```
 
-### keep_prob decay and learning rate decay
+- No Dropout
+- No BN
+- LR decay
 
-- number of measurement: 10
-- precision: 1e-3
-- initial keep prob: 1.0
-- final keep_prob: 0.4
-- decay: 0.05
+*Best validation accuracy*: 0.8654
 
-*best validation accuracy*: 0.8709
+# Modified architecture
 
-### keep_prob decay only
+This architecture is equal to the original one, the only difference is the position of the dropout layers (when present): the dropout layers have been placed only at the beginning ef every block of convolutional filters with the same number of outputs (64 features, 128 fatures, ...) and after every fully connected layer.
 
-- number of measurement: 10
-- precision: 1e-3
-- initial keep prob: 1.0
-- final keep_prob: 0.4
-- decay: 0.05
+
+## Test 1
+
+```
+python --model model2 --dataset cifar10 --lr_decay --kp_decay
+```
+
+- Dropout: keep_prob decay
+- No BN
+- LR decay
+
+*Best validation accuracy*: 0.8709
+
+
+## Test 2
+
+```
+python --model model2 --dataset cifar10 --kp_decay
+```
+
+- Dropout: keep_prob decay
+- No BN
+- No LR decay
 
 *best validation accuracy*: 0.888
+
+## Test 3
+
+- Dropout: keep_prob decay
+- BN
+- No LR decay
+
+*best validation accuracy*: 0.8812
