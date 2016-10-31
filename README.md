@@ -106,6 +106,10 @@ python train.py --model model2 --dataset cifar10 --kp_decay
 
 ## Test 3
 
+```
+python train.py --model model3 --dataset cifar10 --kp_decay
+```
+
 - Dropout: keep_prob decay
 - BN
 - No LR decay
