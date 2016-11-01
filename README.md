@@ -34,7 +34,7 @@ When *keep_prob decay* is specified, the following parameters has been used:
 - number of measurement: 10
 
 
-# Original architecture
+# Architecture 1
 
 The following tests have been made on the original architecture. This means that batch normalization layers (when presents) and dropout layers (if presents) are in the same position of the original architecture.
 
@@ -50,6 +50,8 @@ python train.py --model model1 --dataset cifar10 --lr_decay
 
 *Best validation accuracy*: 0.829
 
+*Notes*: very noisy training process. Training accuracy do not reach 1.
+
 ## Test 2
 
 ```
@@ -60,7 +62,9 @@ python train.py --model model3 --dataset cifar10 --lr_decay
 - BN
 - LR decay
 
-*best validation accuracy*: 0.8798
+*Best validation accuracy*: 0.8798
+
+*Notes*: Training accuracy and validation accuracy with a fixed gap of about 0.13. Only the first learning reate decay has been useful; 0.79 -> 0.87 accuracy.
 
 ## Test 3
 
@@ -74,7 +78,9 @@ python train.py --model model2 --dataset cifar10 --lr_decay
 
 *Best validation accuracy*: 0.8654
 
-# Modified architecture
+*Notes*: fixed gap between training and validation accuracy (0.14). Useful only the first learning rate decay.
+
+# Architecture 2
 
 This architecture is equal to the original one, the only difference is the position of the dropout layers (when present): the dropout layers have been placed only at the beginning ef every block of convolutional filters with the same number of outputs (64 features, 128 fatures, ...) and after every fully connected layer.
 
@@ -91,6 +97,7 @@ python train.py --model model2 --dataset cifar10 --lr_decay --kp_decay
 
 *Best validation accuracy*: 0.8709
 
+*Notes*: overfits training data. Useful only first LR decay 0.82 -> 0.86. Loss incredibly noisy mixing LR decay and kp decay.
 
 ## Test 2
 
@@ -102,7 +109,11 @@ python train.py --model model2 --dataset cifar10 --kp_decay
 - No BN
 - No LR decay
 
-*best validation accuracy*: 0.888
+*Best validation accuracy*: 0.888
+
+*Notes*: less noisy training process. Training validation accuracy is not fixed at 1. Validation accuracy is a bit noisy but increases.
+*Hypothesis*: start with a lower learning rate to reduce the fluctuations -> 1e-3,
+
 
 ## Test 3
 
@@ -114,7 +125,10 @@ python train.py --model model3 --dataset cifar10 --kp_decay
 - BN
 - No LR decay
 
-*best validation accuracy*: 0.8812
+*Best validation accuracy*: 0.8812
+
+*Notes*: w.r.t. Architecture 2, Test2, the training process is noisier.
+*Hypothesis*: lower the learning rate to 1e-3
 
 ## Test 4
 
@@ -126,4 +140,37 @@ python train.py --model model3 --dataset cifar10 --kp_decay --lr_decay
 - BN
 - LR decay
 
-*best validation accuracy*: 0.8842
+*Best validation accuracy*: 0.8842
+
+*Notes*:  first learning rate decay increases the accuracy instantly. This support the hypothesis of starting from a lower learning rate when using keep prob decay (with and without batch norm.
+
+# Architecture 3
+
+Like architecture 2, but with dropout layer after every convolutional/fc layer.
+
+## Test 1
+
+```
+python train.py --model model4 --dataset cifar10 --kp_decay
+```
+
+- Dropout: keep_prob decay
+- No BN
+- No LR decay
+
+*Best validation accuracy*: 0.8897
+
+*Notes*: extremely noisy training process. When keep prob goes under 0.5 the validation accuracy start decreasing and the model underfits the training too,.
+
+## Test 2
+
+```
+python train.py --model model5 --dataset cifar10 --kp_decay
+```
+
+- Dropout: keep_prob decay
+- BN
+- No LR decay
+
+*Best validation accuracy*: 0.8409
+*Notes*: validation accuracy decreases after kp goes under 1. *Extremely* noisy training process. When kp decreases, underfits too.
