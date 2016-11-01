@@ -203,7 +203,9 @@ if __name__ == '__main__':
     # CLI arguments
     PARSER = argparse.ArgumentParser(description="Train the model")
     PARSER.add_argument(
-        "--model", required=True, choices=["model1", "model2", "model3"])
+        "--model",
+        required=True,
+        choices=["model1", "model2", "model3", "model4"])
     PARSER.add_argument(
         "--dataset", required=True, choices=["cifar10", "cifar100"])
     PARSER.add_argument("--kp_decay", action="store_true")
