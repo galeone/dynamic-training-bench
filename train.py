@@ -10,6 +10,7 @@
 """ Train model with a single GPU. Evaluate it on the second one"""
 
 import argparse
+import glob
 import importlib
 import sys
 from datetime import datetime
@@ -196,7 +197,7 @@ def method_name(args):
 
     if name == '':
         name = 'constant'
-    return name
+    return args.prefix + name
 
 
 if __name__ == '__main__':
@@ -211,6 +212,7 @@ if __name__ == '__main__':
         "--dataset", required=True, choices=["cifar10", "cifar100"])
     PARSER.add_argument("--kp_decay", action="store_true")
     PARSER.add_argument("--lr_decay", action="store_true")
+    PARSER.add_argument("--prefix")
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset
