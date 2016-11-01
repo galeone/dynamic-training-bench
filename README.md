@@ -115,3 +115,15 @@ python train.py --model model3 --dataset cifar10 --kp_decay
 - No LR decay
 
 *best validation accuracy*: 0.8812
+
+## Test 4
+
+```
+python train.py --model model3 --dataset cifar10 --kp_decay --lr_decay
+```
+
+- Dropout: keep_prob decay
+- BN
+- LR decay
+
+*best validation accuracy*: 0.8842
