@@ -10,27 +10,27 @@
 import tensorflow as tf
 from . import utils
 
-WD_PENALTY = 5e-4  # L2(weights) penalty
 
-
-def inference(images, num_classes, keep_prob, train_phase=False):
+def inference(images, num_classes, keep_prob, train_phase=False,
+              l2_penalty=0.0):
     """Build the CIFAR-10 VGG model.
 
-  Args:
-    images: Images returned from distorted_inputs() or inputs().
-    num_classes: Number of classes to predict
-    keep_prob: tensor for the dropout probability of keep neurons active
-    train_phase: Boolean to enable/disable train elements
+    Args:
+      images: Images returned from distorted_inputs() or inputs().
+      num_classes: Number of classes to predict
+      keep_prob: tensor for the dropout probability of keep neurons active
+      train_phase: Boolean to enable/disable train elements
+      l2_penalty: float value, weight decay (l2) penalty
 
-  Returns:
-    Logits.
-  """
+    Returns:
+      Logits.
+    """
     with tf.variable_scope('64'):
         with tf.variable_scope('conv1'):
             conv1 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        images, [3, 3, 3, 64], 1, 'SAME', wd=WD_PENALTY),
+                        images, [3, 3, 3, 64], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv1 = tf.nn.dropout(conv1, keep_prob)
@@ -39,7 +39,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv2 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv1, [3, 3, 64, 64], 1, 'SAME', wd=WD_PENALTY),
+                        conv1, [3, 3, 64, 64], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv2 = tf.nn.dropout(conv2, keep_prob)
@@ -53,7 +53,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv3 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        pool1, [3, 3, 64, 128], 1, 'SAME', wd=WD_PENALTY),
+                        pool1, [3, 3, 64, 128], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv3 = tf.nn.dropout(conv3, keep_prob)
@@ -62,7 +62,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv4 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv3, [3, 3, 128, 128], 1, 'SAME', wd=WD_PENALTY),
+                        conv3, [3, 3, 128, 128], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv4 = tf.nn.dropout(conv4, keep_prob)
@@ -76,7 +76,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv5 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        pool2, [3, 3, 128, 256], 1, 'SAME', wd=WD_PENALTY),
+                        pool2, [3, 3, 128, 256], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv5 = tf.nn.dropout(conv5, keep_prob)
@@ -85,7 +85,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv6 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv5, [3, 3, 256, 256], 1, 'SAME', wd=WD_PENALTY),
+                        conv5, [3, 3, 256, 256], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv6 = tf.nn.dropout(conv6, keep_prob)
@@ -94,7 +94,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv7 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv6, [3, 3, 256, 256], 1, 'SAME', wd=WD_PENALTY),
+                        conv6, [3, 3, 256, 256], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv7 = tf.nn.dropout(conv7, keep_prob)
@@ -108,7 +108,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv8 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        pool3, [3, 3, 256, 512], 1, 'SAME', wd=WD_PENALTY),
+                        pool3, [3, 3, 256, 512], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv8 = tf.nn.dropout(conv8, keep_prob)
@@ -117,7 +117,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv9 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv8, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY),
+                        conv8, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty),
                     train_phase))
 
             if train_phase:
@@ -127,7 +127,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv10 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv9, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY),
+                        conv9, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty),
                     train_phase))
             if train_phase:
                 conv10 = tf.nn.dropout(conv10, keep_prob)
@@ -141,7 +141,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv11 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        pool4, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY),
+                        pool4, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty),
                     train_phase))
 
             if train_phase:
@@ -151,7 +151,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv12 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv11, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY),
+                        conv11, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty),
                     train_phase))
 
             if train_phase:
@@ -161,7 +161,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
             conv13 = tf.nn.relu(
                 utils.batch_norm(
                     utils.conv_layer(
-                        conv12, [3, 3, 512, 512], 1, 'SAME', wd=WD_PENALTY),
+                        conv12, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty),
                     train_phase))
 
             if train_phase:
@@ -177,7 +177,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
         fc1 = tf.nn.relu(
             utils.batch_norm(
                 utils.fc_layer(
-                    pool5, [512, 512], wd=WD_PENALTY), train_phase))
+                    pool5, [512, 512], wd=l2_penalty), train_phase))
 
         if train_phase:
             fc1 = tf.nn.dropout(fc1, keep_prob)
@@ -185,7 +185,7 @@ def inference(images, num_classes, keep_prob, train_phase=False):
     with tf.variable_scope('softmax_linear'):
         logits = utils.batch_norm(
             utils.fc_layer(
-                fc1, [512, num_classes], wd=WD_PENALTY), train_phase)
+                fc1, [512, num_classes], wd=0.0), train_phase)
     return logits
 
 
@@ -213,7 +213,7 @@ def loss(logits, labels):
     return error
 
 
-def get_model(images, num_classes, train_phase=False):
+def get_model(images, num_classes, train_phase=False, l2_penalty=0.0):
     """ define the model with its inputs.
     Use this function to define the model in training and when exporting the model
     in the protobuf format.
@@ -222,6 +222,7 @@ def get_model(images, num_classes, train_phase=False):
         images: model input
         num_classes: number of classes to predict
         train_phase: set it to True when defining the model, during train
+        l2_penalty: float value, weight decay (l2) penalty
 
     Return:
         keep_prob_: model dropout placeholder
@@ -229,6 +230,11 @@ def get_model(images, num_classes, train_phase=False):
     """
     keep_prob_ = tf.placeholder(tf.float32, shape=(), name="keep_prob_")
     # build a graph that computes the logits predictions from the images
-    logits = inference(images, num_classes, keep_prob_, train_phase=train_phase)
+    logits = inference(
+        images,
+        num_classes,
+        keep_prob_,
+        train_phase=train_phase,
+        l2_penalty=l2_penalty)
 
     return keep_prob_, logits
