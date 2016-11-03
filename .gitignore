@@ -65,4 +65,4 @@ inputs/MNIST_data/
 inputs/cifar10_data/
 inputs/cifar100_data/
 log/
-eval/
+results.txt

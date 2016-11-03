@@ -25,11 +25,17 @@ from models import utils
 from decay import supervised_parameter_decay
 
 
-def train(lr_decay, kp_decay):
+def train(lr_decay, kp_decay, l2_penalty):
     """Train model.
     Args:
         lr_decay: if True decay the learning rate exponentially
-        kp_decay: if True use supervised parameter decay to decay keep_prob"""
+        kp_decay: if True use supervised parameter decay to decay keep_prob
+        l2_penalty: float value: l2 weight penalization
+
+    Returns:
+        best validation accuracy obtained. Save best model"""
+
+    best_validation_accuracy = 0.0
 
     with tf.Graph().as_default(), tf.device('/gpu:0'):
         global_step = tf.Variable(0, trainable=False)
@@ -40,7 +46,10 @@ def train(lr_decay, kp_decay):
         # Build a Graph that computes the logits predictions from the
         # inference model.
         keep_prob_, logits = MODEL.get_model(
-            images, DATASET.NUM_CLASSES, train_phase=True)
+            images,
+            DATASET.NUM_CLASSES,
+            train_phase=True,
+            l2_penalty=l2_penalty)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
@@ -81,7 +90,10 @@ def train(lr_decay, kp_decay):
         if kp_decay:
             # Decay keep prob using supervised parameter decay
             decay_keep_prob = supervised_parameter_decay(
-                validation_accuracy_, initial_parameter_value=MAX_KEEP_PROB)
+                validation_accuracy_,
+                initial_parameter_value=MAX_KEEP_PROB,
+                min_parameter_value=0.45,
+                num_observations=10)
         else:
             decay_keep_prob = tf.constant(MAX_KEEP_PROB)
 
@@ -111,9 +123,6 @@ def train(lr_decay, kp_decay):
 
             # Extract previous global step value
             old_gs = sess.run(global_step)
-
-            # set best_validation_accuracy, used by best_saver
-            best_validation_accuracy = 0.0
 
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
@@ -184,6 +193,7 @@ def train(lr_decay, kp_decay):
                             sess,
                             os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
                             global_step=0)
+    return best_validation_accuracy
 
 
 def method_name(args):
@@ -193,6 +203,8 @@ def method_name(args):
         name += 'kp_decay_'
     if args.lr_decay:
         name += 'exp_lr_'
+    if args.l2_penalty > 0.0:
+        name += 'l2_'
     name = name.rstrip('_')
 
     if name == '':
@@ -212,7 +224,8 @@ if __name__ == '__main__':
         "--dataset", required=True, choices=["cifar10", "cifar100"])
     PARSER.add_argument("--kp_decay", action="store_true")
     PARSER.add_argument("--lr_decay", action="store_true")
-    PARSER.add_argument("--prefix")
+    PARSER.add_argument("--l2_penalty", type=float, default=0.0)
+    PARSER.add_argument("--prefix", default='')
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset
@@ -249,6 +262,8 @@ if __name__ == '__main__':
     if not tf.gfile.Exists(BEST_MODEL_DIR):
         tf.gfile.MakeDirs(BEST_MODEL_DIR)
 
-    # Start train
-    train(ARGS.lr_decay, ARGS.kp_decay)
+    # Start train, get best validation accuracy at the end
+    BEST_VA = train(ARGS.lr_decay, ARGS.kp_decay, ARGS.l2_penalty)
+    with open(os.path.join(CURRENT_DIR, "results.txt"), "a") as res:
+        res.write("{} {}".format(method_name(ARGS), BEST_VA))
     sys.exit()
