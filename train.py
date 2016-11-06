@@ -265,5 +265,5 @@ if __name__ == '__main__':
     # Start train, get best validation accuracy at the end
     BEST_VA = train(ARGS.lr_decay, ARGS.kp_decay, ARGS.l2_penalty)
     with open(os.path.join(CURRENT_DIR, "results.txt"), "a") as res:
-        res.write("{} {}".format(method_name(ARGS), BEST_VA))
+        res.write("{}: {} {}\n".format(ARGS._model, method_name(ARGS), BEST_VA))
     sys.exit()
