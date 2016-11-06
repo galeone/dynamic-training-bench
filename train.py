@@ -92,8 +92,8 @@ def train(lr_decay, kp_decay, l2_penalty):
             decay_keep_prob = supervised_parameter_decay(
                 validation_accuracy_,
                 initial_parameter_value=MAX_KEEP_PROB,
-                min_parameter_value=0.45,
-                num_observations=10)
+                min_parameter_value=0.5,
+                num_observations=20)
         else:
             decay_keep_prob = tf.constant(MAX_KEEP_PROB)
 
