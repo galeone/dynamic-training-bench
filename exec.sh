@@ -23,3 +23,6 @@ python train.py --model model2 --dataset cifar10 --lr_decay
 
 # keep prob decay only
 python train.py --model model2 --dataset cifar10 --kp_decay
+
+# keep prob decay only with dropout in the same positions as model1
+python train.py --model model6 --dataset cifar10 --kp_decay
