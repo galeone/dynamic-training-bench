@@ -181,6 +181,21 @@ python train.py --model model2 --dataset cifar10 --lr_decay
 
 *Notes*: fixed gap between training and validation accuracy (0.14). Useful only the first learning rate decay.
 
+## Architecture 1: summary
+
+Dropout      | BN  | LR decay | L2  | VA
+-------------| --- | -------- | --- | ---
+             |     |          |     | 0.8572
+Fixed values |     |          |     | 0.8875
+             | yes |          |     | 0.8731
+             |     |          | yes | 0.8693
+             |     | yes      |     | 0.8497
+KP decay     |     |          |     | 0.875
+Fixed values |     |          | yes | 0.829
+             | yes | yes      | yes | 0.8798
+             |     | yes      | yes | 0.8654
+
+
 # Architecture 2
 
 This architecture is equal to the original one, the only difference is the position of the dropout layers (when present): the dropout layers have been placed only at the beginning of every block of convolutional filters with the same number of outputs (64 features, 128 features, ...) and after every fully connected layer.
@@ -252,6 +267,16 @@ python train.py --model model3 --dataset cifar10 --kp_decay --lr_decay
 
 *Notes*:  first learning rate decay increases the accuracy instantly. This support the hypothesis of starting from a lower learning rate when using keep prob decay (with and without batch norm. -> tested: it simply lowers the training speed without any other befit.
 
+## Architecture 2: summary
+
+Dropout      | BN  | LR decay | L2  | VA
+-------------| --- | -------- | --- | ---
+KP decay     |     | yes      | yes | 0.8709
+KP decay     |     |          | yes | 0.888
+KP decay     | yes |          | yes | 0.8812
+KP decay     | yes | yes      | yes | 0.8842
+
+
 # Architecture 3
 
 Like architecture 2, but with dropout layer after every convolutional/fc layer.
@@ -285,3 +310,11 @@ python train.py --model model5 --dataset cifar10 --kp_decay
 *Best validation accuracy*: 0.8409
 
 *Notes*: validation accuracy decreases after kp goes under 1. *Extremely* noisy training process. When kp decreases, underfits too.
+
+## Architecture 3: summary
+
+Dropout      | BN  | LR decay | L2  | VA
+-------------| --- | -------- | --- | ---
+KP decay     |     |          | yes | 0.8897
+KP decay     | yes |          | yes | 0.8409
+
