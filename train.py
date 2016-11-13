@@ -225,6 +225,7 @@ if __name__ == '__main__':
     PARSER.add_argument("--kp_decay", action="store_true")
     PARSER.add_argument("--lr_decay", action="store_true")
     PARSER.add_argument("--l2_penalty", type=float, default=0.0)
+    PARSER.add_argument("--lr", type=float, default=1e-2)
     PARSER.add_argument("--prefix", default='')
     ARGS = PARSER.parse_args()
 
@@ -241,7 +242,7 @@ if __name__ == '__main__':
     MOMENTUM = 0.9
 
     # Learning rate decay constants
-    INITIAL_LEARNING_RATE = 1e-2
+    INITIAL_LEARNING_RATE = ARGS.lr
     NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
     LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
     STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
