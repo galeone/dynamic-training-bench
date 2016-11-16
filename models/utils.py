@@ -157,22 +157,42 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
         # from a binomial distribution
 
         # extract the number of neurons in x
+        # and the number of neurons kept on (unused)
         input_shape = x.get_shape()
         if len(input_shape) == 4:  # conv layer
             num_neurons = input_shape[1].value * input_shape[
                 2].value * input_shape[3].value
+            kept_on = tf.reduce_sum(binary_tensor, [1, 2, 3])
+            shape = [
+                -1, input_shape[1].value, input_shape[2].value, input_shape[3]
+                .value
+            ]
         else:  #fc layer
             num_neurons = input_shape[1].value
+            kept_on = tf.reduce_sum(binary_tensor, [1])
+            shape = [-1, input_shape[1].value]
 
-        num_neurons = tf.convert_to_tensor(
-            num_neurons, dtype=tf.float32, name="num_neurons")
-        dist = tf.contrib.distributions.Binomial(n=num_neurons, p=keep_prob)
+        dist = tf.contrib.distributions.Binomial(
+            n=tf.cast(num_neurons, tf.float32), p=keep_prob)
+
         expected_kept_on = num_neurons * keep_prob
         prob = dist.prob(expected_kept_on)
 
+        #prob = dist.prob(kept_on)
+
         def drop():
-            ret = tf.div(x, 1 - prob) * binary_tensor
-            ret.set_shape(x.get_shape())
+            """ Dropout and scale neurons """
+            # set to 1*(1 - P(Y=np)) the position of the
+            # active neurons
+            boost_mask = tf.reshape(
+                tf.div(
+                    tf.reshape(binary_tensor, (-1, num_neurons)),
+                    tf.expand_dims(1.0 - prob, 1)), shape)
+            # multiply the boost mask for the neuron value
+            # in order to drop the ones with mask[i] = 0 and boost
+            # the ones with mask[i] != 0
+            ret = x * boost_mask
+            ret.set_shape(input_shape)
             return ret
 
         return tf.cond(tf.equal(keep_prob, 1.0), lambda: x, drop)
