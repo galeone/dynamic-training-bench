@@ -205,7 +205,7 @@ def method_name():
         name += 'exp_lr_'
     if KP_DECAY:
         name += 'kp_decay_'
-    if L2_PENALTY:
+    if L2_PENALTY != 0.0:
         name += 'l2={:.6f}_'.format(L2_PENALTY)
 
     return name.rstrip('_')
