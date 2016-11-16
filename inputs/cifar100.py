@@ -112,17 +112,12 @@ def distorted_inputs(batch_size):
     images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
     labels: Labels. 1D tensor of [batch_size] size.
   """
-    filenames = [
-        os.path.join(DATA_DIR, 'cifar-10-batches-bin/data_batch_%d.bin' % i)
-        for i in range(1, 6)
-    ]
-
-    for name in filenames:
-        if not tf.gfile.Exists(name):
-            raise ValueError('Failed to find file: ' + name)
+    filename = os.path.join(DATA_DIR, 'cifar-100-binary/train.bin')
+    if not tf.gfile.Exists(filename):
+        raise ValueError('Failed to find file: ' + filename)
 
     # Create a queue that produces the filenames to read.
-    filename_queue = tf.train.string_input_producer(filenames)
+    filename_queue = tf.train.string_input_producer([filename])
 
     # Read examples from files in the filename queue.
     read_input = read(filename_queue)
@@ -158,23 +153,18 @@ def inputs(eval_data, batch_size):
     labels: Labels. 1D tensor of [batch_size] size.
   """
     if not eval_data:
-        filenames = [
-            os.path.join(DATA_DIR, 'cifar-10-batches-bin/data_batch_%d.bin' % i)
-            for i in range(1, 6)
-        ]
+        filename = os.path.join(DATA_DIR, 'cifar-100-binary/train.bin')
         num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
     else:
-        filenames = [
-            os.path.join(DATA_DIR, 'cifar-10-batches-bin/test_batch.bin')
-        ]
+        filename = os.path.join(DATA_DIR, 'cifar-100-binary/test.bin')
+
         num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
-    for name in filenames:
-        if not tf.gfile.Exists(name):
-            raise ValueError('Failed to find file: ' + name)
+    if not tf.gfile.Exists(filename):
+        raise ValueError('Failed to find file: ' + filename)
 
     # Create a queue that produces the filenames to read.
-    filename_queue = tf.train.string_input_producer(filenames)
+    filename_queue = tf.train.string_input_producer([filename])
 
     # Read examples from files in the filename queue.
     read_input = read(filename_queue)
