@@ -5,7 +5,8 @@
 #file, you can obtain one at http://mozilla.org/MPL/2.0/.
 #Exhibit B is not attached; this software is compatible with the
 #licenses expressed under Section 1.12 of the MPL v2.
-"""Builds the VGG-like network."""
+"""Builds the VGG-like network with binomial dropout layers
+applyed after avery layer of neurons"""
 
 import tensorflow as tf
 from . import utils
@@ -13,7 +14,7 @@ from . import utils
 
 def inference(images, num_classes, keep_prob, train_phase=False,
               l2_penalty=0.0):
-    """Build the CIFAR-10 VGG model.
+    """Build the VGG-like model.
 
     Args:
       images: Images returned from distorted_inputs() or inputs().
@@ -31,14 +32,15 @@ def inference(images, num_classes, keep_prob, train_phase=False,
                 utils.conv_layer(
                     images, [3, 3, 3, 64], 1, 'SAME', wd=l2_penalty))
             if train_phase:
-                conv1 = tf.nn.dropout(conv1, keep_prob)
+                conv1 = utils.binomial_dropout(conv1, 0.7)
 
         with tf.variable_scope('conv2'):
             conv2 = tf.nn.relu(
                 utils.conv_layer(
                     conv1, [3, 3, 64, 64], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv2 = tf.nn.dropout(conv2, keep_prob)
+                conv2 = utils.binomial_dropout(conv2, 0.6)
 
     with tf.variable_scope('pool1'):
         pool1 = tf.nn.max_pool(
@@ -49,15 +51,17 @@ def inference(images, num_classes, keep_prob, train_phase=False,
             conv3 = tf.nn.relu(
                 utils.conv_layer(
                     pool1, [3, 3, 64, 128], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv3 = tf.nn.dropout(conv3, keep_prob)
+                conv3 = utils.binomial_dropout(conv3, 0.6)
 
         with tf.variable_scope('conv4'):
             conv4 = tf.nn.relu(
                 utils.conv_layer(
                     conv3, [3, 3, 128, 128], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv4 = tf.nn.dropout(conv4, keep_prob)
+                conv4 = utils.binomial_dropout(conv4, 0.6)
 
     with tf.variable_scope('pool2'):
         pool2 = tf.nn.max_pool(
@@ -68,22 +72,25 @@ def inference(images, num_classes, keep_prob, train_phase=False,
             conv5 = tf.nn.relu(
                 utils.conv_layer(
                     pool2, [3, 3, 128, 256], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv5 = tf.nn.dropout(conv5, keep_prob)
+                conv5 = utils.binomial_dropout(conv5, 0.6)
 
         with tf.variable_scope('conv6'):
             conv6 = tf.nn.relu(
                 utils.conv_layer(
                     conv5, [3, 3, 256, 256], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv6 = tf.nn.dropout(conv6, keep_prob)
+                conv6 = utils.binomial_dropout(conv6, 0.6)
 
         with tf.variable_scope('conv7'):
             conv7 = tf.nn.relu(
                 utils.conv_layer(
                     conv6, [3, 3, 256, 256], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv7 = tf.nn.dropout(conv7, keep_prob)
+                conv7 = utils.binomial_dropout(conv7, 0.6)
 
     with tf.variable_scope('pool3'):
         pool3 = tf.nn.max_pool(
@@ -94,8 +101,9 @@ def inference(images, num_classes, keep_prob, train_phase=False,
             conv8 = tf.nn.relu(
                 utils.conv_layer(
                     pool3, [3, 3, 256, 512], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv8 = tf.nn.dropout(conv8, keep_prob)
+                conv8 = utils.binomial_dropout(conv8, 0.6)
 
         with tf.variable_scope('conv9'):
             conv9 = tf.nn.relu(
@@ -103,14 +111,15 @@ def inference(images, num_classes, keep_prob, train_phase=False,
                     conv8, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
 
             if train_phase:
-                conv9 = tf.nn.dropout(conv9, keep_prob)
+                conv9 = utils.binomial_dropout(conv9, 0.6)
 
         with tf.variable_scope('conv10'):
             conv10 = tf.nn.relu(
                 utils.conv_layer(
                     conv9, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
+
             if train_phase:
-                conv10 = tf.nn.dropout(conv10, keep_prob)
+                conv10 = utils.binomial_dropout(conv10, 0.6)
 
     with tf.variable_scope('pool4'):
         pool4 = tf.nn.max_pool(
@@ -123,7 +132,7 @@ def inference(images, num_classes, keep_prob, train_phase=False,
                     pool4, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
 
             if train_phase:
-                conv11 = tf.nn.dropout(conv11, keep_prob)
+                conv11 = utils.binomial_dropout(conv11, 0.6)
 
         with tf.variable_scope('conv12'):
             conv12 = tf.nn.relu(
@@ -131,7 +140,7 @@ def inference(images, num_classes, keep_prob, train_phase=False,
                     conv11, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
 
             if train_phase:
-                conv12 = tf.nn.dropout(conv12, keep_prob)
+                conv12 = utils.binomial_dropout(conv12, 0.6)
 
         with tf.variable_scope('conv13'):
             conv13 = tf.nn.relu(
@@ -139,7 +148,7 @@ def inference(images, num_classes, keep_prob, train_phase=False,
                     conv12, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
 
             if train_phase:
-                conv13 = tf.nn.dropout(conv13, keep_prob)
+                conv13 = utils.binomial_dropout(conv13, 0.6)
 
     with tf.variable_scope('pool5'):
         pool5 = tf.nn.max_pool(
@@ -151,7 +160,7 @@ def inference(images, num_classes, keep_prob, train_phase=False,
         fc1 = tf.nn.relu(utils.fc_layer(pool5, [512, 512], wd=l2_penalty))
 
         if train_phase:
-            fc1 = tf.nn.dropout(fc1, keep_prob)
+            fc1 = utils.binomial_dropout(fc1, 0.5)
 
     with tf.variable_scope('softmax_linear'):
         logits = utils.fc_layer(fc1, [512, num_classes], wd=0.0)

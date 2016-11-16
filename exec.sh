@@ -1,28 +1,20 @@
 #!/usr/bin/env bash
 
-############################################################
-### Test single regularization (and train) methods only  ###
-############################################################
+########################################################
+### Test binomial dropout with other regularizations ###
+########################################################
 
-# no regularization at all
-python train.py --model model2 --dataset cifar10
+# VGG: no regularization
+python train.py --model vgg --dataset cifar10
 
-# fixed & different dropout values only
-# model1 have hardcoded dropout values, no flags required
-python train.py --model model1 --dataset cifar10
+# VGG: L2 (every layer)
+python train.py --model vgg --dataset cifar10 --l2_penalty "5e-4"
 
-# batch normalization only
-# model 3 have batch norm layer before every layer
-python train.py --model model3 --dataset cifar10
+# VGG: BN (every layer)
+python train.py --model vgg_bn --dataset cifar10
 
-# l2 regularization only
-python train.py --model model2 --dataset cifar10 --l2_penalty "5e-4"
+# VGG: dropout (every layer)
+python train.py --model vgg_dropout --dataset cifar10
 
-# learning rate decay only
-python train.py --model model2 --dataset cifar10 --lr_decay
-
-# keep prob decay only
-python train.py --model model2 --dataset cifar10 --kp_decay
-
-# keep prob decay only with dropout in the same positions as model1
-python train.py --model model6 --dataset cifar10 --kp_decay
+# VGG: binomial dropout (every layer)
+python train.py --model vgg_binomial_dropout --dataset cifar10
