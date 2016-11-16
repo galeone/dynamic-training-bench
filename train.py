@@ -10,8 +10,10 @@
 """ Train model with a single GPU. Evaluate it on the second one"""
 
 import argparse
+import json
 import glob
 import importlib
+import pprint
 import sys
 from datetime import datetime
 import os.path
@@ -25,19 +27,15 @@ from models import utils
 from decay import supervised_parameter_decay
 
 
-def train(lr_decay, kp_decay, l2_penalty):
+def train():
     """Train model.
-    Args:
-        lr_decay: if True decay the learning rate exponentially
-        kp_decay: if True use supervised parameter decay to decay keep_prob
-        l2_penalty: float value: l2 weight penalization
 
     Returns:
         best validation accuracy obtained. Save best model"""
 
     best_validation_accuracy = 0.0
 
-    with tf.Graph().as_default(), tf.device('/gpu:0'):
+    with tf.Graph().as_default(), tf.device(DEVICE):
         global_step = tf.Variable(0, trainable=False)
 
         # Get images and labels for CIFAR-10.
@@ -49,31 +47,30 @@ def train(lr_decay, kp_decay, l2_penalty):
             images,
             DATASET.NUM_CLASSES,
             train_phase=True,
-            l2_penalty=l2_penalty)
+            l2_penalty=L2_PENALTY)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
 
-        if lr_decay:
+        if LR_DECAY:
             # Decay the learning rate exponentially based on the number of steps.
             learning_rate = tf.train.exponential_decay(
-                INITIAL_LEARNING_RATE,
+                INITIAL_LR,
                 global_step,
                 STEPS_PER_DECAY,
-                LEARNING_RATE_DECAY_FACTOR,
+                LR_DECAY_FACTOR,
                 staircase=True)
         else:
-            learning_rate = tf.constant(INITIAL_LEARNING_RATE)
+            learning_rate = tf.constant(INITIAL_LR)
 
         utils.log(tf.scalar_summary('learning_rate', learning_rate))
-        train_op = tf.train.MomentumOptimizer(learning_rate, MOMENTUM).minimize(
-            loss, global_step=global_step)
+        train_op = OPTIMIZER.minimize(loss, global_step=global_step)
 
         # Create the train saver.
         variables_to_save = utils.variables_to_save([global_step])
-        train_saver = tf.train.Saver(variables_to_save)
+        train_saver = tf.train.Saver(variables_to_save, max_to_keep=2)
         # Create the best model saver.
-        best_saver = tf.train.Saver(variables_to_save)
+        best_saver = tf.train.Saver(variables_to_save, max_to_keep=1)
 
         # Train accuracy ops
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -87,20 +84,26 @@ def train(lr_decay, kp_decay, l2_penalty):
         validation_accuracy_ = tf.placeholder(
             tf.float32, shape=(), name="validation_accuracy_")
 
-        if kp_decay:
+        if KP_DECAY:
             # Decay keep prob using supervised parameter decay
             decay_keep_prob = supervised_parameter_decay(
                 validation_accuracy_,
-                initial_parameter_value=MAX_KEEP_PROB,
-                min_parameter_value=0.5,
-                num_observations=20)
+                initial_parameter_value=INITIAL_KP,
+                min_parameter_value=FINAL_KP,
+                num_observations=NUM_OBSERVATIONS,
+                decay_amount=KP_DECAY_AMOUNT)
+            # set initial keep prob
+            keep_prob = INITIAL_KP
         else:
-            decay_keep_prob = tf.constant(MAX_KEEP_PROB)
+            # if kp is not decayed, a useless value is passed to the
+            # keep_prob placeholder.
+            # Ops that uses this placeholder will use this value
+            # Whilst Ops that have hardcoded keep_prob value, will use
+            # those.
+            decay_keep_prob = tf.constant(1.0)
+            keep_prob = 1.0
 
         keep_prob_summary = tf.scalar_summary('keep_prob', decay_keep_prob)
-
-        # set initial keep_prob
-        keep_prob = MAX_KEEP_PROB
 
         # read collection after keep_prob_decay that adds
         # the keep_prob summary
@@ -188,28 +191,24 @@ def train(lr_decay, kp_decay, l2_penalty):
                     # save best model
                     if validation_accuracy_value > best_validation_accuracy:
                         best_validation_accuracy = validation_accuracy_value
-                        # fixed global_step, the best model is only one
                         best_saver.save(
                             sess,
                             os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
-                            global_step=0)
+                            global_step=step)
     return best_validation_accuracy
 
 
-def method_name(args):
+def method_name():
     """Build method name parsing args"""
-    name = ''
-    if args.kp_decay:
-        name += 'kp_decay_'
-    if args.lr_decay:
+    name = '{}_{}_lr={:.6f}_'.format(ARGS.dataset, OPTIMIZER._name, INITIAL_LR)
+    if LR_DECAY:
         name += 'exp_lr_'
-    if args.l2_penalty > 0.0:
-        name += 'l2_'
-    name = name.rstrip('_')
+    if KP_DECAY:
+        name += 'kp_decay_'
+    if L2_PENALTY:
+        name += 'l2={:.6f}_'.format(L2_PENALTY)
 
-    if name == '':
-        name = 'constant'
-    return args.prefix + name
+    return name.rstrip('_')
 
 
 if __name__ == '__main__':
@@ -217,16 +216,57 @@ if __name__ == '__main__':
         model[len('models/'):-3] for model in glob.glob('models/*.py')
         if "__init__.py" not in model and "utils" not in model
     ]
+
+    DATASETS = [
+        dataset[len('inputs/'):-3] for dataset in glob.glob('inputs/*.py')
+        if "__init__.py" not in dataset
+    ]
+
+    OPTIMIZERS = [
+        optimizer for optimizer in dir(tf.train)
+        if optimizer.endswith("Optimizer")
+    ]
+
     # CLI arguments
     PARSER = argparse.ArgumentParser(description="Train the model")
+
+    # Required arguments
     PARSER.add_argument("--model", required=True, choices=MODELS)
-    PARSER.add_argument(
-        "--dataset", required=True, choices=["cifar10", "cifar100"])
-    PARSER.add_argument("--kp_decay", action="store_true")
+    PARSER.add_argument("--dataset", required=True, choices=DATASETS)
+
+    # Learning rate decay arguments
     PARSER.add_argument("--lr_decay", action="store_true")
+    PARSER.add_argument("--lr_decay_epochs", type=int, default=25)
+    PARSER.add_argument("--lr_decay_factor", type=float, default=0.1)
+
+    # Keep prob decay arguments
+    PARSER.add_argument("--kp_decay", action="store_true")
+    PARSER.add_argument("--initial_kp", type=float, default=1.0)
+    PARSER.add_argument("--final_kp", type=float, default=0.5)
+    PARSER.add_argument("--num_observations", type=int, default=25)
+    PARSER.add_argument("--kp_decay_amount", type=float, default=0.5)
+
+    # L2 regularization arguments
     PARSER.add_argument("--l2_penalty", type=float, default=0.0)
-    PARSER.add_argument("--lr", type=float, default=1e-2)
-    PARSER.add_argument("--prefix", default='')
+
+    # Optimization arguments
+    PARSER.add_argument(
+        "--optimizer", choices=OPTIMIZERS, default="MomentumOptimizer")
+    PARSER.add_argument(
+        "--optimizer_args",
+        type=json.loads,
+        default='''
+    {
+        "learning_rate": 1e-2,
+        "momentum": 0.9
+    }''')
+    PARSER.add_argument("--batch_size", type=int, default=128)
+    PARSER.add_argument("--epochs", type=int, default=300)
+
+    # Hardware
+    PARSER.add_argument("--device", default="/gpu:0")
+
+    # Pargse arguments
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset
@@ -234,26 +274,44 @@ if __name__ == '__main__':
     DATASET = importlib.import_module("inputs." + ARGS.dataset)
 
     # Training constants
-    BATCH_SIZE = 128
+    OPTIMIZER = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
+    # Learning rate must be always present in optimizer args
+    INITIAL_LR = float(ARGS.optimizer_args["learning_rate"])
+
+    BATCH_SIZE = ARGS.batch_size
+    MAX_EPOCH = ARGS.epochs
     STEPS_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
                                 BATCH_SIZE)
-    MAX_EPOCH = 300
     MAX_STEPS = STEPS_PER_EPOCH * MAX_EPOCH
-    MOMENTUM = 0.9
+
+    # Regularization constaints
+    L2_PENALTY = ARGS.l2_penalty
 
     # Learning rate decay constants
-    INITIAL_LEARNING_RATE = ARGS.lr
-    NUM_EPOCHS_PER_DECAY = 25  # Epochs after which learning rate decays.
-    LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
-    STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
+    LR_DECAY = False
+    if ARGS.lr_decay:
+        LR_DECAY = True
+        NUM_EPOCHS_PER_DECAY = ARGS.lr_decay_epochs
+        LR_DECAY_FACTOR = ARGS.lr_decay_factor
+        STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
 
     # Keep prob decay constants
-    MAX_KEEP_PROB = 1.0
+    KP_DECAY = False
+    if ARGS.kp_decay:
+        KP_DECAY = True
+        INITIAL_KP = ARGS.initial_kp
+        FINAL_KP = ARGS.final_kp
+        NUM_OBSERVATIONS = ARGS.num_observations
+        KP_DECAY_AMOUNT = ARGS.kp_decay_amount
 
     # Model logs and checkpoint constants
+    NAME = method_name()
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    LOG_DIR = os.path.join(CURRENT_DIR, 'log', ARGS.model, method_name(ARGS))
+    LOG_DIR = os.path.join(CURRENT_DIR, 'log', ARGS.model, NAME)
     BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
+
+    # Device where to place the model
+    DEVICE = ARGS.device
 
     # Dataset creation if needed
     DATASET.maybe_download_and_extract()
@@ -264,7 +322,8 @@ if __name__ == '__main__':
         tf.gfile.MakeDirs(BEST_MODEL_DIR)
 
     # Start train, get best validation accuracy at the end
-    BEST_VA = train(ARGS.lr_decay, ARGS.kp_decay, ARGS.l2_penalty)
+    pprint.pprint(ARGS)
+    BEST_VA = train()
     with open(os.path.join(CURRENT_DIR, "results.txt"), "a") as res:
-        res.write("{}: {} {}\n".format(ARGS.model, method_name(ARGS), BEST_VA))
+        res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_VA))
     sys.exit()
