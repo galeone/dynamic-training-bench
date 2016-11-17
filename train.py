@@ -93,8 +93,10 @@ def train():
                 allow_soft_placement=True)) as sess:
             sess.run(init)
 
-            # Start the queue runners.
-            tf.train.start_queue_runners(sess=sess)
+            # Start the queue runners with a coordinator
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
             train_log = tf.train.SummaryWriter(LOG_DIR + "/train", sess.graph)
             validation_log = tf.train.SummaryWriter(LOG_DIR + "/validation",
                                                     sess.graph)
@@ -162,6 +164,12 @@ def train():
                             sess,
                             os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
                             global_step=step)
+            # end of for
+
+            # When done, ask the threads to stop.
+            coord.request_stop()
+            # Wait for threads to finish.
+            coord.join(threads)
     return best_validation_accuracy
 
 
