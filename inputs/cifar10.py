@@ -28,6 +28,7 @@ IMAGE_SIZE = 32
 NUM_CLASSES = 10
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10000
+NUM_EXAMPLES_PER_EPOCH_FOR_TEST = NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__)) + "/cifar10_data"
 DATA_URL = 'http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
@@ -145,18 +146,21 @@ def distorted_inputs(batch_size):
         shuffle=True)
 
 
-def inputs(eval_data, batch_size):
+def inputs(input_type, batch_size):
     """Construct input for CIFAR evaluation using the Reader ops.
 
-  Args:
-    eval_data: bool, indicating if one should use the train or eval data set.
-    batch_size: Number of images per batch.
+    Args:
+        input_type: Type enum
+        batch_size: Number of images per batch.
 
-  Returns:
-    images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
-    labels: Labels. 1D tensor of [batch_size] size.
-  """
-    if not eval_data:
+    Returns:
+        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
+        labels: Labels. 1D tensor of [batch_size] size.
+    """
+    if not isinstance(input_type, utils.Type):
+        raise ValueError("Invalid input_type, required a valid Type")
+
+    if input_type == utils.Type.train:
         filenames = [
             os.path.join(DATA_DIR, 'cifar-10-batches-bin/data_batch_%d.bin' % i)
             for i in range(1, 6)
