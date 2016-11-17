@@ -66,3 +66,5 @@ inputs/cifar10_data/
 inputs/cifar100_data/
 log/
 results.txt
+validation_results.txt
+test_results.txt

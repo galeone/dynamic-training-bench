@@ -16,22 +16,27 @@ import math
 
 import numpy as np
 import tensorflow as tf
+from inputs.utils import Type
 
 
-def get_validation_accuracy(checkpoint_dir, model, dataset):
+def get_accuracy(checkpoint_dir, model, dataset, input_type):
     """
     Read latest saved checkpoint and use it to evaluate the model
     Args:
         checkpoint_dir: checkpoint folder
         model: python package containing the model to save
         dataset: python package containing the dataset to use
+        input_type: Type enum, the input type of the input examples
     """
+    if not isinstance(input_type, Type):
+        raise ValueError("Invalid input_type, required a valid type")
 
     with tf.Graph().as_default(), tf.device('/gpu:1'):
         # Get images and labels from the dataset
         # Use batch_size multiple of train set size and big enough to stay in GPU
         batch_size = 200
-        images, labels = dataset.inputs(eval_data=True, batch_size=batch_size)
+        images, labels = dataset.inputs(
+            input_type=input_type, batch_size=batch_size)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
@@ -90,6 +95,7 @@ if __name__ == '__main__':
     PARSER.add_argument("--model", required=True)
     PARSER.add_argument("--dataset", required=True)
     PARSER.add_argument("--checkpoint_dir", required=True)
+    PARSER.add_argument("--test", action="store_true")
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset, ovverides default
@@ -97,5 +103,7 @@ if __name__ == '__main__':
     DATASET = importlib.import_module("inputs." + ARGS.dataset)
 
     DATASET.maybe_download_and_extract()
-    print('{}: accuracy = {:.3f}'.format(datetime.now(
-    ), get_validation_accuracy(ARGS.checkpoint_dir, MODEL, DATASET)))
+    accuracy_type = Type.test if ARGS.test else Type.validation
+    print('{}: {} accuracy = {:.3f}'.format(
+        datetime.now(), 'test' if ARGS.test else 'validation',
+        get_accuracy(ARGS.checkpoint_dir, MODEL, DATASET, accuracy_type)))
