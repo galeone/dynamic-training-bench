@@ -195,3 +195,47 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
             return ret
 
         return tf.cond(tf.equal(keep_prob, 1.0), lambda: x, drop)
+
+
+def direct_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
+    """Computes dropout.
+    The original dropout as described in the paper, not the inverted version.
+    Thus it requires to scale the activation AT TEST TIME.
+    Args:
+        x: A tensor.
+        keep_prob: A scalar `Tensor` with the same type as x. The probability
+        that each element is kept.
+        noise_shape: A 1-D `Tensor` of type `int32`, representing the
+          shape for randomly generated keep/drop flags.
+        seed: A Python integer. Used to create random seeds.
+        name: A name for this operation (optional).
+    Returns:
+        A Tensor of the same shape of `x`.
+    Raises:
+        ValueError: If `keep_prob` is not in `(0, 1]`.
+    """
+    with tf.name_scope(name, "direct_dropout", [x]) as name:
+        x = tf.convert_to_tensor(x, name="x")
+        if isinstance(keep_prob, numbers.Real) and not 0 < keep_prob <= 1:
+            raise ValueError(
+                "keep_prob must be a scalar tensor or a float in the "
+                "range (0, 1], got %g" % keep_prob)
+        keep_prob = tf.convert_to_tensor(
+            keep_prob, dtype=x.dtype, name="keep_prob")
+        keep_prob.get_shape().assert_is_compatible_with(tf.TensorShape([]))
+
+        # Do nothing if we know keep_prob == 1
+        if tf.contrib.util.constant_value(keep_prob) == 1:
+            return x
+
+        noise_shape = noise_shape if noise_shape is not None else tf.shape(x)
+        # uniform [keep_prob, 1.0 + keep_prob)
+        random_tensor = keep_prob
+        random_tensor += tf.random_uniform(
+            noise_shape, seed=seed, dtype=x.dtype)
+        # 0. if [keep_prob, 1.0) and 1. if [1.0, 1.0 + keep_prob)
+        binary_tensor = tf.floor(random_tensor)
+        # Do not scale the activation in train time
+        ret = tf.mul(x, binary_tensor)
+        ret.set_shape(x.get_shape())
+        return ret
