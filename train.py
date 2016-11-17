@@ -24,6 +24,7 @@ import numpy as np
 import tensorflow as tf
 import evaluate
 from models import utils
+from inputs.utils import Type
 from decay import supervised_parameter_decay
 
 
@@ -43,7 +44,7 @@ def train():
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        keep_prob_, logits = MODEL.get_model(
+        is_training_, logits = MODEL.get_model(
             images,
             DATASET.NUM_CLASSES,
             train_phase=True,
@@ -79,34 +80,8 @@ def train():
         accuracy_value_ = tf.placeholder(tf.float32, shape=())
         accuracy_summary = tf.scalar_summary('accuracy', accuracy_value_)
 
-        # Initialize decay_keep_prob op
-        # va placeholder required for supervised_parameter_decay
-        validation_accuracy_ = tf.placeholder(
-            tf.float32, shape=(), name="validation_accuracy_")
-
-        if KP_DECAY:
-            # Decay keep prob using supervised parameter decay
-            decay_keep_prob = supervised_parameter_decay(
-                validation_accuracy_,
-                initial_parameter_value=INITIAL_KP,
-                min_parameter_value=FINAL_KP,
-                num_observations=NUM_OBSERVATIONS,
-                decay_amount=KP_DECAY_AMOUNT)
-            # set initial keep prob
-            keep_prob = INITIAL_KP
-        else:
-            # if kp is not decayed, a useless value is passed to the
-            # keep_prob placeholder.
-            # Ops that uses this placeholder will use this value
-            # Whilst Ops that have hardcoded keep_prob value, will use
-            # those.
-            decay_keep_prob = tf.constant(1.0)
-            keep_prob = 1.0
-
-        keep_prob_summary = tf.scalar_summary('keep_prob', decay_keep_prob)
-
-        # read collection after keep_prob_decay that adds
-        # the keep_prob summary
+        # read collection after that every op added its own
+        # summaries in the train_summaries collection
         train_summaries = tf.merge_summary(
             tf.get_collection_ref('train_summaries'))
 
@@ -132,7 +107,7 @@ def train():
                 start_time = time.time()
                 _, loss_value, summary_lines = sess.run(
                     [train_op, loss, train_summaries],
-                    feed_dict={keep_prob_: keep_prob})
+                    feed_dict={is_training_: True})
                 duration = time.time() - start_time
 
                 if np.isnan(loss_value):
@@ -161,34 +136,25 @@ def train():
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
                     # validation accuracy
-                    validation_accuracy_value = evaluate.get_validation_accuracy(
-                        LOG_DIR, MODEL, DATASET)
+                    validation_accuracy_value = evaluate.get_accuracy(
+                        LOG_DIR, MODEL, DATASET, Type.validation)
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: validation_accuracy_value})
                     validation_log.add_summary(summary_line, global_step=step)
 
-                    # update keep_prob using new validation accuracy
-                    keep_prob, summary_line = sess.run(
-                        [decay_keep_prob, keep_prob_summary],
-                        feed_dict={
-                            validation_accuracy_: validation_accuracy_value
-                        })
-                    train_log.add_summary(summary_line, global_step=step)
-
                     # train accuracy
                     train_accuracy_value = sess.run(
-                        train_accuracy, feed_dict={keep_prob_: 1.0})
+                        train_accuracy, feed_dict={is_training_: False})
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: train_accuracy_value})
                     train_log.add_summary(summary_line, global_step=step)
 
-                    print(('{}: train accuracy = {:.3f}\n'
-                           'validation accuracy = {:.3f}\n'
-                           'keep_prob = {:.2f}').format(datetime.now(
-                           ), train_accuracy_value, validation_accuracy_value,
-                                                        keep_prob))
+                    print(
+                        '{}: train accuracy = {:.3f} validation accuracy = {:.3f}'.
+                        format(datetime.now(), train_accuracy_value,
+                               validation_accuracy_value))
                     # save best model
                     if validation_accuracy_value > best_validation_accuracy:
                         best_validation_accuracy = validation_accuracy_value
@@ -325,6 +291,12 @@ if __name__ == '__main__':
     # Start train, get best validation accuracy at the end
     pprint.pprint(ARGS)
     BEST_VA = train()
-    with open(os.path.join(CURRENT_DIR, "results.txt"), "a") as res:
+    with open(os.path.join(CURRENT_DIR, "validation_results.txt"), "a") as res:
         res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_VA))
+
+    with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
+        res.write("{}: {} {}\n".format(ARGS.model, NAME,
+                                       evaluate.get_accuracy(
+                                           LOG_DIR, MODEL, DATASET, Type.test)))
+
     sys.exit()
