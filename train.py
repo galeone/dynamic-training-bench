@@ -135,8 +135,9 @@ def train():
                     feed_dict={keep_prob_: keep_prob})
                 duration = time.time() - start_time
 
-                assert not np.isnan(
-                    loss_value), 'Model diverged with loss = NaN'
+                if np.isnan(loss_value):
+                    print('Model diverged with loss = NaN')
+                    break
 
                 # update logs every 10 iterations
                 if step % 10 == 0:
@@ -261,7 +262,7 @@ if __name__ == '__main__':
         "momentum": 0.9
     }''')
     PARSER.add_argument("--batch_size", type=int, default=128)
-    PARSER.add_argument("--epochs", type=int, default=300)
+    PARSER.add_argument("--epochs", type=int, default=150)
 
     # Hardware
     PARSER.add_argument("--device", default="/gpu:0")
