@@ -7,7 +7,16 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Utils to dataset preprocessing"""
 
+from enum import Enum, unique
 import tensorflow as tf
+
+
+@unique
+class Type(Enum):
+    """ Enum to specify the data type requested """
+    validation = 1
+    train = 2
+    test = 3
 
 
 # Adapted from
