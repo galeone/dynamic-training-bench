@@ -157,7 +157,7 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
         # from a binomial distribution
 
         # extract the number of neurons in x
-        # and the number of neurons kept on (unused)
+        # and the number of neurons kept on
         input_shape = x.get_shape()
         if len(input_shape) == 4:  # conv layer
             num_neurons = input_shape[1].value * input_shape[
@@ -175,14 +175,13 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
         dist = tf.contrib.distributions.Binomial(
             n=tf.cast(num_neurons, tf.float32), p=keep_prob)
 
-        expected_kept_on = num_neurons * keep_prob
-        prob = dist.prob(expected_kept_on)
-
-        #prob = dist.prob(kept_on)
+        #expected_kept_on = num_neurons * keep_prob
+        #prob = dist.prob(expected_kept_on)
+        prob = dist.prob(kept_on)
 
         def drop():
             """ Dropout and scale neurons """
-            # set to 1*(1 - P(Y=np)) the position of the
+            # set to 1*(1 - P(Y=<active neurons>p)) the position of the
             # active neurons
             boost_mask = tf.reshape(
                 tf.div(
