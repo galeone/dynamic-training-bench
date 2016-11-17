@@ -12,15 +12,18 @@ import tensorflow as tf
 from . import utils
 
 
-def inference(images, num_classes, keep_prob, train_phase=False,
+def inference(images,
+              num_classes,
+              is_training_,
+              train_phase=False,
               l2_penalty=0.0):
     """Build the VGG-like model.
 
     Args:
       images: Images returned from distorted_inputs() or inputs().
       num_classes: Number of classes to predict
-      keep_prob: tensor for the dropout probability of keep neurons active
-      train_phase: Boolean to enable/disable train elements
+      is_training_: enable/disable training ops at run time
+      train_phase: Boolean to enable/disable train ops at build time
       l2_penalty: float value, weight decay (l2) penalty
 
     Returns:
@@ -203,16 +206,16 @@ def get_model(images, num_classes, train_phase=False, l2_penalty=0.0):
         l2_penalty: float value, weight decay (l2) penalty
 
     Return:
-        keep_prob_: model dropout placeholder
+        is_training_: enable/disable training ops at run time
         logits: the model output
     """
-    keep_prob_ = tf.placeholder(tf.float32, shape=(), name="keep_prob_")
+    is_training_ = tf.placeholder(tf.bool, shape=(), name="is_training_")
     # build a graph that computes the logits predictions from the images
     logits = inference(
         images,
         num_classes,
-        keep_prob_,
+        is_training_,
         train_phase=train_phase,
         l2_penalty=l2_penalty)
 
-    return keep_prob_, logits
+    return is_training_, logits
