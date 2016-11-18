@@ -22,6 +22,9 @@ python train.py --model vgg_binomial_dropout --dataset cifar10
 # VGG: direct dropout (every layer)
 python train.py --model vgg_direct_dropout --dataset cifar10
 
+# VGG: direct binomial dropout (every layer)
+python train.py --model vgg_direct_binomial_dropout --dataset cifar10
+
 # LeNet: no regularization
 python train.py --model lenet --dataset mnist
 
@@ -39,3 +42,6 @@ python train.py --model lenet_binomial_dropout --dataset mnist
 
 # LeNet: direct dropout (every layer)
 python train.py --model lenet_direct_dropout --dataset mnist
+
+# LeNet: direct binomial dropout (every layer)
+python train.py --model lenet_direct_binomial_dropout --dataset mnist
