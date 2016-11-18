@@ -182,6 +182,8 @@ def method_name():
         name += 'kp_decay_'
     if L2_PENALTY != 0.0:
         name += 'l2={:.6f}_'.format(L2_PENALTY)
+    if ARGS.comment != '':
+        name += '{}_'.format(ARGS.comment)
 
     return name.rstrip('_')
 
@@ -240,6 +242,9 @@ if __name__ == '__main__':
 
     # Hardware
     PARSER.add_argument("--device", default="/gpu:0")
+
+    # Optional comment
+    PARSER.add_argument("--comment", default='')
 
     # Pargse arguments
     ARGS = PARSER.parse_args()
