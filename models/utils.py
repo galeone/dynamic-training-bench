@@ -106,6 +106,45 @@ def variables_to_save(addlist):
         REQUIRED_NON_TRAINABLES) + addlist
 
 
+def num_neurons_and_shape(layer):
+    """Count the number of neurons in a single element of the layer, returns this
+    number and the shape of the single layer.
+    Args:
+        layer: [batch_size, widht, height, depth] if the layer is convolutional
+               [batch_size, num_neruons] if the layer is fully connected
+    Returns:
+        num_neurons, shape
+        Where num_neurons is the number of neurons in a single elment of the input batch,
+        shape is the shape of the single element"""
+    # extract the number of neurons in x
+    # and the number of neurons kept on
+    input_shape = layer.get_shape()
+    if len(input_shape) == 4:  # conv layer
+        num_neurons = input_shape[1].value * input_shape[2].value * input_shape[
+            3].value
+        shape = [
+            -1, input_shape[1].value, input_shape[2].value, input_shape[3].value
+        ]
+    else:  #fc layer
+        num_neurons = input_shape[1].value
+        shape = [-1, input_shape[1].value]
+
+    return num_neurons, shape
+
+
+def active_neurons(layer, off_value=0):
+    """Count the number of active (> off_value) neurons in a single element of the layer.
+    Args:
+        layer: [batch_size, widht, height, depth] if the layer is convolutional
+               [batch_size, num_neruons] if the layer is fully connected
+    Returns:
+        kept_on: [batch_size, 1] tf.int32, number of active neurons
+    """
+    binary_tensor = tf.cast(tf.greater(layer, off_value), tf.int32)
+    return tf.reduce_sum(binary_tensor, [1, 2, 3]
+                         if len(layer.get_shape()) == 4 else [1])
+
+
 def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
     """Computes dropout.
     With probability `keep_prob`, outputs the input element scaled up by
@@ -155,43 +194,32 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
 
         # scale using the probability of dropping np neurons
         # from a binomial distribution
-
-        # extract the number of neurons in x
-        # and the number of neurons kept on
-        input_shape = x.get_shape()
-        if len(input_shape) == 4:  # conv layer
-            num_neurons = input_shape[1].value * input_shape[
-                2].value * input_shape[3].value
-            kept_on = tf.reduce_sum(binary_tensor, [1, 2, 3])
-            shape = [
-                -1, input_shape[1].value, input_shape[2].value, input_shape[3]
-                .value
-            ]
-        else:  #fc layer
-            num_neurons = input_shape[1].value
-            kept_on = tf.reduce_sum(binary_tensor, [1])
-            shape = [-1, input_shape[1].value]
+        num_neurons, shape = num_neurons_and_shape(x)
 
         dist = tf.contrib.distributions.Binomial(
             n=tf.cast(num_neurons, tf.float32), p=keep_prob)
 
         #expected_kept_on = num_neurons * keep_prob
         #prob = dist.prob(expected_kept_on)
-        prob = dist.prob(kept_on)
+        prob = dist.prob(active_neurons(binary_tensor, off_value=0))
 
         def drop():
             """ Dropout and scale neurons """
             # set to 1*(1 - P(Y=<active neurons>p)) the position of the
             # active neurons
+
             boost_mask = tf.reshape(
                 tf.div(
                     tf.reshape(binary_tensor, (-1, num_neurons)),
                     tf.expand_dims(1.0 - prob, 1)), shape)
+
             # multiply the boost mask for the neuron value
             # in order to drop the ones with mask[i] = 0 and boost
             # the ones with mask[i] != 0
+
             ret = x * boost_mask
-            ret.set_shape(input_shape)
+            #ret = tf.div(x, 1.0 - prob)
+            ret.set_shape(x.get_shape())
             return ret
 
         return tf.cond(tf.equal(keep_prob, 1.0), lambda: x, drop)
