@@ -151,42 +151,6 @@ def inputs(input_type, batch_size):
         shuffle=False)
 
 
-def convert_to(data_set, name):
-    """ Converts the dataset in a TFRecord file with name.tfrecords """
-
-    def _int64_feature(value):
-        return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
-    def _bytes_feature(value):
-        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-    images = data_set.images
-    labels = data_set.labels
-    num_examples = data_set.num_examples
-
-    if images.shape[0] != num_examples:
-        raise ValueError('Images size {} does not match label size {}.'.format(
-            images.shape[0], num_examples))
-    rows = images.shape[1]
-    cols = images.shape[2]
-    depth = images.shape[3]
-
-    filename = os.path.join(DATA_DIR, name + '.tfrecords')
-    print('Writing', filename)
-    writer = tf.python_io.TFRecordWriter(filename)
-    for index in range(num_examples):
-        image_raw = images[index].tostring()
-        example = tf.train.Example(features=tf.train.Features(feature={
-            'height': _int64_feature(rows),
-            'width': _int64_feature(cols),
-            'depth': _int64_feature(depth),
-            'label': _int64_feature(int(labels[index])),
-            'image_raw': _bytes_feature(image_raw)
-        }))
-        writer.write(example.SerializeToString())
-    writer.close()
-
-
 def maybe_download_and_extract():
     """Download and extract the ORL Faces dataset"""
 
@@ -224,6 +188,6 @@ def maybe_download_and_extract():
         # Create dataset object
         dataset = lambda: None
         dataset.num_examples = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
-        dataset.images = np.array(dataset.images)
-        dataset.labels = np.array(dataset.labels)
-        convert_to(dataset, 'faces')
+        dataset.images = np.array(images)
+        dataset.labels = np.array(labels)
+        utils.convert_to_tfrecords(dataset, 'faces', DATA_DIR)

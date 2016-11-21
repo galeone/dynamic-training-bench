@@ -7,6 +7,7 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Utils to dataset preprocessing"""
 
+import os
 from enum import Enum, unique
 import tensorflow as tf
 
@@ -100,3 +101,40 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
     tf.image_summary('images', images)
 
     return images, tf.reshape(label_batch, [batch_size])
+
+
+def convert_to_tfrecords(dataset, name, data_dir):
+    """ Converts the dataset in a TFRecord file with name.tfrecords.
+    Save it into data_dir."""
+
+    def _int64_feature(value):
+        return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+    def _bytes_feature(value):
+        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+    images = dataset.images
+    labels = dataset.labels
+    num_examples = dataset.num_examples
+
+    if images.shape[0] != num_examples:
+        raise ValueError('Images size {} does not match label size {}.'.format(
+            images.shape[0], num_examples))
+    rows = images.shape[1]
+    cols = images.shape[2]
+    depth = images.shape[3]
+
+    filename = os.path.join(data_dir, name + '.tfrecords')
+    print('Writing', filename)
+    writer = tf.python_io.TFRecordWriter(filename)
+    for index in range(num_examples):
+        image_raw = images[index].tostring()
+        example = tf.train.Example(features=tf.train.Features(feature={
+            'height': _int64_feature(rows),
+            'width': _int64_feature(cols),
+            'depth': _int64_feature(depth),
+            'label': _int64_feature(int(labels[index])),
+            'image_raw': _bytes_feature(image_raw)
+        }))
+        writer.write(example.SerializeToString())
+    writer.close()

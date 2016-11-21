@@ -153,46 +153,6 @@ def inputs(input_type, batch_size):
         shuffle=False)
 
 
-# adapted from
-# https://github.com/tensorflow/tensorflow/blob/r0.11/tensorflow/examples/how_tos/reading_data/convert_to_records.py
-
-
-def convert_to(data_set, name):
-    """ Converts the dataset in a TFRecord file with name.tfrecords """
-
-    def _int64_feature(value):
-        return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
-    def _bytes_feature(value):
-        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-    images = data_set.images
-    labels = data_set.labels
-    num_examples = data_set.num_examples
-
-    if images.shape[0] != num_examples:
-        raise ValueError('Images size {} does not match label size {}.'.format(
-            images.shape[0], num_examples))
-    rows = images.shape[1]
-    cols = images.shape[2]
-    depth = images.shape[3]
-
-    filename = os.path.join(DATA_DIR, name + '.tfrecords')
-    print('Writing', filename)
-    writer = tf.python_io.TFRecordWriter(filename)
-    for index in range(num_examples):
-        image_raw = images[index].tostring()
-        example = tf.train.Example(features=tf.train.Features(feature={
-            'height': _int64_feature(rows),
-            'width': _int64_feature(cols),
-            'depth': _int64_feature(depth),
-            'label': _int64_feature(int(labels[index])),
-            'image_raw': _bytes_feature(image_raw)
-        }))
-        writer.write(example.SerializeToString())
-    writer.close()
-
-
 def maybe_download_and_extract():
     """Download and extract the MNIST dataset"""
     data_sets = mnist.read_data_sets(
@@ -203,10 +163,10 @@ def maybe_download_and_extract():
 
     # Convert to Examples and write the result to TFRecords.
     if not tf.gfile.Exists(os.path.join(DATA_DIR, 'train.tfrecords')):
-        convert_to(data_sets.train, 'train')
+        utils.convert_to_tfrecords(data_sets.train, 'train', DATA_DIR)
 
     if not tf.gfile.Exists(os.path.join(DATA_DIR, 'validation.tfrecords')):
-        convert_to(data_sets.validation, 'validation')
+        utils.convert_to_tfrecords(data_sets.validation, 'validation', DATA_DIR)
 
     if not tf.gfile.Exists(os.path.join(DATA_DIR, 'test.tfrecords')):
-        convert_to(data_sets.test, 'test')
+        utils.convert_to_tfrecords(data_sets.test, 'test', DATA_DIR)
