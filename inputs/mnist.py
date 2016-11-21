@@ -1,17 +1,10 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+#Copyright (C) 2016 Paolo Galeone <nessuno@nerdz.eu>
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
+#This Source Code Form is subject to the terms of the Mozilla Public
+#License, v. 2.0. If a copy of the MPL was not distributed with this
+#file, you can obtain one at http://mozilla.org/MPL/2.0/.
+#Exhibit B is not attached; this software is compatible with the
+#licenses expressed under Section 1.12 of the MPL v2.
 """Routine for decoding the MNIST binary file format."""
 
 import os
@@ -20,10 +13,12 @@ import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets import mnist
 from . import utils
 
-IMAGE_SIZE = 28
-mnist.IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
+IMAGE_WIDTH = 28
+IMAGE_HEIGHT = 28
+IMAGE_DEPTH = 1
+mnist.IMAGE_PIXELS = IMAGE_WIDTH * IMAGE_DEPTH
 
-# Global constants describing the CIFAR-10 data set.
+# Global constants describing the MNIST data set.
 NUM_CLASSES = 10
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 55000
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 5000
@@ -69,7 +64,7 @@ def read(filename_queue):
     image.set_shape([mnist.IMAGE_PIXELS])
 
     #`Reshape to a valid image
-    image = tf.reshape(image, (IMAGE_SIZE, IMAGE_SIZE, 1))
+    image = tf.reshape(image, (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_DEPTH))
 
     # Convert from [0, 255] -> [-0.5, 0.5] floats.
     result["image"] = tf.cast(image, tf.float32) * (1. / 255) - 0.5
@@ -80,13 +75,13 @@ def read(filename_queue):
 
 
 def distorted_inputs(batch_size):
-    """Construct distorted input for CIFAR training using the Reader ops.
+    """Construct distorted input for MNIST training using the Reader ops.
 
     Args:
         batch_size: Number of images per batch.
 
     Returns:
-      images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 1] size.
+      images: Images. 4D tensor of [batch_size, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_DEPTH] size.
         labels: Labels. 1D tensor of [batch_size] size.
     """
 
@@ -114,14 +109,14 @@ def distorted_inputs(batch_size):
 
 
 def inputs(input_type, batch_size):
-    """Construct input for CIFAR evaluation using the Reader ops.
+    """Construct input for MNIST evaluation using the Reader ops.
 
     Args:
         input_type: Type enum.
         batch_size: Number of images per batch.
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_DEPTH] size.
         labels: Labels. 1D tensor of [batch_size] size.
     """
 
