@@ -64,6 +64,9 @@ target/
 inputs/MNIST_data/
 inputs/cifar10_data/
 inputs/cifar100_data/
+inputs/ORL_faces_data/
+
+# Logs
 log/
 results.txt
 validation_results.txt
