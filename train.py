@@ -1,13 +1,12 @@
 #Copyright (C) 2016 Paolo Galeone <nessuno@nerdz.eu>
-# Based on Tensorflow cifar10_train.py file
-# https://github.com/tensorflow/tensorflow/blob/r0.11/tensorflow/models/image/cifar10/cifar10_train.py
 #
 #This Source Code Form is subject to the terms of the Mozilla Public
 #License, v. 2.0. If a copy of the MPL was not distributed with this
 #file, you can obtain one at http://mozilla.org/MPL/2.0/.
 #Exhibit B is not attached; this software is compatible with the
 #licenses expressed under Section 1.12 of the MPL v2.
-""" Train model with a single GPU. Evaluate it on the second one"""
+""" Dynamically define the train bench via CLI. Specify the dataset to use, the model to train
+and any other hyper-parameter"""
 
 import argparse
 import json
@@ -25,7 +24,6 @@ import tensorflow as tf
 import evaluate
 from models import utils
 from inputs.utils import Type
-from decay import supervised_parameter_decay
 
 
 def train():
@@ -36,7 +34,7 @@ def train():
 
     best_validation_accuracy = 0.0
 
-    with tf.Graph().as_default(), tf.device(DEVICE):
+    with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
         global_step = tf.Variable(0, trainable=False)
 
         # Get images and labels for CIFAR-10.
@@ -139,7 +137,11 @@ def train():
 
                     # validation accuracy
                     validation_accuracy_value = evaluate.get_accuracy(
-                        LOG_DIR, MODEL, DATASET, Type.validation)
+                        LOG_DIR,
+                        MODEL,
+                        DATASET,
+                        Type.validation,
+                        device=EVAL_DEVICE)
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: validation_accuracy_value})
@@ -178,8 +180,6 @@ def method_name():
     name = '{}_{}_lr={:.6f}_'.format(ARGS.dataset, OPTIMIZER._name, INITIAL_LR)
     if LR_DECAY:
         name += 'exp_lr_'
-    if KP_DECAY:
-        name += 'kp_decay_'
     if L2_PENALTY != 0.0:
         name += 'l2={:.6f}_'.format(L2_PENALTY)
     if ARGS.comment != '':
@@ -216,13 +216,6 @@ if __name__ == '__main__':
     PARSER.add_argument("--lr_decay_epochs", type=int, default=25)
     PARSER.add_argument("--lr_decay_factor", type=float, default=0.1)
 
-    # Keep prob decay arguments
-    PARSER.add_argument("--kp_decay", action="store_true")
-    PARSER.add_argument("--initial_kp", type=float, default=1.0)
-    PARSER.add_argument("--final_kp", type=float, default=0.5)
-    PARSER.add_argument("--num_observations", type=int, default=25)
-    PARSER.add_argument("--kp_decay_amount", type=float, default=0.5)
-
     # L2 regularization arguments
     PARSER.add_argument("--l2_penalty", type=float, default=0.0)
 
@@ -241,7 +234,8 @@ if __name__ == '__main__':
     PARSER.add_argument("--epochs", type=int, default=150)
 
     # Hardware
-    PARSER.add_argument("--device", default="/gpu:0")
+    PARSER.add_argument("--train_device", default="/gpu:0")
+    PARSER.add_argument("--eval_device", default="/gpu:0")
 
     # Optional comment
     PARSER.add_argument("--comment", default='')
@@ -275,15 +269,6 @@ if __name__ == '__main__':
         LR_DECAY_FACTOR = ARGS.lr_decay_factor
         STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
 
-    # Keep prob decay constants
-    KP_DECAY = False
-    if ARGS.kp_decay:
-        KP_DECAY = True
-        INITIAL_KP = ARGS.initial_kp
-        FINAL_KP = ARGS.final_kp
-        NUM_OBSERVATIONS = ARGS.num_observations
-        KP_DECAY_AMOUNT = ARGS.kp_decay_amount
-
     # Model logs and checkpoint constants
     NAME = method_name()
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -291,7 +276,8 @@ if __name__ == '__main__':
     BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
 
     # Device where to place the model
-    DEVICE = ARGS.device
+    TRAIN_DEVICE = ARGS.train_device
+    EVAL_DEVICE = ARGS.eval_device
 
     # Dataset creation if needed
     DATASET.maybe_download_and_extract()
@@ -308,8 +294,10 @@ if __name__ == '__main__':
         res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_VA))
 
     with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
-        res.write("{}: {} {}\n".format(ARGS.model, NAME,
-                                       evaluate.get_accuracy(
-                                           LOG_DIR, MODEL, DATASET, Type.test)))
+        res.write("{}: {} {}\n".format(
+            ARGS.model,
+            NAME,
+            evaluate.get_accuracy(
+                LOG_DIR, MODEL, DATASET, Type.test, device=EVAL_DEVICE)))
 
     sys.exit()
