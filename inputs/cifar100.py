@@ -1,18 +1,15 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+#Copyright (C) 2016 Paolo Galeone <nessuno@nerdz.eu>
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Conversion of cifar10_input:
+# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/models/image/cifar10/cifar10_input.py
+# For the cifar100 dataset.
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Routine for decoding the CIFAR-10 binary file format."""
+#This Source Code Form is subject to the terms of the Mozilla Public
+#License, v. 2.0. If a copy of the MPL was not distributed with this
+#file, you can obtain one at http://mozilla.org/MPL/2.0/.
+#Exhibit B is not attached; this software is compatible with the
+#licenses expressed under Section 1.12 of the MPL v2.
+"""Routine for decoding the CIFAR-100 binary file format."""
 
 import os
 import sys
@@ -22,7 +19,9 @@ from six.moves import urllib
 import tensorflow as tf
 from . import utils
 
-IMAGE_SIZE = 32
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 32
+IMAGE_DEPTH = 3
 
 # Global constants describing the CIFAR-100 data set.
 NUM_CLASSES = 100
@@ -110,7 +109,7 @@ def distorted_inputs(batch_size):
     batch_size: Number of images per batch.
 
   Returns:
-    images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
+    images: Images. 4D tensor of [batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_DEPTH] size.
     labels: Labels. 1D tensor of [batch_size] size.
   """
     filename = os.path.join(DATA_DIR, 'cifar-100-binary/train.bin')
@@ -150,7 +149,7 @@ def inputs(input_type, batch_size):
         batch_size: Number of images per batch.
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_HEIGHT, IMAGE_WIDHT, IMAGE_DEPTH] size.
         labels: Labels. 1D tensor of [batch_size] size.
     """
 
