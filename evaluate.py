@@ -19,7 +19,7 @@ import tensorflow as tf
 from inputs.utils import Type
 
 
-def get_accuracy(checkpoint_dir, model, dataset, input_type):
+def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
     """
     Read latest saved checkpoint and use it to evaluate the model
     Args:
@@ -27,11 +27,12 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type):
         model: python package containing the model to save
         dataset: python package containing the dataset to use
         input_type: Type enum, the input type of the input examples
+        deviece: device where to place the model and run the evaluation
     """
     if not isinstance(input_type, Type):
         raise ValueError("Invalid input_type, required a valid type")
 
-    with tf.Graph().as_default(), tf.device('/gpu:1'):
+    with tf.Graph().as_default(), tf.device(device):
         # Get images and labels from the dataset
         # Use batch_size multiple of train set size and big enough to stay in GPU
         batch_size = 200
@@ -96,6 +97,7 @@ if __name__ == '__main__':
     PARSER.add_argument("--dataset", required=True)
     PARSER.add_argument("--checkpoint_dir", required=True)
     PARSER.add_argument("--test", action="store_true")
+    PARSER.add_argument("--device", default="/gpu:0")
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset, ovverides default
@@ -105,5 +107,11 @@ if __name__ == '__main__':
     DATASET.maybe_download_and_extract()
     accuracy_type = Type.test if ARGS.test else Type.validation
     print('{}: {} accuracy = {:.3f}'.format(
-        datetime.now(), 'test' if ARGS.test else 'validation',
-        get_accuracy(ARGS.checkpoint_dir, MODEL, DATASET, accuracy_type)))
+        datetime.now(),
+        'test' if ARGS.test else 'validation',
+        get_accuracy(
+            ARGS.checkpoint_dir,
+            MODEL,
+            DATASET,
+            accuracy_type,
+            device=ARGS.device)))
