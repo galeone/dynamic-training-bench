@@ -91,7 +91,8 @@ def distorted_inputs(batch_size):
     """
 
     # Create a queue that produces the filenames to read.
-    filename = os.path.join(DATA_DIR, 'train.tfrecords')
+    filename = os.path.join(DATA_DIR, 'faces.tfrecords')
+    print(filename)
     filename_queue = tf.train.string_input_producer([filename])
 
     # Read examples from files in the filename queue.
