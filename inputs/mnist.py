@@ -16,7 +16,7 @@ from . import utils
 IMAGE_WIDTH = 28
 IMAGE_HEIGHT = 28
 IMAGE_DEPTH = 1
-mnist.IMAGE_PIXELS = IMAGE_WIDTH * IMAGE_DEPTH
+mnist.IMAGE_PIXELS = IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_DEPTH
 
 # Global constants describing the MNIST data set.
 NUM_CLASSES = 10
