@@ -10,7 +10,6 @@ and any other hyper-parameter"""
 
 import argparse
 import json
-import glob
 import importlib
 import pprint
 import sys
@@ -22,8 +21,9 @@ import math
 import numpy as np
 import tensorflow as tf
 import evaluate
-from models import utils
+from models.utils import log, variables_to_save
 from inputs.utils import Type
+import utils
 
 
 def train():
@@ -62,14 +62,14 @@ def train():
         else:
             learning_rate = tf.constant(INITIAL_LR)
 
-        utils.log(tf.scalar_summary('learning_rate', learning_rate))
+        log(tf.scalar_summary('learning_rate', learning_rate))
         train_op = OPTIMIZER.minimize(loss, global_step=global_step)
 
         # Create the train saver.
-        variables_to_save = utils.variables_to_save([global_step])
-        train_saver = tf.train.Saver(variables_to_save, max_to_keep=2)
+        variables = variables_to_save([global_step])
+        train_saver = tf.train.Saver(variables, max_to_keep=2)
         # Create the best model saver.
-        best_saver = tf.train.Saver(variables_to_save, max_to_keep=1)
+        best_saver = tf.train.Saver(variables, max_to_keep=1)
 
         # Train accuracy ops
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -175,41 +175,14 @@ def train():
     return best_validation_accuracy
 
 
-def method_name():
-    """Build method name parsing args"""
-    name = '{}_{}_lr={:.6f}_'.format(ARGS.dataset, OPTIMIZER._name, INITIAL_LR)
-    if LR_DECAY:
-        name += 'exp_lr_'
-    if L2_PENALTY != 0.0:
-        name += 'l2={:.6f}_'.format(L2_PENALTY)
-    if ARGS.comment != '':
-        name += '{}_'.format(ARGS.comment)
-
-    return name.rstrip('_')
-
-
 if __name__ == '__main__':
-    MODELS = [
-        model[len('models/'):-3] for model in glob.glob('models/*.py')
-        if "__init__.py" not in model and "utils" not in model
-    ]
-
-    DATASETS = [
-        dataset[len('inputs/'):-3] for dataset in glob.glob('inputs/*.py')
-        if "__init__.py" not in dataset
-    ]
-
-    OPTIMIZERS = [
-        optimizer for optimizer in dir(tf.train)
-        if optimizer.endswith("Optimizer")
-    ]
-
     # CLI arguments
     PARSER = argparse.ArgumentParser(description="Train the model")
 
     # Required arguments
-    PARSER.add_argument("--model", required=True, choices=MODELS)
-    PARSER.add_argument("--dataset", required=True, choices=DATASETS)
+    PARSER.add_argument("--model", required=True, choices=utils.get_models())
+    PARSER.add_argument(
+        "--dataset", required=True, choices=utils.get_datasets())
 
     # Learning rate decay arguments
     PARSER.add_argument("--lr_decay", action="store_true")
@@ -221,7 +194,9 @@ if __name__ == '__main__':
 
     # Optimization arguments
     PARSER.add_argument(
-        "--optimizer", choices=OPTIMIZERS, default="MomentumOptimizer")
+        "--optimizer",
+        choices=utils.get_optimizers(),
+        default="MomentumOptimizer")
     PARSER.add_argument(
         "--optimizer_args",
         type=json.loads,
@@ -270,7 +245,7 @@ if __name__ == '__main__':
         STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
 
     # Model logs and checkpoint constants
-    NAME = method_name()
+    NAME = utils.build_name(ARGS)
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     LOG_DIR = os.path.join(CURRENT_DIR, 'log', ARGS.model, NAME)
     BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
