@@ -5,7 +5,7 @@
 #file, you can obtain one at http://mozilla.org/MPL/2.0/.
 #Exhibit B is not attached; this software is compatible with the
 #licenses expressed under Section 1.12 of the MPL v2.
-"""Builds the VGG-like network with binomial dropout layers
+"""Builds the VGG-like network with direct binomial dropout layers
 applyed after avery layer of neurons"""
 
 import tensorflow as tf
