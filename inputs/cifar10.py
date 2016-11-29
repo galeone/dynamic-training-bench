@@ -95,7 +95,7 @@ def read(filename_queue):
     #image = utils.rgb2yuv(image)
 
     # Subtract off the mean and divide by the variance of the pixels.
-    result["image"] = tf.image.per_image_whitening(image)
+    result["image"] = tf.image.per_image_standardization(image)
     return result
 
 
