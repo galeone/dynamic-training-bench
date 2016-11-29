@@ -47,8 +47,7 @@ def yuv2rgb(yuv):
     Convert YUV image into RGB https://en.wikipedia.org/wiki/YUV
     """
     yuv = tf.mul(yuv, 255)
-    yuv2rgb_filter = tf.constant([[[[1., 1., 1.],
-                                    [0., -0.34413999, 1.77199996],
+    yuv2rgb_filter = tf.constant([[[[1., 1., 1.], [0., -0.34413999, 1.77199996],
                                     [1.40199995, -0.71414, 0.]]]])
     yuv2rgb_bias = tf.constant([-179.45599365, 135.45983887, -226.81599426])
 
@@ -98,7 +97,7 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
             capacity=min_queue_examples + 3 * batch_size)
 
     # Display the training images in the visualizer.
-    tf.image_summary('images', images)
+    tf.summary.image('images', images)
 
     return images, tf.reshape(label_batch, [batch_size])
 

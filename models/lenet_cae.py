@@ -81,7 +81,7 @@ def loss(predictions, real_values):
     # The total loss is defined as the cross entropy loss plus all of the weight
     # decay terms (L2 loss).
     error = tf.add_n(tf.get_collection('losses'), name='total_loss')
-    utils.log(tf.scalar_summary('loss', error))
+    utils.log(tf.summary.scalar('loss', error))
     return error
 
 

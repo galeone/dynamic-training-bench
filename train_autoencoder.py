@@ -40,10 +40,10 @@ def train():
 
         # display original images next to reconstructed images
         log(
-            tf.image_summary(
+            tf.summary.image(
                 'input_output',
                 tf.concat(2, [images, reconstructions]),
-                max_images=10))
+                max_outputs=10))
 
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)
@@ -59,7 +59,7 @@ def train():
         else:
             learning_rate = tf.constant(INITIAL_LR)
 
-        log(tf.scalar_summary('learning_rate', learning_rate))
+        log(tf.summary.scalar('learning_rate', learning_rate))
         train_op = OPTIMIZER.minimize(loss, global_step=global_step)
 
         # Create the train saver.
@@ -68,11 +68,11 @@ def train():
 
         # read collection after that every op added its own
         # summaries in the train_summaries collection
-        train_summaries = tf.merge_summary(
+        train_summaries = tf.summary.merge(
             tf.get_collection_ref('train_summaries'))
 
         # Build an initialization operation to run below.
-        init = tf.initialize_all_variables()
+        init = tf.global_variables_initializer()
 
         # Start running operations on the Graph.
         with tf.Session(config=tf.ConfigProto(
@@ -83,7 +83,7 @@ def train():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-            train_log = tf.train.SummaryWriter(LOG_DIR + "/train", sess.graph)
+            train_log = tf.summary.FileWriter(LOG_DIR + "/train", sess.graph)
 
             # Extract previous global step value
             old_gs = sess.run(global_step)
