@@ -167,7 +167,7 @@ class Cifar10(Input):
                 read_input["label"],
                 min_queue_examples,
                 batch_size,
-                shuffle=False)
+                shuffle=True)
 
     def inputs(self, input_type, batch_size):
         """Construct input for CIFAR evaluation using the Reader ops.
