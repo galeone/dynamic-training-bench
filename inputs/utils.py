@@ -13,11 +13,15 @@ import tensorflow as tf
 
 
 @unique
-class Type(Enum):
+class InputType(Enum):
     """ Enum to specify the data type requested """
-    validation = 1
-    train = 2
-    test = 3
+    validation = 'validation'
+    train = 'train'
+    test = 'test'
+
+    def __str__(self):
+        """Return the string representation of the enum"""
+        return self.value
 
 
 # Adapted from

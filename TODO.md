@@ -1,3 +1,0 @@
-# TODO
-
-- Change models names

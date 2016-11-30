@@ -16,7 +16,8 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from inputs.utils import Type
+from inputs.utils import InputType
+import utils
 
 
 def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
@@ -26,10 +27,10 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
         checkpoint_dir: checkpoint folder
         model: python package containing the model to save
         dataset: python package containing the dataset to use
-        input_type: Type enum, the input type of the input examples
+        input_type: InputType enum, the input type of the input examples
         deviece: device where to place the model and run the evaluation
     """
-    if not isinstance(input_type, Type):
+    if not isinstance(input_type, InputType):
         raise ValueError("Invalid input_type, required a valid type")
 
     with tf.Graph().as_default(), tf.device(device):
@@ -41,8 +42,7 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        _, logits = model.get_model(
-            images, dataset.NUM_CLASSES, train_phase=False)
+        _, logits = model.get(images, dataset.num_classes(), train_phase=False)
 
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -70,8 +70,9 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                             sess, coord=coord, daemon=True, start=True))
 
                 num_iter = int(
-                    math.ceil(dataset.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL /
-                              batch_size))
+                    math.ceil(
+                        dataset.num_examples(InputType.validation) /
+                        batch_size))
                 true_count = 0  # Counts the number of correct predictions.
                 total_sample_count = num_iter * batch_size
                 step = 0
@@ -93,19 +94,24 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
 if __name__ == '__main__':
     # CLI arguments
     PARSER = argparse.ArgumentParser(description="Evaluate the model")
-    PARSER.add_argument("--model", required=True)
-    PARSER.add_argument("--dataset", required=True)
+
+    # Required arguments
+    PARSER.add_argument("--model", required=True, choices=utils.get_models())
+    PARSER.add_argument(
+        "--dataset", required=True, choices=utils.get_datasets())
     PARSER.add_argument("--checkpoint_dir", required=True)
     PARSER.add_argument("--test", action="store_true")
     PARSER.add_argument("--device", default="/gpu:0")
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset, ovverides default
-    MODEL = importlib.import_module("models." + ARGS.model)
-    DATASET = importlib.import_module("inputs." + ARGS.dataset)
+    MODEL = getattr(
+        importlib.import_module("models." + ARGS.model), ARGS.model)()
+    DATASET = getattr(
+        importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
 
     DATASET.maybe_download_and_extract()
-    accuracy_type = Type.test if ARGS.test else Type.validation
+    accuracy_type = InputType.test if ARGS.test else InputType.validation
     print('{}: {} accuracy = {:.3f}'.format(
         datetime.now(),
         'test' if ARGS.test else 'validation',

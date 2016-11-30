@@ -21,8 +21,9 @@ import math
 import numpy as np
 import tensorflow as tf
 import evaluate
-from models.utils import log, variables_to_save
-from inputs.utils import Type
+from models.utils import variables_to_save
+from inputs.utils import InputType
+from loggers.logger import tf_log
 import utils
 
 
@@ -35,21 +36,22 @@ def train():
     best_validation_accuracy = 0.0
 
     with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
-        global_step = tf.Variable(0, trainable=False)
+        global_step = tf.Variable(0, trainable=False, name="global_step")
 
         # Get images and labels for CIFAR-10.
         images, labels = DATASET.distorted_inputs(BATCH_SIZE)
+        tf_log(tf.summary.image('inputs', images, max_outputs=10))
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        is_training_, logits = MODEL.get_model(
-            images,
-            DATASET.NUM_CLASSES,
-            train_phase=True,
-            l2_penalty=L2_PENALTY)
+        is_training_, logits = MODEL.get(images,
+                                         DATASET.num_classes(),
+                                         train_phase=True,
+                                         l2_penalty=L2_PENALTY)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
+        tf_log(tf.summary.scalar('loss', loss))
 
         if LR_DECAY:
             # Decay the learning rate exponentially based on the number of steps.
@@ -62,7 +64,7 @@ def train():
         else:
             learning_rate = tf.constant(INITIAL_LR)
 
-        log(tf.summary.scalar('learning_rate', learning_rate))
+        tf_log(tf.summary.scalar('learning_rate', learning_rate))
         train_op = OPTIMIZER.minimize(loss, global_step=global_step)
 
         # Create the train saver.
@@ -72,11 +74,12 @@ def train():
         best_saver = tf.train.Saver(variables, max_to_keep=1)
 
         # Train accuracy ops
-        top_k_op = tf.nn.in_top_k(logits, labels, 1)
-        train_accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
-        # General validation summary
-        accuracy_value_ = tf.placeholder(tf.float32, shape=())
-        accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
+        with tf.variable_scope('accuracy'):
+            top_k_op = tf.nn.in_top_k(logits, labels, 1)
+            train_accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
+            # General validation summary
+            accuracy_value_ = tf.placeholder(tf.float32, shape=())
+            accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
 
         # read collection after that every op added its own
         # summaries in the train_summaries collection
@@ -116,8 +119,7 @@ def train():
 
                 # update logs every 10 iterations
                 if step % 10 == 0:
-                    num_examples_per_step = BATCH_SIZE
-                    examples_per_sec = num_examples_per_step / duration
+                    examples_per_sec = BATCH_SIZE / duration
                     sec_per_batch = float(duration)
 
                     format_str = ('{}: step {}, loss = {:.2f} '
@@ -140,7 +142,7 @@ def train():
                         LOG_DIR,
                         MODEL,
                         DATASET,
-                        Type.validation,
+                        InputType.validation,
                         device=EVAL_DEVICE)
                     summary_line = sess.run(
                         accuracy_summary,
@@ -156,9 +158,10 @@ def train():
                     train_log.add_summary(summary_line, global_step=step)
 
                     print(
-                        '{}: train accuracy = {:.3f} validation accuracy = {:.3f}'.
-                        format(datetime.now(), train_accuracy_value,
-                               validation_accuracy_value))
+                        '{} ({}): train accuracy = {:.3f} validation accuracy = {:.3f}'.
+                        format(datetime.now(),
+                               int(step / STEPS_PER_EPOCH),
+                               train_accuracy_value, validation_accuracy_value))
                     # save best model
                     if validation_accuracy_value > best_validation_accuracy:
                         best_validation_accuracy = validation_accuracy_value
@@ -219,8 +222,10 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset
-    MODEL = importlib.import_module("models." + ARGS.model)
-    DATASET = importlib.import_module("inputs." + ARGS.dataset)
+    MODEL = getattr(
+        importlib.import_module("models." + ARGS.model), ARGS.model)()
+    DATASET = getattr(
+        importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
 
     # Training constants
     OPTIMIZER = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
@@ -229,8 +234,8 @@ if __name__ == '__main__':
 
     BATCH_SIZE = ARGS.batch_size
     MAX_EPOCH = ARGS.epochs
-    STEPS_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
-                                BATCH_SIZE)
+    STEPS_PER_EPOCH = math.ceil(
+        DATASET.num_examples(InputType.train) / BATCH_SIZE)
     MAX_STEPS = STEPS_PER_EPOCH * MAX_EPOCH
 
     # Regularization constaints
@@ -273,6 +278,6 @@ if __name__ == '__main__':
             ARGS.model,
             NAME,
             evaluate.get_accuracy(
-                LOG_DIR, MODEL, DATASET, Type.test, device=EVAL_DEVICE)))
+                LOG_DIR, MODEL, DATASET, InputType.test, device=EVAL_DEVICE)))
 
     sys.exit()

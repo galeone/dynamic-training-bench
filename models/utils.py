@@ -19,7 +19,7 @@ def weight(name,
            shape,
            initializer=tf.contrib.layers.variance_scaling_initializer(
                factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32)):
-    """ weight returns a tensor with the requested shape, initialized
+    """Returns a tensor with the requested shape, initialized
       using the provided intitializer (default: He init)."""
     return tf.get_variable(
         name, shape=shape, initializer=initializer, dtype=tf.float32)
@@ -86,11 +86,6 @@ def batch_norm(layer_output, is_training_):
         outputs_collections=None,
         trainable=True,
         scope=None)
-
-
-def log(summary):
-    """Add summary to train_summaries collection"""
-    tf.add_to_collection('train_summaries', summary)
 
 
 def variables_to_save(addlist):

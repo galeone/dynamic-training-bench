@@ -20,7 +20,9 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from models.utils import log, variables_to_save
+from models.utils import variables_to_save
+from loggers.logger import tf_log
+from inputs.utils import InputType
 import utils
 
 
@@ -28,18 +30,19 @@ def train():
     """Train model."""
 
     with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
-        global_step = tf.Variable(0, trainable=False)
+        global_step = tf.Variable(0, trainable=False, name="global_step")
 
         # Get images and labels for CIFAR-10.
         images, _ = DATASET.distorted_inputs(BATCH_SIZE)
 
         # Build a Graph that computes the reconstructions predictions from the
         # inference model.
-        is_training_, reconstructions = MODEL.get_model(
-            images, train_phase=True, l2_penalty=L2_PENALTY)
+        is_training_, reconstructions = MODEL.get(images,
+                                                  train_phase=True,
+                                                  l2_penalty=L2_PENALTY)
 
         # display original images next to reconstructed images
-        log(
+        tf_log(
             tf.summary.image(
                 'input_output',
                 tf.concat(2, [images, reconstructions]),
@@ -47,6 +50,7 @@ def train():
 
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)
+        tf_log(tf.summary.scalar('loss', loss))
 
         if LR_DECAY:
             # Decay the learning rate exponentially based on the number of steps.
@@ -59,7 +63,7 @@ def train():
         else:
             learning_rate = tf.constant(INITIAL_LR)
 
-        log(tf.summary.scalar('learning_rate', learning_rate))
+        tf_log(tf.summary.scalar('learning_rate', learning_rate))
         train_op = OPTIMIZER.minimize(loss, global_step=global_step)
 
         # Create the train saver.
@@ -174,9 +178,10 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset
-    MODEL = importlib.import_module("models." + ARGS.model)
-    DATASET = importlib.import_module("inputs." + ARGS.dataset)
-
+    MODEL = getattr(
+        importlib.import_module("models." + ARGS.model), ARGS.model)()
+    DATASET = getattr(
+        importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
     # Training constants
     OPTIMIZER = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
     # Learning rate must be always present in optimizer args
@@ -184,8 +189,8 @@ if __name__ == '__main__':
 
     BATCH_SIZE = ARGS.batch_size
     MAX_EPOCH = ARGS.epochs
-    STEPS_PER_EPOCH = math.ceil(DATASET.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
-                                BATCH_SIZE)
+    STEPS_PER_EPOCH = math.ceil(
+        DATASET.num_examples(InputType.train) / BATCH_SIZE)
     MAX_STEPS = STEPS_PER_EPOCH * MAX_EPOCH
 
     # Regularization constaints
