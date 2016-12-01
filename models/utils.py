@@ -196,7 +196,10 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
 
         #expected_kept_on = num_neurons * keep_prob
         #prob = dist.prob(expected_kept_on)
-        prob = dist.prob(active_neurons(binary_tensor, off_value=0))
+        prob = dist.prob(
+            tf.cast(
+                active_neurons(
+                    binary_tensor, off_value=0), tf.float32))
 
         def drop():
             """ Dropout and scale neurons """
