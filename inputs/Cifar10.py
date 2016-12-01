@@ -82,9 +82,9 @@ class Cifar10(Input):
         # See http://www.cs.toronto.edu/~kriz/cifar.html for a description of the
         # input format.
         result = {
-            "height": 32,
-            "width": 32,
-            "depth": 3,
+            "height": self._image_height,
+            "width": self._image_width,
+            "depth": self._image_depth,
             "label": None,
             "image": None
         }
@@ -121,6 +121,7 @@ class Cifar10(Input):
 
         # Subtract off the mean and divide by the variance of the pixels.
         result["image"] = tf.image.per_image_standardization(image)
+
         return result
 
     def distorted_inputs(self, batch_size):

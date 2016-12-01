@@ -84,9 +84,9 @@ class Cifar100(Input):
         # See http://www.cs.toronto.edu/~kriz/cifar.html for a description of the
         # input format.
         result = {
-            "height": 32,
-            "width": 32,
-            "depth": 3,
+            "height": self._image_height,
+            "width": self._image_width,
+            "depth": self._image_depth,
             "label": None,
             "image": None
         }
@@ -170,11 +170,11 @@ class Cifar100(Input):
         """Construct input for CIFAR evaluation using the Reader ops.
 
         Args:
-            input_type: InputType enum.
+            input_type: InputType enum
             batch_size: Number of images per batch.
 
         Returns:
-            images: Images. 4D tensor of [batch_size, self._image_height, IMAGE_WIDHT, self._image_depth] size.
+            images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
 

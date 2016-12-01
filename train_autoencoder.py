@@ -76,7 +76,9 @@ def train():
             tf.get_collection_ref('train_summaries'))
 
         # Build an initialization operation to run below.
-        init = tf.global_variables_initializer()
+        #init = tf.global_variables_initializer()
+        init = tf.variables_initializer(tf.global_variables() +
+                                        tf.local_variables())
 
         # Start running operations on the Graph.
         with tf.Session(config=tf.ConfigProto(

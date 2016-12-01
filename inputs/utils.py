@@ -100,9 +100,6 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
             num_threads=num_preprocess_threads,
             capacity=min_queue_examples + 3 * batch_size)
 
-    # Display the training images in the visualizer.
-    tf.summary.image('images', images)
-
     return images, tf.reshape(label_batch, [batch_size])
 
 
