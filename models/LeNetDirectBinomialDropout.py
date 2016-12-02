@@ -140,7 +140,7 @@ class LeNetDirectBinomialDropout(Classifier):
         """
         is_training_ = tf.placeholder(tf.bool, shape=(), name="is_training_")
         # build a graph that computes the logits predictions from the images
-        logits = self._inference(self, images, num_classes, is_training_,
-                                 train_phase, l2_penalty)
+        logits = self._inference(images, num_classes, is_training_, train_phase,
+                                 l2_penalty)
 
         return is_training_, logits
