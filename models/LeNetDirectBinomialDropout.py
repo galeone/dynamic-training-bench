@@ -12,7 +12,7 @@ from . import utils
 from .Classifier import Classifier
 
 
-class LetNetDirectBinomialDropout(Classifier):
+class LeNetDirectBinomialDropout(Classifier):
     """Build a LeNet-like network with direct binomial dropout layers"""
 
     def _inference(self,

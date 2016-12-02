@@ -13,7 +13,7 @@ from . import utils
 from .Classifier import Classifier
 
 
-class VGGDirectBinomialDropoput(Classifier):
+class VGGDirectBinomialDropout(Classifier):
     """Builds the VGG-like network with direct binomial dropout layers
     applyed after avery layer of neurons"""
 
