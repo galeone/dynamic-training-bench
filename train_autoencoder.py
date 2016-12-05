@@ -88,6 +88,14 @@ def train():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
+            if not RESTART:  # continue from the saved checkpoint
+                # restore previous session if exists
+                checkpoint = tf.train.latest_checkpoint(LOG_DIR)
+                if checkpoint:
+                    train_saver.restore(sess, checkpoint)
+                else:
+                    print("[I] Unable to restore from checkpoint")
+
             train_log = tf.summary.FileWriter(LOG_DIR + "/train", sess.graph)
 
             # Extract previous global step value
@@ -144,6 +152,9 @@ if __name__ == '__main__':
     PARSER.add_argument(
         "--dataset", required=True, choices=utils.get_datasets())
 
+    # Restart train or continue
+    PARSER.add_argument("--restart", action='store_true')
+
     # Learning rate decay arguments
     PARSER.add_argument("--lr_decay", action="store_true")
     PARSER.add_argument("--lr_decay_epochs", type=int, default=25)
@@ -183,7 +194,9 @@ if __name__ == '__main__':
         importlib.import_module("models." + ARGS.model), ARGS.model)()
     DATASET = getattr(
         importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
+
     # Training constants
+    RESTART = ARGS.restart
     OPTIMIZER = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
     # Learning rate must be always present in optimizer args
     INITIAL_LR = float(ARGS.optimizer_args["learning_rate"])
@@ -217,7 +230,7 @@ if __name__ == '__main__':
 
     # Dataset creation if needed
     DATASET.maybe_download_and_extract()
-    if tf.gfile.Exists(LOG_DIR):
+    if tf.gfile.Exists(LOG_DIR) and RESTART:
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
     if not tf.gfile.Exists(BEST_MODEL_DIR):
