@@ -14,6 +14,15 @@ import tensorflow as tf
 # but required variables for the current model
 REQUIRED_NON_TRAINABLES = 'required_vars_collection'
 
+# name of the collection that holds the summaries
+# related to the model (and the train phase)
+TRAIN_SUMMARIES_COLLECTION = 'train_summaries'
+
+
+def tf_log(summary, collection=TRAIN_SUMMARIES_COLLECTION):
+    """Add tf.summary object to collection named collection"""
+    tf.add_to_collection(collection, summary)
+
 
 def weight(name,
            shape,
@@ -21,8 +30,13 @@ def weight(name,
                factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32)):
     """Returns a tensor with the requested shape, initialized
       using the provided intitializer (default: He init)."""
-    return tf.get_variable(
+    weights = tf.get_variable(
         name, shape=shape, initializer=initializer, dtype=tf.float32)
+    # show weights of the first layer
+    if len(shape) == 4 and shape[3] in (1, 3, 4):
+        tf_log(tf.summary.image(name, weights, max_outputs=10))
+    tf_log(tf.summary.histogram(name, weights))
+    return weights
 
 
 def bias(name, shape, initializer=tf.constant_initializer(value=0.0)):
@@ -44,8 +58,14 @@ def conv_layer(input_x, shape, stride, padding, wd=0.0):
     # Add weight decay to W
     weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
-    return tf.nn.bias_add(
+
+    result = tf.nn.bias_add(
         tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding), b)
+
+    # log convolution result pre-activation function
+    if len(shape) == 4 and shape[3] in (1, 3, 4):
+        tf_log(tf.summary.image(result.name, result))
+    return result
 
 
 def fc_layer(input_x, shape, wd=0.0):

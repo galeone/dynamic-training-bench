@@ -20,8 +20,7 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from models.utils import variables_to_save
-from loggers.logger import tf_log
+from models.utils import variables_to_save, tf_log, TRAIN_SUMMARIES_COLLECTION
 from inputs.utils import InputType
 import utils
 
@@ -73,7 +72,7 @@ def train():
         # read collection after that every op added its own
         # summaries in the train_summaries collection
         train_summaries = tf.summary.merge(
-            tf.get_collection_ref('train_summaries'))
+            tf.get_collection_ref(TRAIN_SUMMARIES_COLLECTION))
 
         # Build an initialization operation to run below.
         #init = tf.global_variables_initializer()
