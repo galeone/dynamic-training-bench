@@ -72,7 +72,7 @@ class LeNetBN(Classifier):
                         train_phase))
 
             with tf.variable_scope("softmax_linear"):
-                logits = utils.fc_layer(fc1, [1024, num_classes], wd=0.0)
+                logits = utils.fc_layer(fc1, [1024, num_classes])
             return logits
 
     def loss(self, logits, labels):

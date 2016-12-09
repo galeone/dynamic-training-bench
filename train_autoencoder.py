@@ -21,6 +21,7 @@ import math
 import numpy as np
 import tensorflow as tf
 from models.utils import variables_to_save, tf_log, TRAIN_SUMMARIES_COLLECTION
+from models.utils import put_kernels_on_grid
 from inputs.utils import InputType
 import utils
 
@@ -41,11 +42,19 @@ def train():
                                                   l2_penalty=L2_PENALTY)
 
         # display original images next to reconstructed images
+        grid_side = math.floor(math.sqrt(BATCH_SIZE))
+        inputs = put_kernels_on_grid(
+            tf.transpose(
+                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            grid_side)
+
+        outputs = put_kernels_on_grid(
+            tf.transpose(
+                reconstructions, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            grid_side)
         tf_log(
             tf.summary.image(
-                'input_output',
-                tf.concat(2, [images, reconstructions]),
-                max_outputs=10))
+                'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
 
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)

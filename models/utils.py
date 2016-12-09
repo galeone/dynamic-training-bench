@@ -8,6 +8,7 @@
 """Utils for models creation"""
 
 import numbers
+import math
 import tensorflow as tf
 
 # name of the collection that holds non trainable
@@ -24,6 +25,59 @@ def tf_log(summary, collection=TRAIN_SUMMARIES_COLLECTION):
     tf.add_to_collection(collection, summary)
 
 
+# Adapeted from
+# https://gist.github.com/kukuruza/03731dc494603ceab0c5#gistcomment-1879326
+def put_kernels_on_grid(kernel, grid_side, pad=1):
+    """Visualize conv. features as an image (mostly for the 1st layer).
+    Place kernel into a grid, with some paddings between adjacent filters.
+
+    Args:
+        kernel:    tensor of shape [Y, X, NumChannels, NumKernels]
+        grid_side: side of the grid. Require: NumKernels == grid_side**2
+        pad:       number of black pixels around each filter (between them)
+
+    Return:
+        An image Tensor with shape [(Y+2*pad)*grid_side, (X+2*pad)*grid_side, NumChannels, 1].
+    """
+
+    x_min = tf.reduce_min(kernel)
+    x_max = tf.reduce_max(kernel)
+
+    kernel1 = (kernel - x_min) / (x_max - x_min)
+
+    # pad X and Y
+    x1 = tf.pad(kernel1,
+                tf.constant([[pad, pad], [pad, pad], [0, 0], [0, 0]]),
+                mode='CONSTANT')
+
+    # X and Y dimensions, w.r.t. padding
+    Y = kernel1.get_shape()[0] + 2 * pad
+    X = kernel1.get_shape()[1] + 2 * pad
+
+    channels = kernel1.get_shape()[2]
+
+    # put NumKernels to the 1st dimension
+    x2 = tf.transpose(x1, (3, 0, 1, 2))
+    # organize grid on Y axis
+    x3 = tf.reshape(x2, tf.pack([grid_side, Y * grid_side, X, channels]))  #3
+
+    # switch X and Y axes
+    x4 = tf.transpose(x3, (0, 2, 1, 3))
+    # organize grid on X axis
+    x5 = tf.reshape(x4,
+                    tf.pack([1, X * grid_side, Y * grid_side, channels]))  #3
+
+    # back to normal order (not combining with the next step for clarity)
+    x6 = tf.transpose(x5, (2, 1, 3, 0))
+
+    # to tf.image_summary order [batch_size, height, width, channels],
+    #   where in this case batch_size == 1
+    x7 = tf.transpose(x6, (3, 0, 1, 2))
+
+    # scale to [0, 255] and convert to uint8
+    return tf.image.convert_image_dtype(x7, dtype=tf.uint8)
+
+
 def weight(name,
            shape,
            initializer=tf.contrib.layers.variance_scaling_initializer(
@@ -32,9 +86,19 @@ def weight(name,
       using the provided intitializer (default: He init)."""
     weights = tf.get_variable(
         name, shape=shape, initializer=initializer, dtype=tf.float32)
+
     # show weights of the first layer
-    if len(shape) == 4 and shape[3] in (1, 3, 4):
-        tf_log(tf.summary.image(name, weights, max_outputs=10))
+    first_layer = len(shape) == 4 and shape[2] in (1, 3, 4)
+    if first_layer:
+        num_kernels = shape[3]
+        # check if is a perfect square
+        grid_side = math.floor(math.sqrt(num_kernels))
+        tf_log(
+            tf.summary.image(name,
+                             put_kernels_on_grid(weights[:, :, :, 0:grid_side**
+                                                         2], grid_side,
+                                                 grid_side)))
+
     tf_log(tf.summary.histogram(name, weights))
     return weights
 
@@ -44,13 +108,14 @@ def bias(name, shape, initializer=tf.constant_initializer(value=0.0)):
     return weight(name, shape, initializer)
 
 
-def conv_layer(input_x, shape, stride, padding, wd=0.0):
+def conv_layer(input_x, shape, stride, padding, activation=tf.identity, wd=0.0):
     """ Define a conv layer.
     Args:
          input_x: a 4D tensor
          shape: weight shape
          stride: a single value supposing equal stride along X and Y
          padding: 'VALID' or 'SAME'
+         activation: activation function. Default linear
          wd: weight decay
     Rerturns the conv2d op"""
     W = weight("W", shape)
@@ -62,17 +127,42 @@ def conv_layer(input_x, shape, stride, padding, wd=0.0):
     result = tf.nn.bias_add(
         tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding), b)
 
+    # apply nonlinearity
+    out = activation(result)
+
     # log convolution result pre-activation function
-    if len(shape) == 4 and shape[3] in (1, 3, 4):
-        tf_log(tf.summary.image(result.name, result))
-    return result
+    # on a single image, the first of the batch
+    conv_results = tf.split(2, shape[3], result[0])
+    grid_side = math.floor(math.sqrt(shape[3]))
+
+    pre_activation = put_kernels_on_grid(
+        tf.transpose(
+            conv_results, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+        grid_side,
+        grid_side)
+
+    # log post-activation
+    conv_results = tf.split(2, shape[3], out[0])
+    post_activation = put_kernels_on_grid(
+        tf.transpose(
+            conv_results, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+        grid_side,
+        grid_side)
+
+    tf_log(
+        tf.summary.image(
+            result.name + '/pre_post_activation',
+            tf.concat(2, [pre_activation, post_activation]),
+            max_outputs=1))
+    return out
 
 
-def fc_layer(input_x, shape, wd=0.0):
+def fc_layer(input_x, shape, activation=tf.identity, wd=0.0):
     """ Define a fully connected layer.
     Args:
         input_x: a 4d tensor
         shape: weight shape
+        activation: activation function. Default linear
         wd: weight decay
     Returns the fc layer"""
     W = weight("W", shape)
@@ -80,7 +170,7 @@ def fc_layer(input_x, shape, wd=0.0):
     # Add weight decay to W
     weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
-    return tf.nn.bias_add(tf.matmul(input_x, W), b)
+    return activation(tf.nn.bias_add(tf.matmul(input_x, W), b))
 
 
 def batch_norm(layer_output, is_training_):

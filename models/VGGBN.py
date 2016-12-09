@@ -211,7 +211,7 @@ class VGGBN(Classifier):
 
             with tf.variable_scope('softmax_linear'):
                 # no batch norm in the classification head
-                logits = utils.fc_layer(fc1, [512, num_classes], wd=0.0)
+                logits = utils.fc_layer(fc1, [512, num_classes])
         return logits
 
     def loss(self, logits, labels):

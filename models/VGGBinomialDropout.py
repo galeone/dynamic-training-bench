@@ -39,16 +39,22 @@ class VGGBinomialDropout(Classifier):
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope('64'):
                 with tf.variable_scope('conv1'):
-                    conv1 = tf.nn.relu(
-                        utils.conv_layer(
-                            images, [3, 3, 3, 64], 1, 'SAME', wd=l2_penalty))
+                    conv1 = utils.conv_layer(
+                        images, [3, 3, 3, 64],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
                     if train_phase:
                         conv1 = utils.binomial_dropout(conv1, 0.7)
 
                 with tf.variable_scope('conv2'):
-                    conv2 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv1, [3, 3, 64, 64], 1, 'SAME', wd=l2_penalty))
+                    conv2 = utils.conv_layer(
+                        conv1, [3, 3, 64, 64],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv2 = utils.binomial_dropout(conv2, 0.6)
@@ -62,17 +68,23 @@ class VGGBinomialDropout(Classifier):
 
             with tf.variable_scope('128'):
                 with tf.variable_scope('conv3'):
-                    conv3 = tf.nn.relu(
-                        utils.conv_layer(
-                            pool1, [3, 3, 64, 128], 1, 'SAME', wd=l2_penalty))
+                    conv3 = utils.conv_layer(
+                        pool1, [3, 3, 64, 128],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv3 = utils.binomial_dropout(conv3, 0.6)
 
                 with tf.variable_scope('conv4'):
-                    conv4 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv3, [3, 3, 128, 128], 1, 'SAME', wd=l2_penalty))
+                    conv4 = utils.conv_layer(
+                        conv3, [3, 3, 128, 128],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv4 = utils.binomial_dropout(conv4, 0.6)
@@ -86,25 +98,34 @@ class VGGBinomialDropout(Classifier):
 
             with tf.variable_scope('256'):
                 with tf.variable_scope('conv5'):
-                    conv5 = tf.nn.relu(
-                        utils.conv_layer(
-                            pool2, [3, 3, 128, 256], 1, 'SAME', wd=l2_penalty))
+                    conv5 = utils.conv_layer(
+                        pool2, [3, 3, 128, 256],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv5 = utils.binomial_dropout(conv5, 0.6)
 
                 with tf.variable_scope('conv6'):
-                    conv6 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv5, [3, 3, 256, 256], 1, 'SAME', wd=l2_penalty))
+                    conv6 = utils.conv_layer(
+                        conv5, [3, 3, 256, 256],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv6 = utils.binomial_dropout(conv6, 0.6)
 
                 with tf.variable_scope('conv7'):
-                    conv7 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv6, [3, 3, 256, 256], 1, 'SAME', wd=l2_penalty))
+                    conv7 = utils.conv_layer(
+                        conv6, [3, 3, 256, 256],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv7 = utils.binomial_dropout(conv7, 0.6)
@@ -118,25 +139,34 @@ class VGGBinomialDropout(Classifier):
 
             with tf.variable_scope('512'):
                 with tf.variable_scope('conv8'):
-                    conv8 = tf.nn.relu(
-                        utils.conv_layer(
-                            pool3, [3, 3, 256, 512], 1, 'SAME', wd=l2_penalty))
+                    conv8 = utils.conv_layer(
+                        pool3, [3, 3, 256, 512],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv8 = utils.binomial_dropout(conv8, 0.6)
 
                 with tf.variable_scope('conv9'):
-                    conv9 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv8, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
+                    conv9 = utils.conv_layer(
+                        conv8, [3, 3, 512, 512],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv9 = utils.binomial_dropout(conv9, 0.6)
 
                 with tf.variable_scope('conv10'):
-                    conv10 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv9, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
+                    conv10 = utils.conv_layer(
+                        conv9, [3, 3, 512, 512],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv10 = utils.binomial_dropout(conv10, 0.6)
@@ -150,25 +180,34 @@ class VGGBinomialDropout(Classifier):
 
             with tf.variable_scope('512b2'):
                 with tf.variable_scope('conv11'):
-                    conv11 = tf.nn.relu(
-                        utils.conv_layer(
-                            pool4, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
+                    conv11 = utils.conv_layer(
+                        pool4, [3, 3, 512, 512],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv11 = utils.binomial_dropout(conv11, 0.6)
 
                 with tf.variable_scope('conv12'):
-                    conv12 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv11, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
+                    conv12 = utils.conv_layer(
+                        conv11, [3, 3, 512, 512],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv12 = utils.binomial_dropout(conv12, 0.6)
 
                 with tf.variable_scope('conv13'):
-                    conv13 = tf.nn.relu(
-                        utils.conv_layer(
-                            conv12, [3, 3, 512, 512], 1, 'SAME', wd=l2_penalty))
+                    conv13 = utils.conv_layer(
+                        conv12, [3, 3, 512, 512],
+                        1,
+                        'SAME',
+                        activation=tf.nn.relu,
+                        wd=l2_penalty)
 
                     if train_phase:
                         conv13 = utils.binomial_dropout(conv13, 0.6)
@@ -183,15 +222,14 @@ class VGGBinomialDropout(Classifier):
                 pool5 = tf.reshape(pool5, [-1, 512])
 
             with tf.variable_scope('fc'):
-                fc1 = tf.nn.relu(
-                    utils.fc_layer(
-                        pool5, [512, 512], wd=l2_penalty))
+                fc1 = utils.fc_layer(
+                    pool5, [512, 512], activation=tf.nn.relu, wd=l2_penalty)
 
                 if train_phase:
                     fc1 = utils.binomial_dropout(fc1, 0.5)
 
             with tf.variable_scope('softmax_linear'):
-                logits = utils.fc_layer(fc1, [512, num_classes], wd=0.0)
+                logits = utils.fc_layer(fc1, [512, num_classes])
         return logits
 
     def loss(self, logits, labels):

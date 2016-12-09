@@ -22,6 +22,7 @@ import numpy as np
 import tensorflow as tf
 import evaluate
 from models.utils import variables_to_save, tf_log, TRAIN_SUMMARIES_COLLECTION
+from models.utils import put_kernels_on_grid
 from inputs.utils import InputType
 import utils
 
@@ -39,7 +40,14 @@ def train():
 
         # Get images and labels for CIFAR-10.
         images, labels = DATASET.distorted_inputs(BATCH_SIZE)
-        tf_log(tf.summary.image('inputs', images, max_outputs=10))
+
+        grid_side = math.floor(math.sqrt(BATCH_SIZE))
+        inputs = put_kernels_on_grid(
+            tf.transpose(
+                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            grid_side)
+
+        tf_log(tf.summary.image('inputs', inputs, max_outputs=1))
 
         # Build a Graph that computes the logits predictions from the
         # inference model.

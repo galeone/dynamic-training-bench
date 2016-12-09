@@ -36,9 +36,12 @@ class LeNetBinomialDropout(Classifier):
 
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope("conv1"):
-                conv1 = tf.nn.relu(
-                    utils.conv_layer(
-                        images, [5, 5, 1, 32], 1, 'SAME', wd=l2_penalty))
+                conv1 = utils.conv_layer(
+                    images, [5, 5, 1, 32],
+                    1,
+                    'SAME',
+                    activation=tf.nn.relu,
+                    wd=l2_penalty)
                 if train_phase:
                     conv1 = tf.cond(
                         tf.equal(is_training_, True),
@@ -53,9 +56,12 @@ class LeNetBinomialDropout(Classifier):
                     padding='VALID')
 
             with tf.variable_scope("conv2"):
-                conv2 = tf.nn.relu(
-                    utils.conv_layer(
-                        pool1, [5, 5, 32, 64], 1, 'SAME', wd=l2_penalty))
+                conv2 = utils.conv_layer(
+                    pool1, [5, 5, 32, 64],
+                    1,
+                    'SAME',
+                    activation=tf.nn.relu,
+                    wd=l2_penalty)
                 if train_phase:
                     conv2 = tf.cond(
                         tf.equal(is_training_, True),
@@ -71,9 +77,10 @@ class LeNetBinomialDropout(Classifier):
                 pool2 = tf.reshape(pool2, [-1, 7 * 7 * 64])
 
             with tf.variable_scope("fc1"):
-                fc1 = tf.nn.relu(
-                    utils.fc_layer(
-                        pool2, [7 * 7 * 64, 1024], wd=l2_penalty))
+                fc1 = utils.fc_layer(
+                    pool2, [7 * 7 * 64, 1024],
+                    activation=tf.nn.relu,
+                    wd=l2_penalty)
 
                 if train_phase:
                     fc1 = tf.cond(
@@ -81,7 +88,7 @@ class LeNetBinomialDropout(Classifier):
                         lambda: utils.binomial_dropout(fc1, 0.5), lambda: fc1)
 
             with tf.variable_scope("softmax_linear"):
-                logits = utils.fc_layer(fc1, [1024, num_classes], wd=0.0)
+                logits = utils.fc_layer(fc1, [1024, num_classes])
             return logits
 
     def loss(self, logits, labels):
