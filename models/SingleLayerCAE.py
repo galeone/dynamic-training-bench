@@ -68,14 +68,9 @@ class SingleLayerCAE(Autoencoder):
                 # differently from the encoding, are constrained by the
                 # choices made in the encoding layer
                 # The only degree of freedom is the chose of the activation function
-                output_x = utils.conv_layer(
-                    encoding, [
-                        filter_side, filter_side, 32, input_x.get_shape()[3]
-                        .value
-                    ],
-                    1,
-                    'VALID',
-                    wd=0.0)
+                output_x = utils.conv_layer(encoding, [
+                    filter_side, filter_side, 32, input_x.get_shape()[3].value
+                ], 1, 'VALID')
 
         # The is_training_ placeholder is not used, but we define and return it
         # in order to respect the expected output cardinality of the get method
