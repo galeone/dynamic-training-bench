@@ -48,26 +48,27 @@ def train():
                                                   l2_penalty=L2_PENALTY)
 
         # display original images next to reconstructed images
-        grid_side = math.floor(math.sqrt(BATCH_SIZE))
-        inputs = put_kernels_on_grid(
-            tf.transpose(
-                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
-            grid_side)
+        with tf.variable_scope("visualization"):
+            grid_side = math.floor(math.sqrt(BATCH_SIZE))
+            inputs = put_kernels_on_grid(
+                tf.transpose(
+                    images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+                grid_side)
 
-        outputs = put_kernels_on_grid(
-            tf.transpose(
-                reconstructions, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
-            grid_side)
+            outputs = put_kernels_on_grid(
+                tf.transpose(
+                    reconstructions,
+                    perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+                grid_side)
         tf_log(
             tf.summary.image(
                 'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
 
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)
-        tf_log(tf.summary.scalar('loss', loss))
-        # Validation loss (reconstruction error)
-        validation_error_ = tf.placeholder(tf.float32, shape=())
-        validation_error = tf.summary.scalar('loss', validation_error_)
+        # reconstruction error
+        error_ = tf.placeholder(tf.float32, shape=())
+        error = tf.summary.scalar('error', error_)
 
         if LR_DECAY:
             # Decay the learning rate exponentially based on the number of steps.
@@ -116,9 +117,10 @@ def train():
                     print("[I] Unable to restore from checkpoint")
 
             train_log = tf.summary.FileWriter(
-                LOG_DIR + "/train", graph=sess.graph)
+                os.path.join(LOG_DIR, str(InputType.train)), graph=sess.graph)
             validation_log = tf.summary.FileWriter(
-                LOG_DIR + "/validation", graph=sess.graph)
+                os.path.join(LOG_DIR, str(InputType.validation)),
+                graph=sess.graph)
 
             # Extract previous global step value
             old_gs = sess.run(global_step)
@@ -126,9 +128,8 @@ def train():
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
-                _, loss_value, summary_lines = sess.run(
-                    [train_op, loss, train_summaries],
-                    feed_dict={is_training_: True})
+                _, loss_value = sess.run([train_op, loss],
+                                         feed_dict={is_training_: True})
                 duration = time.time() - start_time
 
                 if np.isnan(loss_value):
@@ -146,8 +147,14 @@ def train():
                     print(
                         format_str.format(datetime.now(), step, loss_value,
                                           examples_per_sec, sec_per_batch))
-                    # log train values
-                    train_log.add_summary(summary_lines, global_step=step)
+                    # log train error and summaries
+                    train_error_summary_line, train_summary_line = sess.run(
+                        [error, train_summaries],
+                        feed_dict={error_: loss_value,
+                                   is_training_: True})
+                    train_log.add_summary(
+                        train_error_summary_line, global_step=step)
+                    train_log.add_summary(train_summary_line, global_step=step)
 
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
@@ -165,9 +172,8 @@ def train():
                         device=EVAL_DEVICE)
 
                     summary_line = sess.run(
-                        validation_error,
-                        feed_dict={validation_error_: validation_error_value})
-                    validation_log.add_summary(summary_line)
+                        error, feed_dict={error_: validation_error_value})
+                    validation_log.add_summary(summary_line, global_step=step)
 
                     print('{} ({}): train error = {} validation error = {}'.
                           format(datetime.now(),
@@ -188,6 +194,7 @@ def train():
             coord.request_stop()
             # Wait for threads to finish.
             coord.join(threads)
+    return best_validation_error_value
 
 
 if __name__ == '__main__':

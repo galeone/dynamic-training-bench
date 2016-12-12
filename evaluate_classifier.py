@@ -46,18 +46,6 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
         # inference model.
         _, logits = model.get(images, dataset.num_classes(), train_phase=False)
 
-        grid_side = math.floor(math.sqrt(batch_size))
-        inputs = put_kernels_on_grid(
-            tf.transpose(
-                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
-            grid_side)
-
-        tf_log(tf.summary.image('inputs', inputs, max_outputs=1))
-
-        # merge every summarye added to model_summaries collection
-        # model.get has added it's own summaries
-        summaries = tf.summary.merge(tf.get_collection_ref(MODEL_SUMMARIES))
-
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
@@ -72,10 +60,6 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
             else:
                 print('[!] No checkpoint file found')
                 return
-
-            # create a writer
-            writer = tf.train.SummaryWriter(
-                os.path.join(checkpoint_dir, str(input_type)), graph=sess.graph)
 
             # Start the queue runners.
             coord = tf.train.Coordinator()
@@ -93,8 +77,7 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                 total_sample_count = num_iter * batch_size
                 step = 0
                 while step < num_iter and not coord.should_stop():
-                    predictions, summary_line = sess.run([top_k_op, summaries])
-                    writer.add_summary(summary_line)
+                    predictions = sess.run(top_k_op)
                     true_count += np.sum(predictions)
                     step += 1
 
@@ -104,7 +87,6 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
             finally:
                 coord.request_stop()
 
-            writer.close()
             coord.join(threads)
         return accuracy_value
 

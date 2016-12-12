@@ -46,28 +46,8 @@ def error(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                                        train_phase=False,
                                        l2_penalty=0.0)
 
-        # display original images next to reconstructed images
-        grid_side = math.floor(math.sqrt(batch_size))
-        inputs = put_kernels_on_grid(
-            tf.transpose(
-                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
-            grid_side)
-
-        outputs = put_kernels_on_grid(
-            tf.transpose(
-                reconstructions, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
-            grid_side)
-        tf_log(
-            tf.summary.image(
-                'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
-
         # Calculate loss.
         loss = model.loss(reconstructions, images)
-        tf_log(tf.summary.scalar('loss', loss))
-
-        # merge every summarye added to model_summaries collection
-        # model.get has added it's own summaries
-        summaries = tf.summary.merge(tf.get_collection_ref(MODEL_SUMMARIES))
 
         saver = tf.train.Saver()
         with tf.Session(config=tf.ConfigProto(
@@ -79,10 +59,6 @@ def error(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
             else:
                 print('[!] No checkpoint file found')
                 return
-
-            # create a writer
-            writer = tf.train.SummaryWriter(
-                os.path.join(checkpoint_dir, str(input_type)), graph=sess.graph)
 
             # Start the queue runners.
             coord = tf.train.Coordinator()
@@ -99,17 +75,15 @@ def error(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                 step = 0
                 average_error = 0.0
                 while step < num_iter and not coord.should_stop():
-                    error_value, summary_line = sess.run([loss, summaries])
-                    writer.add_summary(summary_line)
+                    error_value = sess.run(loss)
                     step += 1
                     average_error += error_value
-                average_error /= num_iter
+                average_error /= step
             except Exception as exc:
                 coord.request_stop(exc)
             finally:
                 coord.request_stop()
 
-            writer.close()
             coord.join(threads)
         return average_error
 

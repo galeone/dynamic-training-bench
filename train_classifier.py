@@ -41,11 +41,12 @@ def train():
         # Get images and labels for CIFAR-10.
         images, labels = DATASET.distorted_inputs(BATCH_SIZE)
 
-        grid_side = math.floor(math.sqrt(BATCH_SIZE))
-        inputs = put_kernels_on_grid(
-            tf.transpose(
-                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
-            grid_side)
+        with tf.variable_scope("visualization"):
+            grid_side = math.floor(math.sqrt(BATCH_SIZE))
+            inputs = put_kernels_on_grid(
+                tf.transpose(
+                    images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+                grid_side)
 
         tf_log(tf.summary.image('inputs', inputs, max_outputs=1))
 
@@ -125,9 +126,8 @@ def train():
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
-                _, loss_value, summary_lines = sess.run(
-                    [train_op, loss, train_summaries],
-                    feed_dict={is_training_: True})
+                _, loss_value = sess.run([train_op, loss],
+                                         feed_dict={is_training_: True})
                 duration = time.time() - start_time
 
                 if np.isnan(loss_value):
@@ -145,6 +145,8 @@ def train():
                         format_str.format(datetime.now(), step, loss_value,
                                           examples_per_sec, sec_per_batch))
                     # log train values
+                    summary_lines = sess.run([train_summaries],
+                                             feed_dict={is_training_: True})
                     train_log.add_summary(summary_lines, global_step=step)
 
                 # Save the model checkpoint at the end of every epoch
