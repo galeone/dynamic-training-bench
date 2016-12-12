@@ -9,18 +9,19 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Evaluate the model """
 
+import os
 import argparse
 import importlib
 from datetime import datetime
 import math
 
-import numpy as np
 import tensorflow as tf
 from inputs.utils import InputType
+from models.utils import MODEL_SUMMARIES, tf_log, put_kernels_on_grid
 import utils
 
 
-def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
+def error(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
     """
     Read latest saved checkpoint and use it to evaluate the model
     Args:
@@ -28,7 +29,7 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
         model: python package containing the model to save
         dataset: python package containing the dataset to use
         input_type: InputType enum, the input type of the input examples
-        deviece: device where to place the model and run the evaluation
+        device: device where to place the model and run the evaluation
     """
     if not isinstance(input_type, InputType):
         raise ValueError("Invalid input_type, required a valid type")
@@ -37,18 +38,38 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
         # Get images and labels from the dataset
         # Use batch_size multiple of train set size and big enough to stay in GPU
         batch_size = 200
-        images, labels = dataset.inputs(
-            input_type=input_type, batch_size=batch_size)
+        images, _ = dataset.inputs(input_type=input_type, batch_size=batch_size)
 
-        # Build a Graph that computes the logits predictions from the
+        # Build a Graph that computes the reconstructions predictions from the
         # inference model.
-        _, logits = model.get(images, dataset.num_classes(), train_phase=False)
+        _, reconstructions = model.get(images,
+                                       train_phase=False,
+                                       l2_penalty=0.0)
 
-        # Calculate predictions.
-        top_k_op = tf.nn.in_top_k(logits, labels, 1)
+        # display original images next to reconstructed images
+        grid_side = math.floor(math.sqrt(batch_size))
+        inputs = put_kernels_on_grid(
+            tf.transpose(
+                images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            grid_side)
+
+        outputs = put_kernels_on_grid(
+            tf.transpose(
+                reconstructions, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            grid_side)
+        tf_log(
+            tf.summary.image(
+                'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
+
+        # Calculate loss.
+        loss = model.loss(reconstructions, images)
+        tf_log(tf.summary.scalar('loss', loss))
+
+        # merge every summarye added to model_summaries collection
+        # model.get has added it's own summaries
+        summaries = tf.summary.merge(tf.get_collection_ref(MODEL_SUMMARIES))
 
         saver = tf.train.Saver()
-        accuracy = 0.0
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True)) as sess:
             ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
@@ -56,8 +77,12 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                 # Restores from checkpoint
                 saver.restore(sess, ckpt.model_checkpoint_path)
             else:
-                print('No checkpoint file found')
+                print('[!] No checkpoint file found')
                 return
+
+            # create a writer
+            writer = tf.train.SummaryWriter(
+                os.path.join(checkpoint_dir, str(input_type)), graph=sess.graph)
 
             # Start the queue runners.
             coord = tf.train.Coordinator()
@@ -70,25 +95,23 @@ def get_accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                             sess, coord=coord, daemon=True, start=True))
 
                 num_iter = int(
-                    math.ceil(
-                        dataset.num_examples(InputType.validation) /
-                        batch_size))
-                true_count = 0  # Counts the number of correct predictions.
-                total_sample_count = num_iter * batch_size
+                    math.ceil(dataset.num_examples(input_type) / batch_size))
                 step = 0
+                average_error = 0.0
                 while step < num_iter and not coord.should_stop():
-                    predictions = sess.run([top_k_op])
-                    true_count += np.sum(predictions)
+                    error_value, summary_line = sess.run([loss, summaries])
+                    writer.add_summary(summary_line)
                     step += 1
-
-                accuracy = true_count / total_sample_count
+                    average_error += error_value
+                average_error /= num_iter
             except Exception as exc:
                 coord.request_stop(exc)
             finally:
                 coord.request_stop()
 
+            writer.close()
             coord.join(threads)
-        return accuracy
+        return average_error
 
 
 if __name__ == '__main__':
@@ -111,13 +134,12 @@ if __name__ == '__main__':
         importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
 
     DATASET.maybe_download_and_extract()
-    accuracy_type = InputType.test if ARGS.test else InputType.validation
-    print('{}: {} accuracy = {:.3f}'.format(
+    print('{}: {} error = {:.3f}'.format(
         datetime.now(),
         'test' if ARGS.test else 'validation',
-        get_accuracy(
+        error(
             ARGS.checkpoint_dir,
             MODEL,
             DATASET,
-            accuracy_type,
+            InputType.test if ARGS.test else InputType.validation,
             device=ARGS.device)))
