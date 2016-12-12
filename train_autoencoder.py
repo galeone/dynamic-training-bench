@@ -33,7 +33,7 @@ def train():
     Returns:
         best validation error. Save best model"""
 
-    best_validation_error_value = 0.0
+    best_validation_error_value = float('inf')
 
     with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
         global_step = tf.Variable(0, trainable=False, name="global_step")
