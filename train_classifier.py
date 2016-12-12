@@ -20,8 +20,8 @@ import math
 
 import numpy as np
 import tensorflow as tf
-import evaluate
-from models.utils import variables_to_save, tf_log, TRAIN_SUMMARIES_COLLECTION
+import evaluate_classifier as evaluate
+from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from inputs.utils import InputType
 import utils
@@ -91,10 +91,9 @@ def train():
         # read collection after that every op added its own
         # summaries in the train_summaries collection
         train_summaries = tf.summary.merge(
-            tf.get_collection_ref(TRAIN_SUMMARIES_COLLECTION))
+            tf.get_collection_ref(MODEL_SUMMARIES))
 
         # Build an initialization operation to run below.
-        #init = tf.global_variables_initializer()
         init = tf.variables_initializer(tf.global_variables() +
                                         tf.local_variables())
 
@@ -115,9 +114,10 @@ def train():
                 else:
                     print("[I] Unable to restore from checkpoint")
 
-            train_log = tf.summary.FileWriter(LOG_DIR + "/train", sess.graph)
-            validation_log = tf.summary.FileWriter(LOG_DIR + "/validation",
-                                                   sess.graph)
+            train_log = tf.summary.FileWriter(
+                LOG_DIR + "/train", graph=sess.graph)
+            validation_log = tf.summary.FileWriter(
+                LOG_DIR + "/validation", graph=sess.graph)
 
             # Extract previous global step value
             old_gs = sess.run(global_step)
@@ -155,12 +155,13 @@ def train():
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
                     # validation accuracy
-                    validation_accuracy_value = evaluate.get_accuracy(
+                    validation_accuracy_value = evaluate.accuracy(
                         LOG_DIR,
                         MODEL,
                         DATASET,
                         InputType.validation,
                         device=EVAL_DEVICE)
+
                     summary_line = sess.run(
                         accuracy_summary,
                         feed_dict={accuracy_value_: validation_accuracy_value})
@@ -187,6 +188,9 @@ def train():
                             os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
                             global_step=step)
             # end of for
+
+            validation_log.close()
+            train_log.close()
 
             # When done, ask the threads to stop.
             coord.request_stop()
@@ -299,7 +303,7 @@ if __name__ == '__main__':
         res.write("{}: {} {}\n".format(
             ARGS.model,
             NAME,
-            evaluate.get_accuracy(
+            evaluate.accuracy(
                 LOG_DIR, MODEL, DATASET, InputType.test, device=EVAL_DEVICE)))
 
     sys.exit()

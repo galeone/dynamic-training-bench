@@ -17,10 +17,10 @@ REQUIRED_NON_TRAINABLES = 'required_vars_collection'
 
 # name of the collection that holds the summaries
 # related to the model (and the train phase)
-TRAIN_SUMMARIES_COLLECTION = 'train_summaries'
+MODEL_SUMMARIES = 'model_summaries'
 
 
-def tf_log(summary, collection=TRAIN_SUMMARIES_COLLECTION):
+def tf_log(summary, collection=MODEL_SUMMARIES):
     """Add tf.summary object to collection named collection"""
     tf.add_to_collection(collection, summary)
 

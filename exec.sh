@@ -73,7 +73,6 @@ python train_classifier.py --model LeNetDirectDropout --dataset MNIST --epochs 5
 python train_classifier.py --model LeNetDirectBinomialDropout --dataset MNIST --epochs 50 \
     --train_device "/gpu:1" \
     --batch_size 1024
-#!/usr/bin/env bash
 
 python train_autoencoder.py \
     --model SingleLayerCAE \

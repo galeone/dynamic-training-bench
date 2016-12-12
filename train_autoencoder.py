@@ -20,14 +20,20 @@ import math
 
 import numpy as np
 import tensorflow as tf
-from models.utils import variables_to_save, tf_log, TRAIN_SUMMARIES_COLLECTION
+import evaluate_autoencoder as evaluate
+from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from inputs.utils import InputType
 import utils
 
 
 def train():
-    """Train model."""
+    """Train model.
+
+    Returns:
+        best validation error. Save best model"""
+
+    best_validation_error_value = 0.0
 
     with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
         global_step = tf.Variable(0, trainable=False, name="global_step")
@@ -59,6 +65,9 @@ def train():
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)
         tf_log(tf.summary.scalar('loss', loss))
+        # Validation loss (reconstruction error)
+        validation_error_ = tf.placeholder(tf.float32, shape=())
+        validation_error = tf.summary.scalar('loss', validation_error_)
 
         if LR_DECAY:
             # Decay the learning rate exponentially based on the number of steps.
@@ -77,14 +86,15 @@ def train():
         # Create the train saver.
         variables = variables_to_save([global_step])
         train_saver = tf.train.Saver(variables, max_to_keep=2)
+        # Create the best model saver
+        best_saver = tf.train.Saver(variables, max_to_keep=1)
 
         # read collection after that every op added its own
         # summaries in the train_summaries collection
         train_summaries = tf.summary.merge(
-            tf.get_collection_ref(TRAIN_SUMMARIES_COLLECTION))
+            tf.get_collection_ref(MODEL_SUMMARIES))
 
         # Build an initialization operation to run below.
-        #init = tf.global_variables_initializer()
         init = tf.variables_initializer(tf.global_variables() +
                                         tf.local_variables())
 
@@ -105,7 +115,10 @@ def train():
                 else:
                     print("[I] Unable to restore from checkpoint")
 
-            train_log = tf.summary.FileWriter(LOG_DIR + "/train", sess.graph)
+            train_log = tf.summary.FileWriter(
+                LOG_DIR + "/train", graph=sess.graph)
+            validation_log = tf.summary.FileWriter(
+                LOG_DIR + "/validation", graph=sess.graph)
 
             # Extract previous global step value
             old_gs = sess.run(global_step)
@@ -142,9 +155,34 @@ def train():
                         step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
-                    print('[!] Epoch {} ended'.format(
-                        int(step / STEPS_PER_EPOCH)))
+
+                    # validation error
+                    validation_error_value = evaluate.error(
+                        LOG_DIR,
+                        MODEL,
+                        DATASET,
+                        InputType.validation,
+                        device=EVAL_DEVICE)
+
+                    summary_line = sess.run(
+                        validation_error,
+                        feed_dict={validation_error_: validation_error_value})
+                    validation_log.add_summary(summary_line)
+
+                    print('{} ({}): train error = {} validation error = {}'.
+                          format(datetime.now(),
+                                 int(step / STEPS_PER_EPOCH), loss_value,
+                                 validation_error_value))
+                    if validation_error_value < best_validation_error_value:
+                        best_validation_error_value = validation_error_value
+                        best_saver.save(
+                            sess,
+                            os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
+                            global_step=step)
             # end of for
+
+            validation_log.close()
+            train_log.close()
 
             # When done, ask the threads to stop.
             coord.request_stop()
@@ -247,5 +285,14 @@ if __name__ == '__main__':
 
     # Start train
     pprint.pprint(ARGS)
-    train()
+    BEST_ERROR = train()
+    with open(os.path.join(CURRENT_DIR, "validation_results.txt"), "a") as res:
+        res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_ERROR))
+
+    with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
+        res.write("{}: {} {}\n".format(
+            ARGS.model,
+            NAME,
+            evaluate.error(
+                LOG_DIR, MODEL, DATASET, InputType.test, device=EVAL_DEVICE)))
     sys.exit()
