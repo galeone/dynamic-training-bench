@@ -103,6 +103,18 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
     return images, tf.reshape(label_batch, [batch_size])
 
 
+def scale_image(image):
+    """Returns the image tensor with values in [-1, 1].
+    Args:
+        image: [height, width, depth] tensor with values in [0,1]
+    """
+    image = tf.sub(image, 0.5)
+    # now image has values with zero mean in range [-0.5, 0.5]
+    image = tf.mul(image, 2.0)
+    # now image has values with zero mean in range [-1, 1]
+    return image
+
+
 def convert_to_tfrecords(dataset, name, data_dir):
     """ Converts the dataset in a TFRecord file with name.tfrecords.
     Save it into data_dir."""

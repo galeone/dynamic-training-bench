@@ -97,11 +97,15 @@ class ORLFaces(Input):
         image = tf.reshape(image, (self._image_height, self._image_width,
                                    self._image_depth))
 
-        # Convert from [0, 255] -> [-0.5, 0.5] floats.
-        result["image"] = tf.cast(image, tf.float32) * (1. / 255) - 0.5
+        # Convert from [0, 255] -> [0, 1] floats.
+        image = tf.div(tf.cast(image, tf.float32), 255.0)
+
+        # Convert from [0, 1] -> [-1, 1]
+        result["image"] = utils.scale_image(image)
 
         # Convert label from a scalar uint8 tensor to an int32 scalar.
         result["label"] = tf.cast(features['label'], tf.int32)
+
         return result
 
     def distorted_inputs(self, batch_size):

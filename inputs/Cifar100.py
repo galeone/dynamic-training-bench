@@ -116,14 +116,16 @@ class Cifar100(Input):
         depth_major = tf.reshape(
             tf.slice(record_bytes, [label_bytes], [image_bytes]),
             [result["depth"], result["height"], result["width"]])
+
         # Convert from [depth, height, width] to [height, width, depth].
         image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32)
 
-        # RBG -> YUV
-        #image = utils.rgb2yuv(image)
+        # Convert from [0, 255] -> [0, 1]
+        image = tf.div(image, 255.0)
 
-        # Subtract off the mean and divide by the variance of the pixels.
-        result["image"] = tf.image.per_image_standardization(image)
+        # Convert from [0, 1] -> [-1, 1]
+        result["image"] = utils.scale_image(image)
+
         return result
 
     def distorted_inputs(self, batch_size):
