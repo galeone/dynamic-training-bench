@@ -145,7 +145,7 @@ def train():
                         format_str.format(datetime.now(), step, loss_value,
                                           examples_per_sec, sec_per_batch))
                     # log train values
-                    summary_lines = sess.run([train_summaries],
+                    summary_lines = sess.run(train_summaries,
                                              feed_dict={is_training_: True})
                     train_log.add_summary(summary_lines, global_step=step)
 
