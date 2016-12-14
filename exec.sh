@@ -79,7 +79,7 @@ python train_autoencoder.py \
     --dataset MNIST \
     --optimizer AdamOptimizer \
     --optimizer_args '{"learning_rate": 1e-5}' \
-    --train_device "/gpu:1" --batch_size 1024
+    --train_device "/gpu:1" --batch_size 1024 --epochs 50
 
 python train_autoencoder.py \
     --model SingleLayerCAE \
@@ -87,7 +87,7 @@ python train_autoencoder.py \
     --optimizer AdamOptimizer \
     --optimizer_args '{"learning_rate": 1e-5}' \
     --train_device "/gpu:1" \
-    --l2_penalty 1e-9 --batch_size 1024
+    --l2_penalty 1e-9 --batch_size 1024 --epochs 50
 
 
 python train_autoencoder.py \
@@ -95,7 +95,7 @@ python train_autoencoder.py \
     --dataset Cifar10 \
     --optimizer AdamOptimizer \
     --optimizer_args '{"learning_rate": 1e-5}' \
-    --train_device "/gpu:1" --batch_size 1024
+    --train_device "/gpu:1" --batch_size 1024 --epochs 50
 
 python train_autoencoder.py \
     --model SingleLayerCAE \
@@ -103,5 +103,5 @@ python train_autoencoder.py \
     --optimizer AdamOptimizer \
     --optimizer_args '{"learning_rate": 1e-5}' \
     --train_device "/gpu:1" \
-    --l2_penalty 1e-9 --batch_size 1024
+    --l2_penalty 1e-9 --batch_size 1024 --epochs 50
 
