@@ -139,7 +139,7 @@ def train():
                     examples_per_sec = BATCH_SIZE / duration
                     sec_per_batch = float(duration)
 
-                    format_str = ('{}: step {}, loss = {:.2f} '
+                    format_str = ('{}: step {}, loss = {:.4f} '
                                   '({:.1f} examples/sec; {:.3f} sec/batch)')
                     print(
                         format_str.format(datetime.now(), step, loss_value,

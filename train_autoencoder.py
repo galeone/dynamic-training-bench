@@ -54,7 +54,7 @@ def train():
                 tf.transpose(
                     images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
                 grid_side)
-
+            inputs = tf.pad(inputs, [[0, 0], [0, 0], [0, 10], [0, 0]])
             outputs = put_kernels_on_grid(
                 tf.transpose(
                     reconstructions,
@@ -142,7 +142,7 @@ def train():
                     examples_per_sec = num_examples_per_step / duration
                     sec_per_batch = float(duration)
 
-                    format_str = ('{}: step {}, loss = {:.2f} '
+                    format_str = ('{}: step {}, loss = {:.4f} '
                                   '({:.1f} examples/sec; {:.3f} sec/batch)')
                     print(
                         format_str.format(datetime.now(), step, loss_value,
