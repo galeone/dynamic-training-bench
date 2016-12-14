@@ -43,6 +43,7 @@ class SingleLayerCAE(Autoencoder):
             predictions: the model output
         """
         filter_side = 3
+        filters_number = 25
         with tf.variable_scope(self.__class__.__name__):
             input_x = self._pad(images, filter_side)
 
@@ -54,7 +55,7 @@ class SingleLayerCAE(Autoencoder):
                 encoding = utils.conv_layer(
                     input_x, [
                         filter_side, filter_side, input_x.get_shape()[3].value,
-                        32
+                        filters_number
                     ],
                     1,
                     'VALID',
@@ -67,10 +68,19 @@ class SingleLayerCAE(Autoencoder):
                 # The dimenensions of the convolutional filter in the decoding convolution,
                 # differently from the encoding, are constrained by the
                 # choices made in the encoding layer
-                # The only degree of freedom is the chose of the activation function
-                output_x = utils.conv_layer(encoding, [
-                    filter_side, filter_side, 32, input_x.get_shape()[3].value
-                ], 1, 'VALID')
+                # The only degree of freedom is the chose of the activation function.
+                # We have to choose an activation function that constraints the outputs
+                # to live in the same space of the input values.
+                # Since the input values are between -1 and 1, we can use the tanh function
+                # directly, or we could use the sigmoid and then scale the output
+                output_x = utils.conv_layer(
+                    encoding, [
+                        filter_side, filter_side, filters_number,
+                        input_x.get_shape()[3].value
+                    ],
+                    1,
+                    'VALID',
+                    activation=tf.nn.tanh)
 
         # The is_training_ placeholder is not used, but we define and return it
         # in order to respect the expected output cardinality of the get method
