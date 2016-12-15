@@ -43,7 +43,7 @@ class SingleLayerCAE(Autoencoder):
             predictions: the model output
         """
         filter_side = 3
-        filters_number = 25
+        filters_number = 32
         with tf.variable_scope(self.__class__.__name__):
             input_x = self._pad(images, filter_side)
 
