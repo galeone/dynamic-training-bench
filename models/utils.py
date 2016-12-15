@@ -59,13 +59,17 @@ def put_kernels_on_grid(kernel, grid_side, pad=1):
     # put NumKernels to the 1st dimension
     x2 = tf.transpose(x1, (3, 0, 1, 2))
     # organize grid on Y axis
-    x3 = tf.reshape(x2, tf.pack([grid_side, Y * grid_side, X, channels]))  #3
+    x3 = tf.reshape(
+        x2, tf.stack(
+            values=[grid_side, Y * grid_side, X, channels], axis=0))  #3
 
     # switch X and Y axes
     x4 = tf.transpose(x3, (0, 2, 1, 3))
     # organize grid on X axis
-    x5 = tf.reshape(x4,
-                    tf.pack([1, X * grid_side, Y * grid_side, channels]))  #3
+    x5 = tf.reshape(
+        x4,
+        tf.stack(
+            values=[1, X * grid_side, Y * grid_side, channels], axis=0))  #3
 
     # back to normal order (not combining with the next step for clarity)
     x6 = tf.transpose(x5, (2, 1, 3, 0))
