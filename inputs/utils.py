@@ -8,6 +8,7 @@
 """Utils to dataset preprocessing"""
 
 import os
+import multiprocessing
 from enum import Enum, unique
 import tensorflow as tf
 
@@ -85,7 +86,9 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
   """
     # Create a queue that shuffles the examples, and then
     # read 'batch_size' images + labels from the example queue.
-    num_preprocess_threads = 16
+    num_preprocess_threads = multiprocessing.cpu_count()
+    if num_preprocess_threads > 2:
+        num_preprocess_threads -= 2
     if shuffle:
         images, label_batch = tf.train.shuffle_batch(
             [image, label],
