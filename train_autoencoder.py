@@ -62,7 +62,8 @@ def train():
                 grid_side)
         tf_log(
             tf.summary.image(
-                'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
+                'input_output', tf.concat(2, [inputs, outputs]),
+                max_outputs=1))
 
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)
@@ -158,8 +159,8 @@ def train():
 
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
-                if (step > 0 and
-                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
+                if (step > 0 and step % STEPS_PER_EPOCH == 0) or (
+                        step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
@@ -293,13 +294,20 @@ if __name__ == '__main__':
     # Start train
     pprint.pprint(ARGS)
     BEST_ERROR = train()
+
+    # Save the best error value on the validation set
     with open(os.path.join(CURRENT_DIR, "validation_results.txt"), "a") as res:
         res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_ERROR))
 
+    # Use the "best" model to calculat the error on the test set
     with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
         res.write("{}: {} {}\n".format(
             ARGS.model,
             NAME,
             evaluate.error(
-                LOG_DIR, MODEL, DATASET, InputType.test, device=EVAL_DEVICE)))
+                BEST_MODEL_DIR,
+                MODEL,
+                DATASET,
+                InputType.test,
+                device=EVAL_DEVICE)))
     sys.exit()

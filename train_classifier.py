@@ -116,9 +116,9 @@ def train():
                     print("[I] Unable to restore from checkpoint")
 
             train_log = tf.summary.FileWriter(
-                LOG_DIR + "/train", graph=sess.graph)
+                os.path.join(LOG_DIR, "train"), graph=sess.graph)
             validation_log = tf.summary.FileWriter(
-                LOG_DIR + "/validation", graph=sess.graph)
+                os.path.join(LOG_DIR, "validation"), graph=sess.graph)
 
             # Extract previous global step value
             old_gs = sess.run(global_step)
@@ -151,8 +151,8 @@ def train():
 
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
-                if (step > 0 and
-                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
+                if (step > 0 and step % STEPS_PER_EPOCH == 0) or (
+                        step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
@@ -180,8 +180,9 @@ def train():
                     print(
                         '{} ({}): train accuracy = {:.3f} validation accuracy = {:.3f}'.
                         format(datetime.now(),
-                               int(step / STEPS_PER_EPOCH),
-                               train_accuracy_value, validation_accuracy_value))
+                               int(step /
+                                   STEPS_PER_EPOCH), train_accuracy_value,
+                               validation_accuracy_value))
                     # save best model
                     if validation_accuracy_value > best_validation_accuracy:
                         best_validation_accuracy = validation_accuracy_value
@@ -301,11 +302,17 @@ if __name__ == '__main__':
     with open(os.path.join(CURRENT_DIR, "validation_results.txt"), "a") as res:
         res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_VA))
 
+    # Save the test result of the model with the best valiation accuracy
+    # the "best" model
     with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
         res.write("{}: {} {}\n".format(
             ARGS.model,
             NAME,
             evaluate.accuracy(
-                LOG_DIR, MODEL, DATASET, InputType.test, device=EVAL_DEVICE)))
+                BEST_MODEL_DIR,
+                MODEL,
+                DATASET,
+                InputType.test,
+                device=EVAL_DEVICE)))
 
     sys.exit()
