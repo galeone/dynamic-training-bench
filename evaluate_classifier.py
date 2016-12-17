@@ -15,7 +15,6 @@ import importlib
 from datetime import datetime
 import math
 
-import numpy as np
 import tensorflow as tf
 from inputs.utils import InputType
 from models.utils import MODEL_SUMMARIES, tf_log, put_kernels_on_grid
@@ -47,7 +46,8 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
         _, logits = model.get(images, dataset.num_classes(), train_phase=False)
 
         # Calculate predictions.
-        top_k_op = tf.nn.in_top_k(logits, labels, 1)
+        correct_predictions = tf.reduce_sum(
+            tf.cast(tf.nn.in_top_k(logits, labels, 1), tf.int32))
 
         saver = tf.train.Saver()
         accuracy_value = 0.0
@@ -77,8 +77,7 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
                 total_sample_count = num_iter * batch_size
                 step = 0
                 while step < num_iter and not coord.should_stop():
-                    predictions = sess.run(top_k_op)
-                    true_count += np.sum(predictions)
+                    true_count += sess.run(correct_predictions)
                     step += 1
 
                 accuracy_value = true_count / total_sample_count
