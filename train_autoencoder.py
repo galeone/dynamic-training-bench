@@ -62,8 +62,7 @@ def train():
                 grid_side)
         tf_log(
             tf.summary.image(
-                'input_output', tf.concat(2, [inputs, outputs]),
-                max_outputs=1))
+                'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
 
         # Calculate loss.
         loss = MODEL.loss(reconstructions, images)
@@ -159,8 +158,8 @@ def train():
 
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
-                if (step > 0 and step % STEPS_PER_EPOCH == 0) or (
-                        step + 1) == MAX_STEPS:
+                if (step > 0 and
+                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
 

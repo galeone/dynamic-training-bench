@@ -151,8 +151,8 @@ def train():
 
                 # Save the model checkpoint at the end of every epoch
                 # evaluate train and validation performance
-                if (step > 0 and step % STEPS_PER_EPOCH == 0) or (
-                        step + 1) == MAX_STEPS:
+                if (step > 0 and
+                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
@@ -180,9 +180,8 @@ def train():
                     print(
                         '{} ({}): train accuracy = {:.3f} validation accuracy = {:.3f}'.
                         format(datetime.now(),
-                               int(step /
-                                   STEPS_PER_EPOCH), train_accuracy_value,
-                               validation_accuracy_value))
+                               int(step / STEPS_PER_EPOCH),
+                               train_accuracy_value, validation_accuracy_value))
                     # save best model
                     if validation_accuracy_value > best_validation_accuracy:
                         best_validation_accuracy = validation_accuracy_value
