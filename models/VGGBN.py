@@ -42,7 +42,7 @@ class VGGBN(Classifier):
                             utils.conv_layer(
                                 images, [3, 3, 3, 64], 1, 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv2'):
                     conv2 = tf.nn.relu(
@@ -50,7 +50,7 @@ class VGGBN(Classifier):
                             utils.conv_layer(
                                 conv1, [3, 3, 64, 64], 1, 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
             with tf.variable_scope('pool1'):
                 pool1 = tf.nn.max_pool(
@@ -68,7 +68,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv4'):
                     conv4 = tf.nn.relu(
@@ -78,7 +78,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
             with tf.variable_scope('pool2'):
                 pool2 = tf.nn.max_pool(
@@ -96,7 +96,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv6'):
                     conv6 = tf.nn.relu(
@@ -106,7 +106,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv7'):
                     conv7 = tf.nn.relu(
@@ -116,7 +116,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
             with tf.variable_scope('pool3'):
                 pool3 = tf.nn.max_pool(
@@ -134,7 +134,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv9'):
                     conv9 = tf.nn.relu(
@@ -144,7 +144,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv10'):
                     conv10 = tf.nn.relu(
@@ -154,7 +154,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
             with tf.variable_scope('pool4'):
                 pool4 = tf.nn.max_pool(
@@ -172,7 +172,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv12'):
                     conv12 = tf.nn.relu(
@@ -182,7 +182,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
                 with tf.variable_scope('conv13'):
                     conv13 = tf.nn.relu(
@@ -192,7 +192,7 @@ class VGGBN(Classifier):
                                 1,
                                 'SAME',
                                 wd=l2_penalty),
-                            train_phase))
+                            is_training_ if train_phase else False))
 
             with tf.variable_scope('pool5'):
                 pool5 = tf.nn.max_pool(
@@ -207,7 +207,7 @@ class VGGBN(Classifier):
                     utils.batch_norm(
                         utils.fc_layer(
                             pool5, [512, 512], wd=l2_penalty),
-                        train_phase))
+                        is_training_ if train_phase else False))
 
             with tf.variable_scope('softmax_linear'):
                 # no batch norm in the classification head

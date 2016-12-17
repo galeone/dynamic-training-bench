@@ -177,15 +177,16 @@ def fc_layer(input_x, shape, activation=tf.identity, wd=0.0):
     return activation(tf.nn.bias_add(tf.matmul(input_x, W), b))
 
 
-def batch_norm(layer_output, is_training_):
+def batch_norm(layer_output, is_training_, decay=0.9):
     """Applies batch normalization to the layer output.
     Args:
         layer_output: 4-d tensor, output of a FC/convolutional layer
         is_training_: placeholder or boolean variable to set to True when training
+        decay:        decay for the moving average.
     """
     return tf.contrib.layers.batch_norm(
-        layer_output,
-        decay=0.999,
+        inputs=layer_output,
+        decay=decay,
         center=True,
         scale=True,
         epsilon=1e-3,
@@ -199,6 +200,8 @@ def batch_norm(layer_output, is_training_):
         variables_collections=[REQUIRED_NON_TRAINABLES],
         outputs_collections=None,
         trainable=True,
+        batch_weights=None,
+        fused=True,
         scope=None)
 
 
