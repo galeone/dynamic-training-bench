@@ -28,7 +28,7 @@ E.g.: `class LeNet` into [`models/LeNet.py`](models/LeNet.py).
 
 Once created the model file, the methods defined in the interface file must be implemented.
 
-It's recommended, but not strictly required, to use the wrappers built around the Tensorflow methods to define the model: this wrappers creates log and visualizations for you.
+It's recommended, but not strictly required, to use the wrappers built around the Tensorflow methods to define the model: these wrappers creates log and visualizations for you.
 
 ## Wrappers
 
@@ -58,7 +58,7 @@ The recommended steps to follow to implement this interface are:
 
 1. Implement the `maybe_download_and_extract` method: this method must download the dataset and apply the desired transformations to its elements. There are some utility functions defined in the [`inputs/utils.py`](inputs/utils.py) file that can be used.
 This method is executed as first operation when the dataset object is created, therefore is recommended to cache the results.
-2. Implement the `num_classes` method: this method should required the number of classes of the dataset. If your dataset have no labels, just return 0.
+2. Implement the `num_classes` method: this method must return the number of classes of the dataset. If your dataset has no labels, just return 0.
 3. Implement the `num_examples(input_type)` method: this method accepts an `InputType` enumeration, defined in `inputs/utils.py`.
 This enumeration has 3 possible values: `InputType.train`, `InputType.validation`, `InputType.test`. As obvious, the method must return the number of examples for every possible value of this enumeration.
 4. Implement the `inputs` and `distorted_inputs` methods.
@@ -77,7 +77,7 @@ A single model can be trained using various hyper-parameters, such as the learni
 
 DTB allows to train a model with different hyper-parameter and automatically it logs every training process allowing the developer to visually compare them.
 
-Moreover, if a training process is interrupted, it automatically resume it from the last saved training step.
+Moreover, if a training process is interrupted, it automatically resumes it from the last saved training step.
 
 ## Example
 
@@ -106,8 +106,8 @@ python train_classifier.py --model LeNet --dataset MNIST --l2_penalty \
 
 The commands above will create 4 different models. Every model has it's own log folder that shares the same root folder.
 
-In particular, in the `log` folder there'll be a `LeNet` folder and within this folder there'll be other 4 folders, each one with a name that contains the hyper-parameters previously defined.
-This allows to visualize in the same graphs, using Tensorboard, the 4 models and easily understand which one performs better.
+In particular, in the `log` folder there'll be a `LeNet` folder and within this folder, there'll be other 4 folders, each one with a name that contains the hyper-parameters previously defined.
+This allows visualizing in the same graphs, using Tensorboard, the 4 models and easily understand which one performs better.
 
 Depending on the implemented model interface, the training script must change. If an Autoencoder has been implemented, instead of the `train_classifier.py` script, the `train_autoencoder.py` script must be used.
 
@@ -150,12 +150,12 @@ log/LeNet/
 
 `train` and `validation` folders contain the logs, used by Tensorboard to display in the same graphs train and validation metrics.
 
-The `best` folder, contains one single checkpoint file that is the model with the highest quality obtained during the training phase.
+The `best` folder contains one single checkpoint file that is the model with the highest quality obtained during the training phase.
 
 
 This model is used at the end of the training process to add a line to the `test_results.txt` and `validation_results.txt` files.
 
-The `test_results.txt` file, contains the results of the evaluation of the best model on the test set, whilst the validation results contains the same result but for the validation set.
+The `test_results.txt` file contains the results of the evaluation of the best model on the test set, whilst the `validation_results.txt` contains the same result but for the validation set.
 
 Moreover, is possible to run the evaluation of any checkpoint file (in the `log/<MODEL>` folder or in the `log/<MODEL>/best` folder) using the `evaluate_classifier.py` (`evaluate_autoencoder.py`) script.
 
