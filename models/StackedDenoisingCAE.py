@@ -47,14 +47,17 @@ class StackedDenoisingCAE(Autoencoder):
         filters_number = 9
         with tf.variable_scope(self.__class__.__name__):
             input_x = tf.identity(images)
-            input_x_noise = tf.clip_by_value(
-                input_x + tf.random_uniform(
-                    input_x.get_shape(),
-                    minval=-0.5,
-                    maxval=0.5,
-                    dtype=input_x.dtype),
-                -1.0,
-                1.0)
+            if train_phase:
+                input_x_noise = tf.clip_by_value(
+                    input_x + tf.random_uniform(
+                        input_x.get_shape(),
+                        minval=-0.5,
+                        maxval=0.5,
+                        dtype=input_x.dtype),
+                    -1.0,
+                    1.0)
+            else:
+                input_x_noise = input_x
             input_padded_noise = self._pad(input_x_noise, filter_side)
 
             for layer in range(num_layers):
@@ -68,8 +71,9 @@ class StackedDenoisingCAE(Autoencoder):
                             ],
                             1,
                             'VALID',
-                            activation=tf.nn.tanh,
+                            activation=tf.nn.relu,
                             wd=l2_penalty)
+
                         if train_phase:
                             encoding = tf.nn.dropout(encoding, 0.5)
 
@@ -82,6 +86,10 @@ class StackedDenoisingCAE(Autoencoder):
                             1,
                             'VALID',
                             activation=tf.nn.tanh)
+
+                        last_layer = layer == num_layers - 1
+                        if train_phase and not last_layer:
+                            output_x_noise = tf.nn.dropout(output_x_noise, 0.5)
 
                         # loss between input without noise and output computed
                         # on noisy values
