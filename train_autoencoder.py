@@ -36,9 +36,9 @@ def train():
     best_validation_error_value = float('inf')
 
     with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
-        global_step = tf.Variable(0, trainable=False, name="global_step")
+        global_step = tf.Variable(0, trainable=False, name='global_step')
 
-        # Get images and labels for CIFAR-10.
+        # Get images and discard labels
         images, _ = DATASET.distorted_inputs(BATCH_SIZE)
 
         # Build a Graph that computes the reconstructions predictions from the
@@ -48,7 +48,7 @@ def train():
                                                   l2_penalty=L2_PENALTY)
 
         # display original images next to reconstructed images
-        with tf.variable_scope("visualization"):
+        with tf.variable_scope('visualization'):
             grid_side = math.floor(math.sqrt(BATCH_SIZE))
             inputs = put_kernels_on_grid(
                 tf.transpose(
@@ -114,7 +114,7 @@ def train():
                 if checkpoint:
                     train_saver.restore(sess, checkpoint)
                 else:
-                    print("[I] Unable to restore from checkpoint")
+                    print('[I] Unable to restore from checkpoint')
 
             train_log = tf.summary.FileWriter(
                 os.path.join(LOG_DIR, str(InputType.train)), graph=sess.graph)
@@ -199,61 +199,61 @@ def train():
 
 if __name__ == '__main__':
     # CLI arguments
-    PARSER = argparse.ArgumentParser(description="Train the model")
+    PARSER = argparse.ArgumentParser(description='Train the model')
 
     # Required arguments
-    PARSER.add_argument("--model", required=True, choices=utils.get_models())
+    PARSER.add_argument('--model', required=True, choices=utils.get_models())
     PARSER.add_argument(
-        "--dataset", required=True, choices=utils.get_datasets())
+        '--dataset', required=True, choices=utils.get_datasets())
 
     # Restart train or continue
-    PARSER.add_argument("--restart", action='store_true')
+    PARSER.add_argument('--restart', action='store_true')
 
     # Learning rate decay arguments
-    PARSER.add_argument("--lr_decay", action="store_true")
-    PARSER.add_argument("--lr_decay_epochs", type=int, default=25)
-    PARSER.add_argument("--lr_decay_factor", type=float, default=0.1)
+    PARSER.add_argument('--lr_decay', action='store_true')
+    PARSER.add_argument('--lr_decay_epochs', type=int, default=25)
+    PARSER.add_argument('--lr_decay_factor', type=float, default=0.1)
 
     # L2 regularization arguments
-    PARSER.add_argument("--l2_penalty", type=float, default=0.0)
+    PARSER.add_argument('--l2_penalty', type=float, default=0.0)
 
     # Optimization arguments
     PARSER.add_argument(
-        "--optimizer",
+        '--optimizer',
         choices=utils.get_optimizers(),
-        default="MomentumOptimizer")
+        default='MomentumOptimizer')
     PARSER.add_argument(
-        "--optimizer_args",
+        '--optimizer_args',
         type=json.loads,
         default='''
     {
         "learning_rate": 1e-2,
         "momentum": 0.9
     }''')
-    PARSER.add_argument("--batch_size", type=int, default=128)
-    PARSER.add_argument("--epochs", type=int, default=150)
+    PARSER.add_argument('--batch_size', type=int, default=128)
+    PARSER.add_argument('--epochs', type=int, default=150)
 
     # Hardware
-    PARSER.add_argument("--train_device", default="/gpu:0")
-    PARSER.add_argument("--eval_device", default="/gpu:0")
+    PARSER.add_argument('--train_device', default='/gpu:0')
+    PARSER.add_argument('--eval_device', default='/gpu:0')
 
     # Optional comment
-    PARSER.add_argument("--comment", default='')
+    PARSER.add_argument('--comment', default='')
 
     # Pargse arguments
     ARGS = PARSER.parse_args()
 
     # Load required model and dataset
     MODEL = getattr(
-        importlib.import_module("models." + ARGS.model), ARGS.model)()
+        importlib.import_module('models.' + ARGS.model), ARGS.model)()
     DATASET = getattr(
-        importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
+        importlib.import_module('inputs.' + ARGS.dataset), ARGS.dataset)()
 
     # Training constants
     RESTART = ARGS.restart
     OPTIMIZER = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
     # Learning rate must be always present in optimizer args
-    INITIAL_LR = float(ARGS.optimizer_args["learning_rate"])
+    INITIAL_LR = float(ARGS.optimizer_args['learning_rate'])
 
     BATCH_SIZE = ARGS.batch_size
     MAX_EPOCH = ARGS.epochs
@@ -295,12 +295,14 @@ if __name__ == '__main__':
     BEST_ERROR = train()
 
     # Save the best error value on the validation set
-    with open(os.path.join(CURRENT_DIR, "validation_results.txt"), "a") as res:
-        res.write("{}: {} {}\n".format(ARGS.model, NAME, BEST_ERROR))
+    with open(os.path.join(CURRENT_DIR, 'validation_results.txt'), 'a') as res:
+        res.write('{} {}: {} {}\n'.format(datetime.now(), ARGS.model, NAME,
+                                          BEST_ERROR))
 
-    # Use the "best" model to calculat the error on the test set
+    # Use the 'best' model to calculat the error on the test set
     with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
-        res.write("{}: {} {}\n".format(
+        res.write('{} {}: {} {}\n'.format(
+            datetime.now(),
             ARGS.model,
             NAME,
             evaluate.error(
