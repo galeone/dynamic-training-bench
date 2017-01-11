@@ -125,7 +125,7 @@ def conv_layer(input_x, shape, stride, padding, activation=tf.identity, wd=0.0):
     W = weight("W", shape)
     b = bias("b", [shape[3]])
     # Add weight decay to W
-    weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
+    weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
 
     result = tf.nn.bias_add(
@@ -172,7 +172,7 @@ def fc_layer(input_x, shape, activation=tf.identity, wd=0.0):
     W = weight("W", shape)
     b = bias("b", [shape[1]])
     # Add weight decay to W
-    weight_decay = tf.mul(tf.nn.l2_loss(W), wd, name='weight_loss')
+    weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
     return activation(tf.nn.bias_add(tf.matmul(input_x, W), b))
 
@@ -324,7 +324,7 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
             # active neurons
 
             boost_mask = tf.reshape(
-                tf.div(
+                tf.divide(
                     tf.reshape(binary_tensor, (-1, num_neurons)),
                     tf.expand_dims(1.0 - prob, 1)), shape)
 
@@ -333,7 +333,7 @@ def binomial_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
             # the ones with mask[i] != 0
 
             ret = x * boost_mask
-            #ret = tf.div(x, 1.0 - prob)
+            #ret = tf.divide(x, 1.0 - prob)
             ret.set_shape(x.get_shape())
             return ret
 
@@ -379,6 +379,6 @@ def direct_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
         # 0. if [keep_prob, 1.0) and 1. if [1.0, 1.0 + keep_prob)
         binary_tensor = tf.floor(random_tensor)
         # Do not scale the activation in train time
-        ret = tf.mul(x, binary_tensor)
+        ret = tf.multiply(x, binary_tensor)
         ret.set_shape(x.get_shape())
         return ret

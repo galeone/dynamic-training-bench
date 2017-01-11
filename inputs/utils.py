@@ -51,7 +51,7 @@ def yuv2rgb(yuv):
     """
     Convert YUV image into RGB https://en.wikipedia.org/wiki/YUV
     """
-    yuv = tf.mul(yuv, 255)
+    yuv = tf.multiply(yuv, 255)
     yuv2rgb_filter = tf.constant([[[[1., 1., 1.], [0., -0.34413999, 1.77199996],
                                     [1.40199995, -0.71414, 0.]]]])
     yuv2rgb_bias = tf.constant([-179.45599365, 135.45983887, -226.81599426])
@@ -61,9 +61,10 @@ def yuv2rgb(yuv):
     temp = tf.nn.bias_add(temp, yuv2rgb_bias)
     temp = tf.maximum(temp, tf.zeros(temp.get_shape(), dtype=tf.float32))
     temp = tf.minimum(
-        temp, tf.mul(tf.ones(
-            temp.get_shape(), dtype=tf.float32), 255))
-    temp = tf.div(temp, 255)
+        temp, tf.multiply(
+            tf.ones(
+                temp.get_shape(), dtype=tf.float32), 255))
+    temp = tf.divide(temp, 255)
     temp = tf.squeeze(temp, [0])
     return temp
 
@@ -113,7 +114,7 @@ def scale_image(image):
     """
     image = tf.sub(image, 0.5)
     # now image has values with zero mean in range [-0.5, 0.5]
-    image = tf.mul(image, 2.0)
+    image = tf.multiply(image, 2.0)
     # now image has values with zero mean in range [-1, 1]
     return image
 

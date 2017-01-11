@@ -93,7 +93,7 @@ class MNIST(Input):
                                    self._image_depth))
 
         # Convert from [0, 255] -> [0, 1]
-        image = tf.div(tf.cast(image, tf.float32), 255.0)
+        image = tf.divide(tf.cast(image, tf.float32), 255.0)
         # Convert from [0, 1] -> [-1, 1]
         result["image"] = utils.scale_image(image)
 

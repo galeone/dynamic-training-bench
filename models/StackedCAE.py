@@ -86,9 +86,10 @@ class StackedCAE(Autoencoder):
 
     def _mse(self, input_x, output_x):
         # 1/2n \sum^{n}_{i=i}{(x_i - x'_i)^2}
-        return tf.div(tf.reduce_mean(tf.square(tf.subtract(input_x, output_x))),
-                      2,
-                      name="mse")
+        return tf.divide(
+            tf.reduce_mean(tf.square(tf.subtract(input_x, output_x))),
+            2,
+            name="mse")
 
     def loss(self, predictions, real_values):
         """Return the loss operation between predictions and real_values.

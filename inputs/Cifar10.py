@@ -118,7 +118,7 @@ class Cifar10(Input):
         image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32)
 
         # Convert from [0, 255] -> [0, 1]
-        image = tf.div(image, 255.0)
+        image = tf.divide(image, 255.0)
 
         # Convert from [0, 1] -> [-1, 1]
         result["image"] = utils.scale_image(image)
