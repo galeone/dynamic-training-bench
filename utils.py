@@ -8,6 +8,10 @@
 """Utilities for the training process and logging"""
 
 import glob
+import argparse
+import json
+import importlib
+import pprint
 import tensorflow as tf
 
 
@@ -51,3 +55,74 @@ def get_optimizers():
         optimizer for optimizer in dir(tf.train)
         if optimizer.endswith("Optimizer")
     ]
+
+
+def parse_args(description="Train the model"):
+    """Parser the CLI arguments and returns (see Returns)
+    Args:
+        description: The description to show when the help is displayed
+    Returns:
+        args: args object
+        model name: string representing the model name
+        model: model object instantiated
+        dataset: input object instantiated
+        optimizer: optimizer object instantiated"""
+    # CLI arguments
+    parser = argparse.ArgumentParser(description=description)
+
+    # Required arguments
+    parser.add_argument('--model', required=True, choices=get_models())
+    parser.add_argument('--dataset', required=True, choices=get_datasets())
+
+    # Restart train or continue
+    parser.add_argument('--restart', action='store_true')
+
+    # Learning rate decay arguments
+    parser.add_argument('--lr_decay', action='store_true')
+    parser.add_argument('--lr_decay_epochs', type=int, default=25)
+    parser.add_argument('--lr_decay_factor', type=float, default=0.1)
+
+    # L2 regularization arguments
+    parser.add_argument('--l2_penalty', type=float, default=0.0)
+
+    # Optimization arguments
+    parser.add_argument(
+        '--optimizer', choices=get_optimizers(), default='MomentumOptimizer')
+    parser.add_argument(
+        '--optimizer_args',
+        type=json.loads,
+        default='''
+    {
+        "learning_rate": 1e-2,
+        "momentum": 0.9
+    }''')
+    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--epochs', type=int, default=150)
+
+    # Hardware
+    parser.add_argument('--train_device', default='/gpu:0')
+    parser.add_argument('--eval_device', default='/gpu:0')
+
+    # Optional comment
+    parser.add_argument('--comment', default='')
+
+    args = parser.parse_args()
+
+    # Build name
+    name = build_name(args)
+
+    # Instantiate the model object
+    model = getattr(
+        importlib.import_module('models.' + args.model), args.model)()
+
+    # Instantiate the input object
+    dataset = getattr(
+        importlib.import_module('inputs.' + args.dataset), args.dataset)()
+
+    # Instantiate the optimizer
+    optimizer = getattr(tf.train, args.optimizer)(**args.optimizer_args)
+    print('Model name {}\nArgs: {}'.format(
+        name, pprint.pformat(
+            vars(args), indent=4)))
+
+    return args, name, model, dataset, optimizer

@@ -8,10 +8,6 @@
 """ Dynamically define the train bench via CLI. Specify the dataset to use, the model to train
 and any other hyper-parameter"""
 
-import argparse
-import json
-import importlib
-import pprint
 import sys
 from datetime import datetime
 import os.path
@@ -35,14 +31,14 @@ def train():
 
     best_validation_accuracy = 0.0
 
-    with tf.Graph().as_default(), tf.device(TRAIN_DEVICE):
+    with tf.Graph().as_default(), tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and labels
-        images, labels = DATASET.distorted_inputs(BATCH_SIZE)
+        images, labels = DATASET.distorted_inputs(ARGS.batch_size)
 
         with tf.variable_scope('visualization'):
-            grid_side = math.floor(math.sqrt(BATCH_SIZE))
+            grid_side = math.floor(math.sqrt(ARGS.batch_size))
             inputs = put_kernels_on_grid(
                 tf.transpose(
                     images, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
@@ -55,22 +51,26 @@ def train():
         is_training_, logits = MODEL.get(images,
                                          DATASET.num_classes(),
                                          train_phase=True,
-                                         l2_penalty=L2_PENALTY)
+                                         l2_penalty=ARGS.l2_penalty)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
         tf_log(tf.summary.scalar('loss', loss))
 
-        if LR_DECAY:
+        # learning rate
+        initial_lr = float(ARGS.optimizer_args['learning_rate'])
+
+        if ARGS.lr_decay:
             # Decay the learning rate exponentially based on the number of steps.
+            steps_per_decay = STEPS_PER_EPOCH * ARGS.lr_decay_epochs
             learning_rate = tf.train.exponential_decay(
-                INITIAL_LR,
+                initial_lr,
                 global_step,
-                STEPS_PER_DECAY,
-                LR_DECAY_FACTOR,
+                steps_per_decay,
+                ARGS.lr_decay_factor,
                 staircase=True)
         else:
-            learning_rate = tf.constant(INITIAL_LR)
+            learning_rate = tf.constant(initial_lr)
 
         tf_log(tf.summary.scalar('learning_rate', learning_rate))
         train_op = OPTIMIZER.minimize(loss, global_step=global_step)
@@ -107,7 +107,7 @@ def train():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-            if not RESTART:  # continue from the saved checkpoint
+            if not ARGS.restart:  # continue from the saved checkpoint
                 # restore previous session if exists
                 checkpoint = tf.train.latest_checkpoint(LOG_DIR)
                 if checkpoint:
@@ -136,7 +136,7 @@ def train():
 
                 # update logs every 10 iterations
                 if step % 10 == 0:
-                    examples_per_sec = BATCH_SIZE / duration
+                    examples_per_sec = ARGS.batch_size / duration
                     sec_per_batch = float(duration)
 
                     format_str = ('{}: step {}, loss = {:.4f} '
@@ -162,7 +162,7 @@ def train():
                         MODEL,
                         DATASET,
                         InputType.validation,
-                        device=EVAL_DEVICE)
+                        device=ARGS.eval_device)
 
                     summary_line = sess.run(
                         accuracy_summary,
@@ -202,101 +202,28 @@ def train():
 
 
 if __name__ == '__main__':
-    # CLI arguments
-    PARSER = argparse.ArgumentParser(description='Train the model')
+    ARGS, NAME, MODEL, DATASET, OPTIMIZER = utils.parse_args()
 
-    # Required arguments
-    PARSER.add_argument('--model', required=True, choices=utils.get_models())
-    PARSER.add_argument(
-        '--dataset', required=True, choices=utils.get_datasets())
-
-    # Restart train or continue
-    PARSER.add_argument('--restart', action='store_true')
-
-    # Learning rate decay arguments
-    PARSER.add_argument('--lr_decay', action='store_true')
-    PARSER.add_argument('--lr_decay_epochs', type=int, default=25)
-    PARSER.add_argument('--lr_decay_factor', type=float, default=0.1)
-
-    # L2 regularization arguments
-    PARSER.add_argument('--l2_penalty', type=float, default=0.0)
-
-    # Optimization arguments
-    PARSER.add_argument(
-        '--optimizer',
-        choices=utils.get_optimizers(),
-        default='MomentumOptimizer')
-    PARSER.add_argument(
-        '--optimizer_args',
-        type=json.loads,
-        default='''
-    {
-        "learning_rate": 1e-2,
-        "momentum": 0.9
-    }''')
-    PARSER.add_argument('--batch_size', type=int, default=128)
-    PARSER.add_argument('--epochs', type=int, default=150)
-
-    # Hardware
-    PARSER.add_argument('--train_device', default='/gpu:0')
-    PARSER.add_argument('--eval_device', default='/gpu:0')
-
-    # Optional comment
-    PARSER.add_argument('--comment', default='')
-
-    # Pargse arguments
-    ARGS = PARSER.parse_args()
-
-    # Load required model and dataset
-    MODEL = getattr(
-        importlib.import_module('models.' + ARGS.model), ARGS.model)()
-    DATASET = getattr(
-        importlib.import_module('inputs.' + ARGS.dataset), ARGS.dataset)()
-
-    # Training constants
-    RESTART = ARGS.restart
-    OPTIMIZER = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
-    # Learning rate must be always present in optimizer args
-    INITIAL_LR = float(ARGS.optimizer_args['learning_rate'])
-
-    BATCH_SIZE = ARGS.batch_size
-    MAX_EPOCH = ARGS.epochs
+    #### Training constants ####
     STEPS_PER_EPOCH = math.ceil(
-        DATASET.num_examples(InputType.train) / BATCH_SIZE)
-    MAX_STEPS = STEPS_PER_EPOCH * MAX_EPOCH
+        DATASET.num_examples(InputType.train) / ARGS.batch_size)
+    MAX_STEPS = STEPS_PER_EPOCH * ARGS.epochs
 
-    # Regularization constaints
-    L2_PENALTY = ARGS.l2_penalty
-
-    # Learning rate decay constants
-    LR_DECAY = False
-    if ARGS.lr_decay:
-        LR_DECAY = True
-        NUM_EPOCHS_PER_DECAY = ARGS.lr_decay_epochs
-        LR_DECAY_FACTOR = ARGS.lr_decay_factor
-        STEPS_PER_DECAY = STEPS_PER_EPOCH * NUM_EPOCHS_PER_DECAY
-
-    # Model logs and checkpoint constants
-    NAME = utils.build_name(ARGS)
+    #### Model logs and checkpoint constants ####
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     LOG_DIR = os.path.join(CURRENT_DIR, 'log', ARGS.model, NAME)
     BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
 
-    # Device where to place the model
-    TRAIN_DEVICE = ARGS.train_device
-    EVAL_DEVICE = ARGS.eval_device
-
-    # Dataset creation if needed
+    #### Dataset and logs ####
     DATASET.maybe_download_and_extract()
 
-    if tf.gfile.Exists(LOG_DIR) and RESTART:
+    if tf.gfile.Exists(LOG_DIR) and ARGS.restart:
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
     if not tf.gfile.Exists(BEST_MODEL_DIR):
         tf.gfile.MakeDirs(BEST_MODEL_DIR)
 
-    # Start train, get best validation accuracy at the end
-    pprint.pprint(ARGS)
+    # Train and get best validation accuracy of the training process
     BEST_VA = train()
     with open(os.path.join(CURRENT_DIR, 'validation_results.txt'), 'a') as res:
         res.write('{} {}: {} {}\n'.format(datetime.now(), ARGS.model, NAME,
@@ -314,6 +241,6 @@ if __name__ == '__main__':
                 MODEL,
                 DATASET,
                 InputType.test,
-                device=EVAL_DEVICE)))
+                device=ARGS.eval_device)))
 
     sys.exit()
