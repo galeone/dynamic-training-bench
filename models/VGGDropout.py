@@ -23,7 +23,7 @@ class VGGDropout(Classifier):
                    is_training_,
                    train_phase=False,
                    l2_penalty=0.0):
-        """Builds the VGG-like network with binomial dropout layers
+        """Builds the VGG-like network with inverted dropout layers
         applyed after avery layer of neurons.
 
         Args:
