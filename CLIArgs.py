@@ -128,7 +128,7 @@ class CLIArgs(object):
             model name: string representing the model name
             model: model object instantiated
             dataset: input object instantiated
-            optimizer: optimizer object instantiated"""
+        """
 
         parser = self._init_parser()
 
@@ -173,12 +173,8 @@ class CLIArgs(object):
         # Get model and dataset objects
         model, dataset = self._get_model_dataset()
 
-        # Instantiate the optimizer
-        optimizer = getattr(tf.train, self._args.optimizer)(
-            **self._args.optimizer_args)
-
         print('Model name {}\nArgs: {}'.format(
             name, pprint.pformat(
                 vars(self._args), indent=4)))
 
-        return self._args, name, model, dataset, optimizer
+        return self._args, name, model, dataset
