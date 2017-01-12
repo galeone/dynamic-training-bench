@@ -30,8 +30,8 @@ class CLIArgs(object):
         optimizer = getattr(tf.train, self._args.optimizer)(
             **self._args.optimizer_args)
         learning_rate = self._args.optimizer_args["learning_rate"]
-        name = '{}_{}_lr={}_'.format(self._args.dataset, optimizer._name,
-                                     learning_rate)
+        name = '{}_{}_lr={}_'.format(self._args.dataset,
+                                     optimizer.get_name(), learning_rate)
 
         if self._args.lr_decay:
             name += 'exp_lr_'
