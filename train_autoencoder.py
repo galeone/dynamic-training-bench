@@ -16,7 +16,7 @@ import math
 
 import numpy as np
 import tensorflow as tf
-import evaluate_autoencoder as evaluate
+import evaluate
 from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from inputs.utils import InputType
