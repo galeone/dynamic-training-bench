@@ -83,24 +83,24 @@ Moreover, if a training process is interrupted, it automatically resumes it from
 
 ```
 # LeNet: no regularization
-python train_classifier.py --model LeNet --dataset MNIST
+python train.py --model LeNet --dataset MNIST
 
 # LeNet: L2 regularization with value 1e-5
-python train_classifier.py --model LeNet --dataset MNIST --l2_penalty 1e-5
+python train.py --model LeNet --dataset MNIST --l2_penalty 1e-5
 
 # LeNet: L2 regularization with value 1e-2
-python train_classifier.py --model LeNet --dataset MNIST --l2_penalty 1e-2
+python train.py --model LeNet --dataset MNIST --l2_penalty 1e-2
 
 # LeNet: L2 regularization with value 1e-2, initial learning rate of 1e-4
 # The default optimization algorithm is MomentumOptimizer, so we can change the momentum value
 # The optimizer parameters are passed as a json string
-python train_classifier.py --model LeNet --dataset MNIST --l2_penalty 1e-2 \
+python train.py --model LeNet --dataset MNIST --l2_penalty 1e-2 \
     --optimizer_args '{"learning_rate": 1e-4, "momentum": 0.5}'
 
 # If, for some reason, we interrupt this training process, rerunning the same command
 # will restart the training process from the last saved training step.
 # If we want to delete every saved model and log, we can pass the --restart flag
-python train_classifier.py --model LeNet --dataset MNIST --l2_penalty \
+python train.py --model LeNet --dataset MNIST --l2_penalty \
     --optimizer_args '{"learning_rate": 1e-4, "momentum": 0.5}' --restart
 ```
 
@@ -109,14 +109,14 @@ The commands above will create 4 different models. Every model has it's own log 
 In particular, in the `log` folder there'll be a `LeNet` folder and within this folder, there'll be other 4 folders, each one with a name that contains the hyper-parameters previously defined.
 This allows visualizing in the same graphs, using Tensorboard, the 4 models and easily understand which one performs better.
 
-Depending on the implemented model interface, the training script must change. If an Autoencoder has been implemented, instead of the `train_classifier.py` script, the `train_autoencoder.py` script must be used.
+No matter what interface has been implemented, the script to run is **always** `train.py`: it's capable of identifying the type of the model and use the right training procedure.
 
-A complete list of the available tunable parameters can be obtained running `python train_classifier.py --help` (`python train_autoencoder.py --help`).
+A complete list of the available tunable parameters can be obtained running `python train.py --help` (`python train.py --help`).
 
-For reference, a part of the output of `python train_classifier.py --help`:
+For reference, a part of the output of `python train.py --help`:
 
 ```
-usage: train_classifier.py [-h] --model --dataset
+usage: train.py [-h] --model --dataset
   -h, --help            show this help message and exit
   --model {<list of models in the models/ folder, without the .py suffix>}
   --dataset {<list of inputs in the inputs/folder, without the .py suffix}
@@ -157,20 +157,20 @@ This model is used at the end of the training process to add a line to the `test
 
 The `test_results.txt` file contains the results of the evaluation of the best model on the test set, whilst the `validation_results.txt` contains the same result but for the validation set.
 
-Moreover, is possible to run the evaluation of any checkpoint file (in the `log/<MODEL>` folder or in the `log/<MODEL>/best` folder) using the `evaluate_classifier.py` (`evaluate_autoencoder.py`) script.
+Moreover, is possible to run the evaluation of any checkpoint file (in the `log/<MODEL>` folder or in the `log/<MODEL>/best` folder) using the `evaluate.py` (`evaluate.py`) script.
 
 For example:
 
 ```
 # Evaluate the validation accuracy
-python evaluate_classifier.py  \
+python evaluate.py  \
            --model LeNet \
            --dataset MNIST \
            --checkpoint_dir log/LeNet/MNIST_Momentum_lr\=0.01/
 # outputs something like: validation accuracy = 0.993
 
 # Evaluate the test accuracy
-python evaluate_classifier.py  \
+python evaluate.py  \
            --model LeNet \
            --dataset MNIST \
            --checkpoint_dir log/LeNet/MNIST_Momentum_lr\=0.01/ \
