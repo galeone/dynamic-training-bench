@@ -10,15 +10,13 @@
 """ Evaluate the model """
 
 import os
-import argparse
-import importlib
 from datetime import datetime
 import math
 
 import tensorflow as tf
 from inputs.utils import InputType
 from models.utils import MODEL_SUMMARIES, tf_log, put_kernels_on_grid
-import utils
+from CLIArgs import CLIArgs
 
 
 def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
@@ -91,24 +89,8 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
 
 
 if __name__ == '__main__':
-    # CLI arguments
-    PARSER = argparse.ArgumentParser(description="Evaluate the model")
-
-    # Required arguments
-    PARSER.add_argument("--model", required=True, choices=utils.get_models())
-    PARSER.add_argument(
-        "--dataset", required=True, choices=utils.get_datasets())
-    PARSER.add_argument("--checkpoint_dir", required=True)
-    PARSER.add_argument("--test", action="store_true")
-    PARSER.add_argument("--device", default="/gpu:0")
-    ARGS = PARSER.parse_args()
-
-    # Load required model and dataset, ovverides default
-    MODEL = getattr(
-        importlib.import_module("models." + ARGS.model), ARGS.model)()
-    DATASET = getattr(
-        importlib.import_module("inputs." + ARGS.dataset), ARGS.dataset)()
-
+    ARGS, MODEL, DATASET = CLIArgs(
+        description="Evaluate the model").parse_eval()
     DATASET.maybe_download_and_extract()
     print('{}: {} accuracy = {:.3f}'.format(
         datetime.now(),
@@ -118,4 +100,4 @@ if __name__ == '__main__':
             MODEL,
             DATASET,
             InputType.test if ARGS.test else InputType.validation,
-            device=ARGS.device)))
+            device=ARGS.eval_device)))

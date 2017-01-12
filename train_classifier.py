@@ -20,7 +20,7 @@ import evaluate_classifier as evaluate
 from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from inputs.utils import InputType
-import utils
+from CLIArgs import CLIArgs
 
 
 def train():
@@ -202,7 +202,7 @@ def train():
 
 
 if __name__ == '__main__':
-    ARGS, NAME, MODEL, DATASET, OPTIMIZER = utils.parse_args()
+    ARGS, NAME, MODEL, DATASET, OPTIMIZER = CLIArgs().parse_train()
 
     #### Training constants ####
     STEPS_PER_EPOCH = math.ceil(
