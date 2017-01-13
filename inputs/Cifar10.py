@@ -43,8 +43,7 @@ class Cifar10(Input):
         Args:
             input_type: InputType enum
         """
-        if not isinstance(input_type, utils.InputType):
-            raise ValueError("Invalid input_type, required a valid InputType")
+        utils.InputType.check(input_type)
 
         if input_type == utils.InputType.train:
             return self._num_examples_per_epoch_for_train
@@ -182,8 +181,7 @@ class Cifar10(Input):
             images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
-        if not isinstance(input_type, utils.InputType):
-            raise ValueError("Invalid input_type, required a valid InputType")
+        utils.InputType.check(input_type)
 
         if input_type == utils.InputType.train:
             filenames = [

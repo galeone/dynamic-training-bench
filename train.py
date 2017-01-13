@@ -394,8 +394,7 @@ def eval_model(checkpoint_dir, input_type):
     Returns:
         val: the evaluation results
     """
-    if not isinstance(input_type, InputType):
-        raise ValueError("Invalid input_type, required a valid InputType")
+    InputType.check(input_type)
 
     if isinstance(MODEL, Classifier):
         return evaluate.accuracy(

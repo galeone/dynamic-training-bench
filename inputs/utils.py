@@ -24,6 +24,12 @@ class InputType(Enum):
         """Return the string representation of the enum"""
         return self.value
 
+    @staticmethod
+    def check(input_type):
+        """Check if input_type is an element of this Enum"""
+        if not isinstance(input_type, InputType):
+            raise ValueError("Invalid input_type, required a valid InputType")
+
 
 # Adapted from
 # https://github.com/pavelgonchar/colornet/blob/master/train.py
