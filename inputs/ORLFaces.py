@@ -17,7 +17,7 @@ from six.moves import urllib
 import tensorflow as tf
 import numpy as np
 from . import utils
-from .Input import Input
+from .interfaces.Input import Input
 
 
 class ORLFaces(Input):

@@ -10,7 +10,7 @@ applyed after avery layer of neurons"""
 
 import tensorflow as tf
 from . import utils
-from .Classifier import Classifier
+from .interfaces.Classifier import Classifier
 
 
 class VGGDirectDropout(Classifier):

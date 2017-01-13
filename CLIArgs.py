@@ -47,8 +47,7 @@ class CLIArgs(object):
         """Returns the avaiable modules filename, without the .py ext"""
         return [
             model[len('models/'):-3] for model in glob.glob('models/*.py')
-            if "__init__.py" not in model and "utils" not in model and
-            "Autoencoder.py" not in model and "Classifier.py" not in model
+            if "__init__.py" not in model and "utils" not in model
         ]
 
     @staticmethod
@@ -56,8 +55,7 @@ class CLIArgs(object):
         """Returns the avaiable datasets filename, without the .py ext"""
         return [
             dataset[len('inputs/'):-3] for dataset in glob.glob('inputs/*.py')
-            if "__init__.py" not in dataset and "utils" not in dataset and
-            "Input.py" not in dataset
+            if "__init__.py" not in dataset and "utils" not in dataset
         ]
 
     @staticmethod

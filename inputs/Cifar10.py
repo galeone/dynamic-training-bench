@@ -16,7 +16,7 @@ import tarfile
 from six.moves import urllib
 import tensorflow as tf
 from . import utils
-from .Input import Input
+from .interfaces.Input import Input
 
 
 class Cifar10(Input):

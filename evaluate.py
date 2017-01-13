@@ -14,8 +14,8 @@ import math
 
 import tensorflow as tf
 from inputs.utils import InputType
-from models.Autoencoder import Autoencoder
-from models.Classifier import Classifier
+from models.interfaces.Autoencoder import Autoencoder
+from models.interfaces.Classifier import Classifier
 from CLIArgs import CLIArgs
 
 

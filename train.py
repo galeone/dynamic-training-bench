@@ -19,8 +19,8 @@ import evaluate
 from inputs.utils import InputType
 from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
-from models.Autoencoder import Autoencoder
-from models.Classifier import Classifier
+from models.interfaces.Autoencoder import Autoencoder
+from models.interfaces.Classifier import Classifier
 from CLIArgs import CLIArgs
 
 

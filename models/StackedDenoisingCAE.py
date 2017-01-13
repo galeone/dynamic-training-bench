@@ -9,7 +9,7 @@
 
 import tensorflow as tf
 from . import utils
-from .Autoencoder import Autoencoder
+from .interfaces.Autoencoder import Autoencoder
 
 
 class StackedDenoisingCAE(Autoencoder):

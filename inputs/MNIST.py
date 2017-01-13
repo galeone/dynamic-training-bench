@@ -12,7 +12,7 @@ import os
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets import mnist
 from . import utils
-from .Input import Input
+from .interfaces.Input import Input
 
 
 class MNIST(Input):
