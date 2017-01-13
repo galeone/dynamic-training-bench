@@ -391,7 +391,7 @@ def eval_model(checkpoint_dir, input_type):
     Args:
         model: the model to evaluate
         input_type: the Type.inputType enum that defines the input
-    Return:
+    Returns:
         val: the evaluation results
     """
     if not isinstance(input_type, InputType):

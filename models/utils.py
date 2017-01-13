@@ -36,7 +36,7 @@ def put_kernels_on_grid(kernel, grid_side, pad=1):
         grid_side: side of the grid. Require: NumKernels == grid_side**2
         pad:       number of black pixels around each filter (between them)
 
-    Return:
+    Returns:
         An image Tensor with shape [(Y+2*pad)*grid_side, (X+2*pad)*grid_side, NumChannels, 1].
     """
 

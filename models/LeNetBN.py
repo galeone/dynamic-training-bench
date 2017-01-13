@@ -111,7 +111,7 @@ class LeNetBN(Classifier):
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
 
-        Return:
+        Returns:
             is_training_: tf.bool placeholder enable/disable training ops at run time
             logits: the model output
         """
