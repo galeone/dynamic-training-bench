@@ -9,45 +9,49 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Evaluate the model """
 
-import os
 from datetime import datetime
 import math
 
 import tensorflow as tf
 from inputs.utils import InputType
-from models.utils import MODEL_SUMMARIES, tf_log, put_kernels_on_grid
 from models.Autoencoder import Autoencoder
 from models.Classifier import Classifier
 from CLIArgs import CLIArgs
 
 
-def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
+def accuracy(checkpoint_dir,
+             model,
+             dataset,
+             input_type,
+             device="/gpu:0",
+             batch_size=200):
     """
-    Read latest saved checkpoint and use it to evaluate the model
+    Reads the checkpoint and use it to evaluate the model
     Args:
         checkpoint_dir: checkpoint folder
-        model: python package containing the model to save
+        model: python package containing the model saved
         dataset: python package containing the dataset to use
         input_type: InputType enum, the input type of the input examples
         device: device where to place the model and run the evaluation
+        batch_size: batch size for the evaluation in batches
+    Returns:
+        average_accuracy: the average accuracy
     """
-    if not isinstance(input_type, InputType):
-        raise ValueError("Invalid input_type, required a valid type")
+    InputType.check(input_type)
 
     with tf.Graph().as_default(), tf.device(device):
         # Get images and labels from the dataset
-        # Use batch_size multiple of train set size and big enough to stay in GPU
-        batch_size = 200
         images, labels = dataset.inputs(
             input_type=input_type, batch_size=batch_size)
 
-        # Build a Graph that computes the logits predictions from the
-        # inference model.
-        _, logits = model.get(images, dataset.num_classes(), train_phase=False)
+        # Build a Graph that computes the predictions from the inference model.
+        _, predictions = model.get(images,
+                                   dataset.num_classes(),
+                                   train_phase=False)
 
-        # Calculate predictions.
+        # Calculate correct predictions.
         correct_predictions = tf.reduce_sum(
-            tf.cast(tf.nn.in_top_k(logits, labels, 1), tf.int32))
+            tf.cast(tf.nn.in_top_k(predictions, labels, 1), tf.int32))
 
         saver = tf.train.Saver()
         accuracy_value = 0.0
@@ -73,7 +77,8 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
 
                 num_iter = int(
                     math.ceil(dataset.num_examples(input_type) / batch_size))
-                true_count = 0  # Counts the number of correct predictions.
+                # Counts the number of correct predictions.
+                true_count = 0
                 total_sample_count = num_iter * batch_size
                 step = 0
                 while step < num_iter and not coord.should_stop():
@@ -90,27 +95,31 @@ def accuracy(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
         return accuracy_value
 
 
-def error(checkpoint_dir, model, dataset, input_type, device="/gpu:0"):
+def error(checkpoint_dir,
+          model,
+          dataset,
+          input_type,
+          device="/gpu:0",
+          batch_size=200):
     """
-    Read latest saved checkpoint and use it to evaluate the model
+    Reads the checkpoint and use it to evaluate the model
     Args:
         checkpoint_dir: checkpoint folder
-        model: python package containing the model to save
+        model: python package containing the model saved
         dataset: python package containing the dataset to use
         input_type: InputType enum, the input type of the input examples
         device: device where to place the model and run the evaluation
+        batch_size: batch size for the evaluation in batches
+    Returns:
+        average_error: the average error
     """
-    if not isinstance(input_type, InputType):
-        raise ValueError("Invalid input_type, required a valid type")
+    InputType.check(input_type)
 
     with tf.Graph().as_default(), tf.device(device):
         # Get images and labels from the dataset
-        # Use batch_size multiple of train set size and big enough to stay in GPU
-        batch_size = 200
         images, _ = dataset.inputs(input_type=input_type, batch_size=batch_size)
 
-        # Build a Graph that computes the reconstructions predictions from the
-        # inference model.
+        # Build a Graph that computes the reconstructions from the inference model.
         _, reconstructions = model.get(images,
                                        train_phase=False,
                                        l2_penalty=0.0)
