@@ -21,8 +21,8 @@ class Input(object, metaclass=abc.ABCMeta):
             batch_size: Number of images per batch.
 
         Returns:
-            images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
-            labels: Labels. 1D tensor of [batch_size] size.
+            images: distorted images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
+            ground_truth: tensor with batch_size elements
         """
         raise NotImplementedError(
             'users must define distorted_inputs to use this base class')
@@ -37,14 +37,14 @@ class Input(object, metaclass=abc.ABCMeta):
 
         Returns:
             images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
-            labels: Labels. 1D tensor of [batch_size] size.
+            ground_truth: tensor with batch_size elements
         """
         raise NotImplementedError(
             'users must define inputs to use this base class')
 
     @abc.abstractmethod
     def maybe_download_and_extract(self):
-        """Acquire and save the sataset"""
+        """Acquire and save the dataset"""
         raise NotImplementedError(
             'users must define maybe_download_and_extract to use this base class'
         )
