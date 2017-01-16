@@ -24,39 +24,6 @@ from models.interfaces.Classifier import Classifier
 from CLIArgs import CLIArgs
 
 
-def build_optimizer(global_step):
-    """Build the CLI specified optimizer, log the learning rate and enalble
-    learning rate decay is specified.
-    Args:
-        global_step: integer tensor, the current training step
-    Returns:
-        optimizer: tf.Optimizer object initialized
-    """
-    # Extract the initial learning rate
-    initial_lr = float(ARGS.optimizer_args['learning_rate'])
-
-    if ARGS.lr_decay:
-        # Decay the learning rate exponentially based on the number of steps.
-        steps_per_decay = STEPS_PER_EPOCH * ARGS.lr_decay_epochs
-        learning_rate = tf.train.exponential_decay(
-            initial_lr,
-            global_step,
-            steps_per_decay,
-            ARGS.lr_decay_factor,
-            staircase=True)
-        # Update the learning rate parameter of the optimizer
-        ARGS.optimizer_args['learning_rate'] = learning_rate
-    else:
-        learning_rate = tf.constant(initial_lr)
-
-    # Log the learning rate
-    tf_log(tf.summary.scalar('learning_rate', learning_rate))
-
-    # Instantiate the optimizer
-    optimizer = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
-    return optimizer
-
-
 def classifier():
     """Trains the classifier, returns the best validation accuracy reached
     and saves the best model (with the highest validation accuracy).
@@ -134,6 +101,7 @@ def classifier():
                 start_time = time.time()
                 _, loss_value = sess.run([train_op, loss],
                                          feed_dict={is_training_: True})
+
                 duration = time.time() - start_time
 
                 if np.isnan(loss_value):
@@ -329,6 +297,39 @@ def autoencoder():
             # Wait for threads to finish.
             coord.join(threads)
     return best_ve
+
+
+def build_optimizer(global_step):
+    """Build the CLI specified optimizer, log the learning rate and enalble
+    learning rate decay is specified.
+    Args:
+        global_step: integer tensor, the current training step
+    Returns:
+        optimizer: tf.Optimizer object initialized
+    """
+    # Extract the initial learning rate
+    initial_lr = float(ARGS.optimizer_args['learning_rate'])
+
+    if ARGS.lr_decay:
+        # Decay the learning rate exponentially based on the number of steps.
+        steps_per_decay = STEPS_PER_EPOCH * ARGS.lr_decay_epochs
+        learning_rate = tf.train.exponential_decay(
+            initial_lr,
+            global_step,
+            steps_per_decay,
+            ARGS.lr_decay_factor,
+            staircase=True)
+        # Update the learning rate parameter of the optimizer
+        ARGS.optimizer_args['learning_rate'] = learning_rate
+    else:
+        learning_rate = tf.constant(initial_lr)
+
+    # Log the learning rate
+    tf_log(tf.summary.scalar('learning_rate', learning_rate))
+
+    # Instantiate the optimizer
+    optimizer = getattr(tf.train, ARGS.optimizer)(**ARGS.optimizer_args)
+    return optimizer
 
 
 def log_io(inputs, outputs=None):
