@@ -30,7 +30,7 @@ class Classifier(object, metaclass=abc.ABCMeta):
             logits: the model output
         """
         raise NotImplementedError(
-            'users must define get_model to use this base class')
+            'users must define get to use this base class')
 
     @abc.abstractmethod
     def loss(self, logits, labels):

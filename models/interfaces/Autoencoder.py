@@ -29,7 +29,7 @@ class Autoencoder(object, metaclass=abc.ABCMeta):
             predictions: the model output
         """
         raise NotImplementedError(
-            'users must define get_model to use this base class')
+            'users must define get to use this base class')
 
     @abc.abstractmethod
     def loss(self, predictions, real_values):

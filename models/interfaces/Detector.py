@@ -30,10 +30,9 @@ class Detector(object, metaclass=abc.ABCMeta):
             logits: the unscaled prediction for a class specific detector
             bboxes: the predicted coordinates for every detected object in the input image
                     this must have the same number of rows of logits
-
         """
         raise NotImplementedError(
-            'users must define get_model to use this base class')
+            'users must define get to use this base class')
 
     @abc.abstractmethod
     def loss(self, label_relations, bboxes_relations):
