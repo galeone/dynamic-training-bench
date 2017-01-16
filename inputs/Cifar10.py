@@ -127,13 +127,13 @@ class Cifar10(Input):
     def distorted_inputs(self, batch_size):
         """Construct distorted input for CIFAR training using the Reader ops.
 
-      Args:
-        batch_size: Number of images per batch.
+        Args:
+            batch_size: Number of images per batch.
 
-      Returns:
-        images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
-        labels: Labels. 1D tensor of [batch_size] size.
-      """
+        Returns:
+            images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
+            labels: Labels. 1D tensor of [batch_size] size.
+        """
         filenames = [
             os.path.join(self._data_dir,
                          'cifar-10-batches-bin/data_batch_%d.bin' % i)

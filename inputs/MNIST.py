@@ -107,7 +107,7 @@ class MNIST(Input):
             batch_size: Number of images per batch.
 
         Returns:
-          images: Images. 4D tensor of [batch_size, self._image_width, self._image_height, self._image_depth] size.
+            images: Images. 4D tensor of [batch_size, self._image_width, self._image_height, self._image_depth] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
 
