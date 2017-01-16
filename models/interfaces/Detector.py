@@ -20,7 +20,7 @@ class Detector(object, metaclass=abc.ABCMeta):
         in the protobuf format.
 
         Args:
-            images: model input
+            images: model input, tensor with batch_size elements
             num_classes: number of classes to predict
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
@@ -36,14 +36,14 @@ class Detector(object, metaclass=abc.ABCMeta):
             'users must define get_model to use this base class')
 
     @abc.abstractmethod
-    def loss(self, logits, bboxes, labels, coordinates):
-        """Return the loss operation between logits and labels
+    def loss(self, label_relations, bboxes_relations):
+        """Return the loss operation.
         Args:
-            logits: Logits from inference().
-            bboxes: Bboxes from inference().
-            labels: Labels from distorted_inputs or inputs(). 1-D tensor
-                    of shape [batch_size]
-            coordinates: Ground truth coordinates from distorted_inputs or inputs().
+            label_relations: a tuple with 2 elements, usually the pair
+            (labels, logits), each one a tensor of batch_size elements
+            bboxes_relations: a tuple with 2 elements, usually the pair
+            (coordinates, bboxes) where coordinates are the
+            ground truth coordinates ad bboxes the predicted one
         Returns:
             Loss tensor of type float.
         """
