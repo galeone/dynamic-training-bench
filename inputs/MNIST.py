@@ -30,8 +30,9 @@ class MNIST(Input):
         self._num_examples_per_epoch_for_eval = 5000
         self._num_examples_per_epoch_for_test = 10000
 
-        self._data_dir = os.path.dirname(os.path.abspath(
-            __file__)) + "/MNIST_data"
+        self._data_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'data', 'MNIST')
+        self._maybe_download_and_extract()
 
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
@@ -178,7 +179,7 @@ class MNIST(Input):
                 batch_size,
                 shuffle=False)
 
-    def maybe_download_and_extract(self):
+    def _maybe_download_and_extract(self):
         """Download and extract the MNIST dataset"""
         data_sets = mnist.read_data_sets(
             self._data_dir,

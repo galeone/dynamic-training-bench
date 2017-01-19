@@ -34,9 +34,10 @@ class ORLFaces(Input):
         self._num_examples_per_epoch_for_eval = 0
         self._num_examples_per_epoch_for_test = 0
 
-        self._data_dir = os.path.dirname(os.path.abspath(
-            __file__)) + "/ORL_faces_data"
+        self._data_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'data', 'ORLFaces')
         self._data_url = 'http://www.cl.cam.ac.uk/Research/DTG/attarchive/pub/data/att_faces.zip'
+        self._maybe_download_and_extract()
 
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
@@ -178,7 +179,7 @@ class ORLFaces(Input):
                 batch_size,
                 shuffle=False)
 
-    def maybe_download_and_extract(self):
+    def _maybe_download_and_extract(self):
         """Download and extract the ORL Faces dataset"""
 
         dest_directory = self._data_dir

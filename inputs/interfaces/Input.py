@@ -43,13 +43,6 @@ class Input(object, metaclass=abc.ABCMeta):
             'users must define inputs to use this base class')
 
     @abc.abstractmethod
-    def maybe_download_and_extract(self):
-        """Acquire and save the dataset"""
-        raise NotImplementedError(
-            'users must define maybe_download_and_extract to use this base class'
-        )
-
-    @abc.abstractmethod
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
 

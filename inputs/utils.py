@@ -109,7 +109,7 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
             num_threads=num_preprocess_threads,
             capacity=min_queue_examples + 3 * batch_size)
 
-    return images, tf.reshape(label_batch, [batch_size])
+    return images, tf.squeeze(label_batch)
 
 
 def scale_image(image):

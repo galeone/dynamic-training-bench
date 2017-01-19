@@ -56,7 +56,7 @@ DTB provides a single interface to implement to define an input source:
 
 The recommended steps to follow to implement this interface are:
 
-1. Implement the `maybe_download_and_extract` method: this method must download the dataset and apply the desired transformations to its elements. There are some utility functions defined in the [`inputs/utils.py`](inputs/utils.py) file that can be used.
+1. Implement the `__init__` method: this method must download the dataset and apply the desired transformations to its elements. There are some utility functions defined in the [`inputs/utils.py`](inputs/utils.py) file that can be used.
 This method is executed as first operation when the dataset object is created, therefore is recommended to cache the results.
 2. Implement the `num_classes` method: this method must return the number of classes of the dataset. If your dataset has no labels, just return 0.
 3. Implement the `num_examples(input_type)` method: this method accepts an `InputType` enumeration, defined in `inputs/utils.py`.

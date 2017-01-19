@@ -35,9 +35,10 @@ class Cifar100(Input):
         self._num_examples_per_epoch_for_eval = 10000
         self._num_examples_per_epoch_for_test = self._num_examples_per_epoch_for_eval
 
-        self._data_dir = os.path.dirname(os.path.abspath(
-            __file__)) + "/cifar100_data"
+        self._data_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'data', 'Cifar100')
         self._data_url = 'http://www.cs.toronto.edu/~kriz/cifar-100-binary.tar.gz'
+        self._maybe_download_and_extract()
 
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
@@ -211,7 +212,7 @@ class Cifar100(Input):
                 batch_size,
                 shuffle=False)
 
-    def maybe_download_and_extract(self):
+    def _maybe_download_and_extract(self):
         """Download and extract the tarball from Alex's website."""
         dest_directory = self._data_dir
         if not os.path.exists(dest_directory):

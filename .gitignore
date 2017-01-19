@@ -60,11 +60,8 @@ target/
 #Ipython Notebook
 .ipynb_checkpoints
 
-# Dataset
-inputs/MNIST_data/
-inputs/cifar10_data/
-inputs/cifar100_data/
-inputs/ORL_faces_data/
+# Datasets
+inputs/data/
 
 # Logs
 log/
