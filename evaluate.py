@@ -39,7 +39,7 @@ def accuracy(checkpoint_dir,
     """
     InputType.check(input_type)
 
-    with tf.Graph().as_default(), tf.device(device):
+    with tf.device(device):
         # Get images and labels from the dataset
         images, labels = dataset.inputs(
             input_type=input_type, batch_size=batch_size)
@@ -115,7 +115,7 @@ def error(checkpoint_dir,
     """
     InputType.check(input_type)
 
-    with tf.Graph().as_default(), tf.device(device):
+    with tf.device(device):
         # Get images and labels from the dataset
         images, _ = dataset.inputs(input_type=input_type, batch_size=batch_size)
 
@@ -169,7 +169,6 @@ def error(checkpoint_dir,
 if __name__ == '__main__':
     ARGS, MODEL, DATASET = CLIArgs(
         description="Evaluate the model").parse_eval()
-    DATASET.maybe_download_and_extract()
 
     if isinstance(MODEL, Classifier):
         print('{}: {} accuracy = {:.3f}'.format(
