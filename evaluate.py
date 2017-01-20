@@ -14,6 +14,7 @@ import math
 
 import tensorflow as tf
 from inputs.utils import InputType
+from models.utils import variables_to_save
 from models.interfaces.Autoencoder import Autoencoder
 from models.interfaces.Classifier import Classifier
 from CLIArgs import CLIArgs
@@ -53,7 +54,7 @@ def accuracy(checkpoint_dir,
         correct_predictions = tf.reduce_sum(
             tf.cast(tf.nn.in_top_k(predictions, labels, 1), tf.int32))
 
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(variables_to_save())
         accuracy_value = 0.0
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True)) as sess:
@@ -127,7 +128,7 @@ def error(checkpoint_dir,
         # Calculate loss.
         loss = model.loss(reconstructions, images)
 
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(variables_to_save())
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True)) as sess:
             ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
