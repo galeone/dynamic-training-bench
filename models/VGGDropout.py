@@ -37,7 +37,7 @@ class VGGDropout(Classifier):
           Logits.
         """
 
-        with tf.variable_scope(self.__class__.__name__):
+        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
             with tf.variable_scope('64'):
                 with tf.variable_scope('conv1'):
                     conv1 = utils.conv_layer(
@@ -250,11 +250,12 @@ class VGGDropout(Classifier):
                 logits, labels, name='cross_entropy_per_example')
             cross_entropy_mean = tf.reduce_mean(
                 cross_entropy, name='cross_entropy')
-            tf.add_to_collection('losses', cross_entropy_mean)
+            tf.add_to_collection(utils.LOSSES_COLLECTION, cross_entropy_mean)
 
             # The total loss is defined as the cross entropy loss plus all of the weight
             # decay terms (L2 loss).
-            error = tf.add_n(tf.get_collection('losses'), name='total_loss')
+            error = tf.add_n(
+                tf.get_collection(utils.LOSSES_COLLECTION), name='total_loss')
 
         return error
 

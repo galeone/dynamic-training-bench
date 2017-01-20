@@ -44,7 +44,7 @@ class SingleLayerCAE(Autoencoder):
         """
         filter_side = 3
         filters_number = 32
-        with tf.variable_scope(self.__class__.__name__):
+        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
             input_x = self._pad(images, filter_side)
 
             with tf.variable_scope("encode"):
@@ -103,9 +103,10 @@ class SingleLayerCAE(Autoencoder):
                     tf.square(tf.subtract(predictions, real_values))),
                 2,
                 name="mse")
-            tf.add_to_collection('losses', mse)
+            tf.add_to_collection(utils.LOSSES_COLLECTION, mse)
 
             # mse + weight_decay per layer
-            error = tf.add_n(tf.get_collection('losses'), name='total_loss')
+            error = tf.add_n(
+                tf.get_collection(utils.LOSSES_COLLECTION), name='total_loss')
 
         return error

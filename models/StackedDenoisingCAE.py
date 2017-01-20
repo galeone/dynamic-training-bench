@@ -45,7 +45,7 @@ class StackedDenoisingCAE(Autoencoder):
         num_layers = 9
         filter_side = 3
         filters_number = 9
-        with tf.variable_scope(self.__class__.__name__):
+        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
             input_x = tf.identity(images)
             if train_phase:
                 input_x_noise = tf.clip_by_value(
@@ -93,7 +93,7 @@ class StackedDenoisingCAE(Autoencoder):
 
                         # loss between input without noise and output computed
                         # on noisy values
-                        tf.add_to_collection('losses',
+                        tf.add_to_collection(utils.LOSSES_COLLECTION,
                                              self._mse(output_x_noise, input_x))
                         input_x_noise = tf.stop_gradient(output_x_noise)
                         input_padded_noise = self._pad(input_x_noise,
@@ -121,8 +121,9 @@ class StackedDenoisingCAE(Autoencoder):
             Loss tensor of type float.
         """
         with tf.variable_scope('loss'):
-            #tf.add_to_collection('losses', self._mse(real_values, predictions))
+            #tf.add_to_collection(utils.LOSSES_COLLECTION, self._mse(real_values, predictions))
             # mse + weight_decay per layer
-            error = tf.add_n(tf.get_collection('losses'), name='total_loss')
+            error = tf.add_n(
+                tf.get_collection(utils.LOSSES_COLLECTION), name='total_loss')
 
         return error

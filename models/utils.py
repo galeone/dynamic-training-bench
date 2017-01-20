@@ -19,6 +19,9 @@ REQUIRED_NON_TRAINABLES = 'required_vars_collection'
 # related to the model (and the train phase)
 MODEL_SUMMARIES = 'model_summaries'
 
+# losses collection
+LOSSES_COLLECTION = 'losses'
+
 
 def tf_log(summary, collection=MODEL_SUMMARIES):
     """Add tf.summary object to collection named collection"""
@@ -112,6 +115,63 @@ def bias(name, shape, initializer=tf.constant_initializer(value=0.0)):
     return weight(name, shape, initializer)
 
 
+def atrous_conv_layer(input_x,
+                      shape,
+                      rate,
+                      padding,
+                      activation=tf.identity,
+                      wd=0.0):
+    """ Define an atrous conv layer.
+    Args:
+         input_x: a 4D tensor
+         shape: weight shape
+         rate: : A positive int32. The stride with which we sample input values
+            cross the height and width dimensions. Equivalently, the rate by which
+            we upsample the filter values by inserting zeros
+            across the height and width dimensions. In the literature, the same
+            parameter is sometimes called input stride or dilation
+         padding: 'VALID' or 'SAME'
+         activation: activation function. Default linear
+         wd: weight decay
+    Rerturns the conv2d op"""
+    W = weight("W", shape)
+    b = bias("b", [shape[3]])
+    # Add weight decay to W
+    weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
+    tf.add_to_collection(LOSSES_COLLECTION, weight_decay)
+
+    result = tf.nn.bias_add(tf.nn.atrous_conv2d(input_x, W, rate, padding), b)
+
+    # apply nonlinearity
+    out = activation(result)
+
+    # log convolution result pre-activation function
+    # on a single image, the first of the batch
+    conv_results = tf.split(2, shape[3], result[0])
+    grid_side = math.floor(math.sqrt(shape[3]))
+
+    pre_activation = put_kernels_on_grid(
+        tf.transpose(
+            conv_results, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+        grid_side,
+        grid_side)
+
+    # log post-activation
+    conv_results = tf.split(2, shape[3], out[0])
+    post_activation = put_kernels_on_grid(
+        tf.transpose(
+            conv_results, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+        grid_side,
+        grid_side)
+
+    tf_log(
+        tf.summary.image(
+            result.name + '/pre_post_activation',
+            tf.concat(2, [pre_activation, post_activation]),
+            max_outputs=1))
+    return out
+
+
 def conv_layer(input_x, shape, stride, padding, activation=tf.identity, wd=0.0):
     """ Define a conv layer.
     Args:
@@ -126,7 +186,7 @@ def conv_layer(input_x, shape, stride, padding, activation=tf.identity, wd=0.0):
     b = bias("b", [shape[3]])
     # Add weight decay to W
     weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection('losses', weight_decay)
+    tf.add_to_collection(LOSSES_COLLECTION, weight_decay)
 
     result = tf.nn.bias_add(
         tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding), b)
@@ -173,7 +233,7 @@ def fc_layer(input_x, shape, activation=tf.identity, wd=0.0):
     b = bias("b", [shape[1]])
     # Add weight decay to W
     weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection('losses', weight_decay)
+    tf.add_to_collection(LOSSES_COLLECTION, weight_decay)
     return activation(tf.nn.bias_add(tf.matmul(input_x, W), b))
 
 
@@ -205,7 +265,7 @@ def batch_norm(layer_output, is_training_, decay=0.9):
         scope=None)
 
 
-def variables_to_save(addlist):
+def variables_to_save(addlist=[]):
     """Create a list of all trained variables and required variables of the model.
     Appends to the list, the addlist passed as argument.
 

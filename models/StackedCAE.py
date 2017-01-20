@@ -45,7 +45,7 @@ class StackedCAE(Autoencoder):
         num_layers = 9
         filter_side = 3
         filters_number = 9
-        with tf.variable_scope(self.__class__.__name__):
+        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
             input_x = tf.identity(images)
             input_padded = self._pad(input_x, filter_side)
             for layer in range(num_layers):
@@ -74,7 +74,7 @@ class StackedCAE(Autoencoder):
                             'VALID',
                             activation=tf.nn.tanh)
 
-                        tf.add_to_collection('losses',
+                        tf.add_to_collection(utils.LOSSES_COLLECTION,
                                              self._mse(input_x, output_x))
                         input_x = tf.stop_gradient(output_x)
                         input_padded = self._pad(input_x, filter_side)
@@ -101,8 +101,9 @@ class StackedCAE(Autoencoder):
             Loss tensor of type float.
         """
         with tf.variable_scope('loss'):
-            #tf.add_to_collection('losses', self._mse(real_values, predictions))
+            #tf.add_to_collection(utils.LOSSES_COLLECTION, self._mse(real_values, predictions))
             # mse + weight_decay per layer
-            error = tf.add_n(tf.get_collection('losses'), name='total_loss')
+            error = tf.add_n(
+                tf.get_collection(utils.LOSSES_COLLECTION), name='total_loss')
 
         return error
