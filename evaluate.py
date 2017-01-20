@@ -171,7 +171,15 @@ if __name__ == '__main__':
     ARGS, MODEL, DATASET = CLIArgs(
         description="Evaluate the model").parse_eval()
 
+    INPUT_TYPE = InputType.test if ARGS.test else InputType.validation
+    # models need to be instantiated in "train mode" in order to define
+    # the complete graph. Then the evaluation reinstantiate the model but
+    # in "test" mode, reusing the previosly defined variable.
     if isinstance(MODEL, Classifier):
+        with tf.device(ARGS.eval_device):
+            IMAGES, _ = DATASET.inputs(input_type=INPUT_TYPE, batch_size=1)
+            _ = MODEL.get(IMAGES, DATASET.num_classes(), train_phase=True)
+
         print('{}: {} accuracy = {:.3f}'.format(
             datetime.now(),
             'test' if ARGS.test else 'validation',
@@ -179,10 +187,14 @@ if __name__ == '__main__':
                 ARGS.checkpoint_dir,
                 MODEL,
                 DATASET,
-                InputType.test if ARGS.test else InputType.validation,
+                INPUT_TYPE,
                 device=ARGS.eval_device)))
 
     if isinstance(MODEL, Autoencoder):
+        with tf.device(ARGS.eval_device):
+            IMAGES, _ = DATASET.inputs(input_type=INPUT_TYPE, batch_size=1)
+            _ = MODEL.get(IMAGES, train_phase=True)
+
         print('{}: {} error = {:.3f}'.format(
             datetime.now(),
             'test' if ARGS.test else 'validation',
@@ -190,5 +202,5 @@ if __name__ == '__main__':
                 ARGS.checkpoint_dir,
                 MODEL,
                 DATASET,
-                InputType.test if ARGS.test else InputType.validation,
+                INPUT_TYPE,
                 device=ARGS.eval_device)))
