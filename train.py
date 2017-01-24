@@ -21,6 +21,7 @@ from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from models.interfaces.Autoencoder import Autoencoder
 from models.interfaces.Classifier import Classifier
+from models.interfaces.Detector import Detector
 from CLIArgs import CLIArgs
 
 
@@ -29,15 +30,17 @@ def classifier():
     and saves the best model (with the highest validation accuracy).
 
     Returns:
-        best_va: best validation accuracy"""
+        best_va: best validation accuracy
+    """
 
     best_va = 0.0
 
-    with tf.Graph().as_default(), tf.device(ARGS.train_device):
+    with tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and labels
         images, labels = DATASET.distorted_inputs(ARGS.batch_size)
+        labels = tf.squeeze(labels)
         log_io(images)
         # Build a Graph that computes the logits predictions from the
         # inference model.
@@ -71,8 +74,10 @@ def classifier():
             tf.get_collection_ref(MODEL_SUMMARIES))
 
         # Build an initialization operation to run below.
-        init = tf.variables_initializer(tf.global_variables() +
-                                        tf.local_variables())
+        init = [
+            tf.variables_initializer(tf.global_variables() + tf.local_variables(
+            )), tf.initialize_all_tables()
+        ]
 
         # Start running operations on the Graph.
         with tf.Session(config=tf.ConfigProto(
@@ -172,10 +177,11 @@ def autoencoder():
     and saves the best model (with the lower validation error).
 
     Returns:
-        best_ve: best validation error"""
+        best_ve: best validation error
+    """
 
     best_ve = float('inf')
-    with tf.Graph().as_default(), tf.device(ARGS.train_device):
+    with tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and discard labels
@@ -299,6 +305,209 @@ def autoencoder():
     return best_ve
 
 
+def detector():
+    """Trains the detector, returns the best average precision (AP) reached
+    and saves the best model (with the highest validation AP).
+
+    Returns:
+        best_iou: best average precision
+    """
+
+    best_iou = 0.0
+
+    with tf.device(ARGS.train_device):
+        global_step = tf.Variable(0, trainable=False, name='global_step')
+        images, ground_truth = DATASET.distorted_inputs(ARGS.batch_size)
+
+        # Build a Graph that computes the logits predictions from the
+        # inference model.
+        # predictions has shape: [batch_size, n, m, num_bboxes, 4 + 1 + num_classes]
+        # 4 = coords, 1 = score
+        # n & m = 1 when training and input has the expected shape of the network
+        is_training_, predictions = MODEL.get(images,
+                                              DATASET.num_classes(),
+                                              train_phase=True,
+                                              l2_penalty=ARGS.l2_penalty)
+
+        # Calculate loss.
+        loss = MODEL.loss(predictions, ground_truth)
+        tf_log(tf.summary.scalar('loss', loss))
+
+        # reshape predictions in order to be useful in training
+        predictions = tf.squeeze(predictions, axis=[1, 2])
+        coordinates = predictions[:, :4]
+        scores = predictions[:, 4]
+        logits = predictions[:, 5:]
+
+        # reshape ground truth in order to be useful in training
+        ground_truth = tf.squeeze(ground_truth, axis=[1])
+        real_coordinates = ground_truth[:, :4]
+        labels = tf.cast(ground_truth[:, 4], tf.int32)
+
+        # add dimension to real coordinates, in order to get a tensor with shape:
+        # [batch_size, 1=num_bboxes, 4]
+        log_io(
+            images,
+            tf.image.draw_bounding_boxes(
+                images, tf.expand_dims(
+                    real_coordinates, axis=1)))
+
+        # Create optimizer and log learning rate
+        optimizer = build_optimizer(global_step)
+        train_op = optimizer.minimize(loss, global_step=global_step)
+
+        # Create the train saver.
+        train_saver, best_saver = build_savers([global_step])
+
+        with tf.variable_scope('iou'):
+            ymin_orig = real_coordinates[:, 0]
+            xmin_orig = real_coordinates[:, 1]
+            ymax_orig = real_coordinates[:, 2]
+            xmax_orig = real_coordinates[:, 3]
+            area_orig = (ymax_orig - ymin_orig) * (xmax_orig - xmin_orig)
+
+            ymin = coordinates[:, 0]
+            xmin = coordinates[:, 1]
+            ymax = coordinates[:, 2]
+            xmax = coordinates[:, 3]
+            area_pred = (ymax - ymin) * (xmax - xmin)
+
+            intersection_ymin = tf.maximum(ymin, ymin_orig)
+            intersection_xmin = tf.maximum(xmin, xmin_orig)
+            intersection_ymax = tf.minimum(ymax, ymax_orig)
+            intersection_xmax = tf.minimum(xmax, xmax_orig)
+
+            intersection_area = tf.maximum(
+                intersection_ymax - intersection_ymin,
+                tf.zeros_like(intersection_ymax)) * tf.maximum(
+                    intersection_xmax - intersection_xmin,
+                    tf.zeros_like(intersection_ymax))
+
+            iou = tf.reduce_mean(intersection_area /
+                                 (area_orig + area_pred - intersection_area))
+
+            iou_value_ = tf.placeholder(tf.float32, shape=())
+            iou_summary = tf.summary.scalar('iou', iou_value_)
+
+        # Train accuracy ops
+        with tf.variable_scope('accuracy'):
+            top_k_op = tf.nn.in_top_k(logits, labels, 1)
+            train_accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
+            # General validation summary
+            accuracy_value_ = tf.placeholder(tf.float32, shape=())
+            accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
+
+        # read collection after that every op added its own
+        # summaries in the train_summaries collection
+        train_summaries = tf.summary.merge(
+            tf.get_collection_ref(MODEL_SUMMARIES))
+
+        # Build an initialization operation to run below.
+        init = tf.variables_initializer(tf.global_variables() +
+                                        tf.local_variables())
+
+        # Start running operations on the Graph.
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True)) as sess:
+            sess.run(init)
+
+            # Start the queue runners with a coordinator
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
+            if not ARGS.restart:  # continue from the saved checkpoint
+                # restore previous session if exists
+                checkpoint = tf.train.latest_checkpoint(LOG_DIR)
+                if checkpoint:
+                    train_saver.restore(sess, checkpoint)
+                else:
+                    print('[I] Unable to restore from checkpoint')
+
+            train_log, validation_log = build_loggers(sess.graph)
+
+            # Extract previous global step value
+            old_gs = sess.run(global_step)
+
+            # Restart from where we were
+            for step in range(old_gs, MAX_STEPS):
+                start_time = time.time()
+                _, loss_value = sess.run([train_op, loss],
+                                         feed_dict={is_training_: True})
+
+                duration = time.time() - start_time
+
+                if np.isnan(loss_value):
+                    print('Model diverged with loss = NaN')
+                    break
+
+                # update logs every 10 iterations
+                if step % 10 == 0:
+                    examples_per_sec = ARGS.batch_size / duration
+                    sec_per_batch = float(duration)
+
+                    format_str = ('{}: step {}, loss = {:.4f} '
+                                  '({:.1f} examples/sec; {:.3f} sec/batch)')
+                    print(
+                        format_str.format(datetime.now(), step, loss_value,
+                                          examples_per_sec, sec_per_batch))
+                    # log train values
+                    summary_lines = sess.run(train_summaries,
+                                             feed_dict={is_training_: True})
+                    train_log.add_summary(summary_lines, global_step=step)
+
+                # Save the model checkpoint at the end of every epoch
+                # evaluate train and validation performance
+                if (step > 0 and
+                        step % STEPS_PER_EPOCH == 0) or (step + 1) == MAX_STEPS:
+                    checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
+                    train_saver.save(sess, checkpoint_path, global_step=step)
+
+                    # validation average iou TODO
+                    #validation_iou_value = eval_model(LOG_DIR,
+                    #                                  InputType.validation)
+                    #
+                    #summary_line = sess.run(
+                    #        iou_summary,
+                    #    feed_dict={iou_value_: validation_iou_value})
+                    #validation_log.add_summary(summary_line, global_step=step)
+
+                    # train metrics
+                    iou_value, ta_value = sess.run(
+                        [iou, train_accuracy], feed_dict={is_training_: False})
+                    summary_line = sess.run(iou_summary,
+                                            feed_dict={iou_value_: iou_value})
+                    train_log.add_summary(summary_line, global_step=step)
+
+                    summary_line = sess.run(
+                        accuracy_summary, feed_dict={accuracy_value_: ta_value})
+                    train_log.add_summary(summary_line, global_step=step)
+
+                    #print(
+                    #    '{} ({}): train accuracy = {:.3f} validation accuracy = {:.3f}'.
+                    #    format(datetime.now(),
+                    #           int(step / STEPS_PER_EPOCH), ta_value, va_value))
+                    print('{} ({}): train IOU: {:.3f} train acc: {:.3f}'.format(
+                        datetime.now(),
+                        int(step / STEPS_PER_EPOCH), iou_value, ta_value))
+                    # save best model TODO
+                    #if validation_iou_value > best_iou:
+                    #    best_iou = validation_iou_value
+                    #    best_saver.save(
+                    #        sess,
+                    #        os.path.join(BEST_MODEL_DIR, 'model.ckpt'),
+                    #        global_step=step)
+                # end of for
+
+            validation_log.close()
+            train_log.close()
+
+            # When done, ask the threads to stop.
+            coord.request_stop()
+            # Wait for threads to finish.
+            coord.join(threads)
+    return best_iou
+
+
 def build_optimizer(global_step):
     """Build the CLI specified optimizer, log the learning rate and enalble
     learning rate decay is specified.
@@ -412,6 +621,8 @@ def train():
         return classifier()
     if isinstance(MODEL, Autoencoder):
         return autoencoder()
+    if isinstance(MODEL, Detector):
+        return detector()
     raise ValueError("train method not defined for this model type")
 
 
@@ -427,9 +638,6 @@ if __name__ == '__main__':
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     LOG_DIR = os.path.join(CURRENT_DIR, 'log', ARGS.model, NAME)
     BEST_MODEL_DIR = os.path.join(LOG_DIR, 'best')
-
-    #### Dataset and logs ####
-    DATASET.maybe_download_and_extract()
 
     if tf.gfile.Exists(LOG_DIR) and ARGS.restart:
         tf.gfile.DeleteRecursively(LOG_DIR)
