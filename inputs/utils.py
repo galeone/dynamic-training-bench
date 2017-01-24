@@ -95,6 +95,7 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
     num_preprocess_threads = multiprocessing.cpu_count()
     if num_preprocess_threads > 2:
         num_preprocess_threads -= 2
+
     if shuffle:
         images, label_batch = tf.train.shuffle_batch(
             [image, label],
@@ -109,7 +110,7 @@ def generate_image_and_label_batch(image, label, min_queue_examples, batch_size,
             num_threads=num_preprocess_threads,
             capacity=min_queue_examples + 3 * batch_size)
 
-    return images, tf.squeeze(label_batch)
+    return images, label_batch
 
 
 def scale_image(image):
