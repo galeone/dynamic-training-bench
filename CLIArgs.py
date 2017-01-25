@@ -111,8 +111,11 @@ class CLIArgs(object):
             dataset: input object instantiated"""
 
         parser = self._init_parser()
-        parser.add_argument("--checkpoint_path", required=True)
-        parser.add_argument("--test", action="store_true")
+        parser.add_argument(
+            "--checkpoint_path",
+            required=True,
+            help='the path to a checkpoint from which load the model')
+        parser.add_argument("--test", action="store_true", help='use test set')
         self._args = parser.parse_args()
         # Get model and dataset objects
         model, dataset = self._get_model_dataset()
@@ -131,21 +134,42 @@ class CLIArgs(object):
         parser = self._init_parser()
 
         # Restart train or continue
-        parser.add_argument('--restart', action='store_true')
+        parser.add_argument(
+            '--restart',
+            action='store_true',
+            help='restart the training process DELETING the old checkpoint files'
+        )
 
         # Learning rate decay arguments
-        parser.add_argument('--lr_decay', action='store_true')
-        parser.add_argument('--lr_decay_epochs', type=int, default=25)
-        parser.add_argument('--lr_decay_factor', type=float, default=0.1)
+        parser.add_argument(
+            '--lr_decay',
+            action='store_true',
+            help='enable the learning rate decay')
+        parser.add_argument(
+            '--lr_decay_epochs',
+            type=int,
+            default=25,
+            help='decay the learning rate every lr_decay_epochs epochs')
+        parser.add_argument(
+            '--lr_decay_factor',
+            type=float,
+            default=0.1,
+            help='decay of lr_decay_factor the initial learning rate after lr_decay_epochs epochs'
+        )
 
         # L2 regularization arguments
-        parser.add_argument('--l2_penalty', type=float, default=0.0)
+        parser.add_argument(
+            '--l2_penalty',
+            type=float,
+            default=0.0,
+            help='L2 penalty term to apply ad the trained parameters')
 
         # Optimization arguments
         parser.add_argument(
             '--optimizer',
             choices=self.get_optimizers(),
-            default='MomentumOptimizer')
+            default='MomentumOptimizer',
+            help='the optimizer to use')
         parser.add_argument(
             '--optimizer_args',
             type=json.loads,
@@ -153,14 +177,26 @@ class CLIArgs(object):
         {
             "learning_rate": 1e-2,
             "momentum": 0.9
-        }''')
-        parser.add_argument('--epochs', type=int, default=150)
+        }''',
+            help='the optimizer parameters')
+        parser.add_argument(
+            '--epochs',
+            type=int,
+            default=150,
+            help='number of epochs to train the model')
 
         # Hardware
-        parser.add_argument('--train_device', default='/gpu:0')
+        parser.add_argument(
+            '--train_device',
+            default='/gpu:0',
+            help='the device on which place the the model during the trining phase'
+        )
 
         # Optional comment
-        parser.add_argument('--comment', default='')
+        parser.add_argument(
+            '--comment',
+            default='',
+            help='comment string to preprend to the model name')
 
         # Build the object
         self._args = parser.parse_args()
