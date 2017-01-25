@@ -52,8 +52,7 @@ class PASCALVOC2012(Input):
         self._data_url = 'http://pjreddie.com/media/files/VOCtrainval_11-May-2012.tar'
         self._maybe_download_and_extract()
 
-        if self._multiple_bboxes:
-            self._load_bboxes()
+        self._load_bboxes()
 
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
@@ -121,16 +120,10 @@ class PASCALVOC2012(Input):
 
         Returns:
             images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
-            labels: Labels. 1D tensor of [batch_size] siz
+            labels: Labels. 1D tensor of [batch_size, 2 = angle + label]
         """
 
-        if self._multiple_bboxes:
-            filenames = [
-                os.path.join(self._data_dir, 'VOCdevkit', 'VOC2012',
-                             'ImageSets', 'Main', 'train.txt')
-            ]
-        else:
-            filenames = [os.path.join(self._data_dir, 'train.csv')]
+        filenames = [os.path.join(self._data_dir, 'train.csv')]
 
         for name in filenames:
             if not tf.gfile.Exists(name):
@@ -144,12 +137,6 @@ class PASCALVOC2012(Input):
         with tf.variable_scope("{}_input".format(utils.InputType.train)):
             # Create a queue that produces the filenames to read.
             filename_queue = tf.train.string_input_producer(filenames)
-
-            if self._multiple_bboxes:
-                image, bboxes = self._read_image_and_boxes(
-                    filename_queue, utils.InputType.train)
-                return utils.generate_image_and_label_batch(
-                    image, bboxes, min_queue_examples, batch_size, shuffle=True)
 
             image, bbox_and_label = self._read_image_and_box(
                 filename_queue)  #bbox is a single box
@@ -189,18 +176,22 @@ class PASCALVOC2012(Input):
             # we just need to resize the box to be absolute to the cropped image
             # and not to the orignal image
 
-            distort_bbox = tf.cond(
-                tf.greater(box_height, box_width),
-                lambda: tf.pack([0.05, 0.15, 0.95, 0.85]),
-                lambda: tf.pack([0.15, 0.05, 0.85, 0.95]))
+            # TODO: if present in the dataset use it,
+            # otherwise generate an approximative angle
+            # TODO: or better, rotate the image by a random angle and
+            # and try to predict it
+            degree = tf.cond(
+                tf.greater(box_height, box_width), lambda: tf.constant([90.]),
+                lambda: tf.constant([0.]))
 
-            distort_bbox_and_label = tf.expand_dims(
-                tf.concat(0, [tf.squeeze(distort_bbox), label]), axis=0)
+            # expand dims required to get a format [num_box = 1, degree, label]
+            angle_and_label = tf.expand_dims(
+                tf.concat(0, [degree, label]), axis=0)
 
             # Generate a batch of images and labels by building up a queue of examples.
             return utils.generate_image_and_label_batch(
                 cropped_image,
-                distort_bbox_and_label,
+                angle_and_label,
                 min_queue_examples,
                 batch_size,
                 shuffle=True)
@@ -211,30 +202,24 @@ class PASCALVOC2012(Input):
         Args:
             input_type: InputType enum
             batch_size: Number of images per batch.
-
         Returns:
             images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
-            labels: Labels. 1D tensor of [batch_size] size.
+            labels: A tensor with shape [batch_size, num_bboxes_max, 5]. num_bboxes_max are the maximum bboxes found in the
+            requested set (train/test/validation). Where the bbox is fake, a -1,-1,-1,-1,-1 value is present
         """
         utils.InputType.check(input_type)
 
         if input_type == utils.InputType.train:
-            if self._multiple_bboxes:
-                filenames = [
-                    os.path.join(self._data_dir, 'VOCdevkit', 'VOC2012',
-                                 'ImageSets', 'Main', 'train.txt')
-                ]
-            else:
-                filenames = [os.path.join(self._data_dir, 'train.csv')]
+            filenames = [
+                os.path.join(self._data_dir, 'VOCdevkit', 'VOC2012',
+                             'ImageSets', 'Main', 'train.txt')
+            ]
             num_examples_per_epoch = self._num_examples_per_epoch_for_train
         else:
-            if self._multiple_bboxes:
-                filenames = [
-                    os.path.join(self._data_dir, 'VOCdevkit', 'VOC2012',
-                                 'ImageSets', 'Main', 'val.txt')
-                ]
-            else:
-                filenames = [os.path.join(self._data_dir, 'val.csv')]
+            filenames = [
+                os.path.join(self._data_dir, 'VOCdevkit', 'VOC2012',
+                             'ImageSets', 'Main', 'val.txt')
+            ]
             num_examples_per_epoch = self._num_examples_per_epoch_for_eval
 
         for name in filenames:
@@ -250,26 +235,10 @@ class PASCALVOC2012(Input):
             # Create a queue that produces the filenames to read.
             filename_queue = tf.train.string_input_producer(filenames)
 
-            if self._multiple_bboxes:
-                image, bboxes = self._read_image_and_boxes(filename_queue,
-                                                           input_type)
-                return utils.generate_image_and_label_batch(
-                    image,
-                    bboxes,
-                    min_queue_examples,
-                    batch_size,
-                    shuffle=False)
-
-            image, bbox = self._read_image_and_box(filename_queue)
-
-            image = tf.squeeze(
-                tf.image.resize_bilinear(
-                    tf.expand_dims(image, 0),
-                    [self._image_height, self._image_width]))
-
-            # Generate a batch of images and labels by building up a queue of examples.
+            image, bboxes = self._read_image_and_boxes(filename_queue,
+                                                       input_type)
             return utils.generate_image_and_label_batch(
-                image, bbox, min_queue_examples, batch_size, shuffle=False)
+                image, bboxes, min_queue_examples, batch_size, shuffle=False)
 
     def _load_bboxes(self):
         """load bboxes for every image"""
@@ -278,7 +247,7 @@ class PASCALVOC2012(Input):
             max_bboxes = defaultdict(int)
             for current_set in ['train', 'val']:
                 print(
-                    'Building bounding box set for {}, it will takes some time.'.
+                    'Building bounding box set for {}, it will take some time.'.
                     format(current_set))
                 with open(
                         os.path.join(self._data_dir, '{}.csv'.format(
