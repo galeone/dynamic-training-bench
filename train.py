@@ -215,8 +215,10 @@ def autoencoder():
             tf.get_collection_ref(MODEL_SUMMARIES))
 
         # Build an initialization operation to run below.
-        init = tf.variables_initializer(tf.global_variables() +
-                                        tf.local_variables())
+        init = [
+            tf.variables_initializer(tf.global_variables() + tf.local_variables(
+            )), tf.initialize_all_tables()
+        ]
 
         # Start running operations on the Graph.
         with tf.Session(config=tf.ConfigProto(
@@ -321,8 +323,8 @@ def detector():
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        # predictions has shape: [batch_size, n, m, num_bboxes, 4 + 1 + num_classes]
-        # 4 = coords, 1 = score
+        # predictions has shape: [batch_size, n, m, num_bboxes, 4 + num_classes]
+        # 4 = coords
         # n & m = 1 when training and input has the expected shape of the network
         is_training_, predictions = MODEL.get(images,
                                               DATASET.num_classes(),
@@ -335,22 +337,17 @@ def detector():
 
         # reshape predictions in order to be useful in training
         predictions = tf.squeeze(predictions, axis=[1, 2])
-        coordinates = predictions[:, :4]
-        scores = predictions[:, 4]
-        logits = predictions[:, 5:]
+        angle = predictions[:, :1]
+        logits = predictions[:, 1:]
 
         # reshape ground truth in order to be useful in training
         ground_truth = tf.squeeze(ground_truth, axis=[1])
-        real_coordinates = ground_truth[:, :4]
-        labels = tf.cast(ground_truth[:, 4], tf.int32)
+        real_angle = ground_truth[:, :1]
+        labels = tf.cast(ground_truth[:, 1], tf.int32)
 
-        # add dimension to real coordinates, in order to get a tensor with shape:
-        # [batch_size, 1=num_bboxes, 4]
-        log_io(
-            images,
-            tf.image.draw_bounding_boxes(
-                images, tf.expand_dims(
-                    real_coordinates, axis=1)))
+        # add dimension to real angle, in order to get a tensor with shape:
+        # [batch_size, 1=num_bboxes, 1=angle]
+        log_io(images)
 
         # Create optimizer and log learning rate
         optimizer = build_optimizer(global_step)
@@ -359,35 +356,8 @@ def detector():
         # Create the train saver.
         train_saver, best_saver = build_savers([global_step])
 
-        with tf.variable_scope('iou'):
-            ymin_orig = real_coordinates[:, 0]
-            xmin_orig = real_coordinates[:, 1]
-            ymax_orig = real_coordinates[:, 2]
-            xmax_orig = real_coordinates[:, 3]
-            area_orig = (ymax_orig - ymin_orig) * (xmax_orig - xmin_orig)
-
-            ymin = coordinates[:, 0]
-            xmin = coordinates[:, 1]
-            ymax = coordinates[:, 2]
-            xmax = coordinates[:, 3]
-            area_pred = (ymax - ymin) * (xmax - xmin)
-
-            intersection_ymin = tf.maximum(ymin, ymin_orig)
-            intersection_xmin = tf.maximum(xmin, xmin_orig)
-            intersection_ymax = tf.minimum(ymax, ymax_orig)
-            intersection_xmax = tf.minimum(xmax, xmax_orig)
-
-            intersection_area = tf.maximum(
-                intersection_ymax - intersection_ymin,
-                tf.zeros_like(intersection_ymax)) * tf.maximum(
-                    intersection_xmax - intersection_xmin,
-                    tf.zeros_like(intersection_ymax))
-
-            iou = tf.reduce_mean(intersection_area /
-                                 (area_orig + area_pred - intersection_area))
-
-            iou_value_ = tf.placeholder(tf.float32, shape=())
-            iou_summary = tf.summary.scalar('iou', iou_value_)
+        #iou_value_ = tf.placeholder(tf.float32, shape=())
+        #iou_summary = tf.summary.scalar('iou', iou_value_)
 
         # Train accuracy ops
         with tf.variable_scope('accuracy'):
@@ -397,14 +367,21 @@ def detector():
             accuracy_value_ = tf.placeholder(tf.float32, shape=())
             accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
 
+        with tf.variable_scope("angle_distance"):
+            angle_distance = tf.reduce_mean(180. - tf.mod(
+                tf.abs(real_angle - angle), 360.) - 180.)
+            tf_log(tf.summary.scalar('angle_distance', angle_distance))
+
         # read collection after that every op added its own
         # summaries in the train_summaries collection
         train_summaries = tf.summary.merge(
             tf.get_collection_ref(MODEL_SUMMARIES))
 
         # Build an initialization operation to run below.
-        init = tf.variables_initializer(tf.global_variables() +
-                                        tf.local_variables())
+        init = [
+            tf.variables_initializer(tf.global_variables() + tf.local_variables(
+            )), tf.initialize_all_tables()
+        ]
 
         # Start running operations on the Graph.
         with tf.Session(config=tf.ConfigProto(
@@ -462,34 +439,20 @@ def detector():
                     checkpoint_path = os.path.join(LOG_DIR, 'model.ckpt')
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
-                    # validation average iou TODO
-                    #validation_iou_value = eval_model(LOG_DIR,
-                    #                                  InputType.validation)
-                    #
-                    #summary_line = sess.run(
-                    #        iou_summary,
-                    #    feed_dict={iou_value_: validation_iou_value})
-                    #validation_log.add_summary(summary_line, global_step=step)
-
                     # train metrics
-                    iou_value, ta_value = sess.run(
-                        [iou, train_accuracy], feed_dict={is_training_: False})
-                    summary_line = sess.run(iou_summary,
-                                            feed_dict={iou_value_: iou_value})
-                    train_log.add_summary(summary_line, global_step=step)
+                    ta_value = sess.run(train_accuracy,
+                                        feed_dict={is_training_: False})
 
                     summary_line = sess.run(
                         accuracy_summary, feed_dict={accuracy_value_: ta_value})
                     train_log.add_summary(summary_line, global_step=step)
 
-                    #print(
-                    #    '{} ({}): train accuracy = {:.3f} validation accuracy = {:.3f}'.
-                    #    format(datetime.now(),
-                    #           int(step / STEPS_PER_EPOCH), ta_value, va_value))
-                    print('{} ({}): train IOU: {:.3f} train acc: {:.3f}'.format(
-                        datetime.now(),
-                        int(step / STEPS_PER_EPOCH), iou_value, ta_value))
-                    # save best model TODO
+                    # TODO: validation metrics
+
+                    print('{} ({}): train acc: {:.3f}'.format(datetime.now(
+                    ), int(step / STEPS_PER_EPOCH), ta_value))
+
+                    # TODO: save best model
                     #if validation_iou_value > best_iou:
                     #    best_iou = validation_iou_value
                     #    best_saver.save(
