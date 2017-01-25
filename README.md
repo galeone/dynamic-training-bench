@@ -166,14 +166,14 @@ For example:
 python evaluate.py  \
            --model LeNet \
            --dataset MNIST \
-           --checkpoint_dir log/LeNet/MNIST_Momentum_lr\=0.01/
+           --checkpoint_path log/LeNet/MNIST_Momentum_lr\=0.01/
 # outputs something like: validation accuracy = 0.993
 
 # Evaluate the test accuracy
 python evaluate.py  \
            --model LeNet \
            --dataset MNIST \
-           --checkpoint_dir log/LeNet/MNIST_Momentum_lr\=0.01/ \
+           --checkpoint_path log/LeNet/MNIST_Momentum_lr\=0.01/ \
            --test
 # outputs something like: test accuracy = 0.993
 ```

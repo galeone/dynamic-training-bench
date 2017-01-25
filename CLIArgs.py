@@ -111,7 +111,7 @@ class CLIArgs(object):
             dataset: input object instantiated"""
 
         parser = self._init_parser()
-        parser.add_argument("--checkpoint_dir", required=True)
+        parser.add_argument("--checkpoint_path", required=True)
         parser.add_argument("--test", action="store_true")
         self._args = parser.parse_args()
         # Get model and dataset objects
