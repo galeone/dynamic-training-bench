@@ -39,15 +39,17 @@ def classifier():
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and labels
-        images, labels = DATASET.distorted_inputs(ARGS.batch_size)
+        with tf.device('/cpu:0'):
+            images, labels = DATASET.distorted_inputs(ARGS.batch_size)
         labels = tf.squeeze(labels)
         log_io(images)
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        is_training_, logits = MODEL.get(images,
-                                         DATASET.num_classes(),
-                                         train_phase=True,
-                                         l2_penalty=ARGS.l2_penalty)
+        is_training_, logits = MODEL.get(
+            images,
+            DATASET.num_classes(),
+            train_phase=True,
+            l2_penalty=ARGS.l2_penalty)
 
         # Calculate loss.
         loss = MODEL.loss(logits, labels)
@@ -75,8 +77,9 @@ def classifier():
 
         # Build an initialization operation to run below.
         init = [
-            tf.variables_initializer(tf.global_variables() + tf.local_variables(
-            )), tf.initialize_all_tables()
+            tf.variables_initializer(tf.global_variables() +
+                                     tf.local_variables()),
+            tf.tables_initializer()
         ]
 
         # Start running operations on the Graph.
@@ -104,8 +107,8 @@ def classifier():
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
-                _, loss_value = sess.run([train_op, loss],
-                                         feed_dict={is_training_: True})
+                _, loss_value = sess.run(
+                    [train_op, loss], feed_dict={is_training_: True})
 
                 duration = time.time() - start_time
 
@@ -124,8 +127,8 @@ def classifier():
                         format_str.format(datetime.now(), step, loss_value,
                                           examples_per_sec, sec_per_batch))
                     # log train values
-                    summary_lines = sess.run(train_summaries,
-                                             feed_dict={is_training_: True})
+                    summary_lines = sess.run(
+                        train_summaries, feed_dict={is_training_: True})
                     train_log.add_summary(summary_lines, global_step=step)
 
                 # Save the model checkpoint at the end of every epoch
@@ -143,8 +146,8 @@ def classifier():
                     validation_log.add_summary(summary_line, global_step=step)
 
                     # train accuracy
-                    ta_value = sess.run(train_accuracy,
-                                        feed_dict={is_training_: False})
+                    ta_value = sess.run(
+                        train_accuracy, feed_dict={is_training_: False})
                     summary_line = sess.run(
                         accuracy_summary, feed_dict={accuracy_value_: ta_value})
                     train_log.add_summary(summary_line, global_step=step)
@@ -185,13 +188,13 @@ def autoencoder():
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and discard labels
-        images, _ = DATASET.distorted_inputs(ARGS.batch_size)
+        with tf.device('/cpu:0'):
+            images, _ = DATASET.distorted_inputs(ARGS.batch_size)
 
         # Build a Graph that computes the reconstructions predictions from the
         # inference model.
-        is_training_, reconstructions = MODEL.get(images,
-                                                  train_phase=True,
-                                                  l2_penalty=ARGS.l2_penalty)
+        is_training_, reconstructions = MODEL.get(
+            images, train_phase=True, l2_penalty=ARGS.l2_penalty)
 
         log_io(images, reconstructions)
 
@@ -216,8 +219,9 @@ def autoencoder():
 
         # Build an initialization operation to run below.
         init = [
-            tf.variables_initializer(tf.global_variables() + tf.local_variables(
-            )), tf.initialize_all_tables()
+            tf.variables_initializer(tf.global_variables() +
+                                     tf.local_variables()),
+            tf.tables_initializer()
         ]
 
         # Start running operations on the Graph.
@@ -245,8 +249,8 @@ def autoencoder():
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
-                _, loss_value = sess.run([train_op, loss],
-                                         feed_dict={is_training_: True})
+                _, loss_value = sess.run(
+                    [train_op, loss], feed_dict={is_training_: True})
                 duration = time.time() - start_time
 
                 if np.isnan(loss_value):
@@ -319,17 +323,20 @@ def detector():
 
     with tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
-        images, ground_truth = DATASET.distorted_inputs(ARGS.batch_size)
+
+        with tf.device('/cpu:0'):
+            images, ground_truth = DATASET.distorted_inputs(ARGS.batch_size)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
         # predictions has shape: [batch_size, n, m, num_bboxes, 4 + num_classes]
         # 4 = coords
         # n & m = 1 when training and input has the expected shape of the network
-        is_training_, predictions = MODEL.get(images,
-                                              DATASET.num_classes(),
-                                              train_phase=True,
-                                              l2_penalty=ARGS.l2_penalty)
+        is_training_, predictions = MODEL.get(
+            images,
+            DATASET.num_classes(),
+            train_phase=True,
+            l2_penalty=ARGS.l2_penalty)
 
         # Calculate loss.
         loss = MODEL.loss(predictions, ground_truth)
@@ -379,8 +386,9 @@ def detector():
 
         # Build an initialization operation to run below.
         init = [
-            tf.variables_initializer(tf.global_variables() + tf.local_variables(
-            )), tf.initialize_all_tables()
+            tf.variables_initializer(tf.global_variables() +
+                                     tf.local_variables()),
+            tf.tables_initializer()
         ]
 
         # Start running operations on the Graph.
@@ -408,8 +416,8 @@ def detector():
             # Restart from where we were
             for step in range(old_gs, MAX_STEPS):
                 start_time = time.time()
-                _, loss_value = sess.run([train_op, loss],
-                                         feed_dict={is_training_: True})
+                _, loss_value = sess.run(
+                    [train_op, loss], feed_dict={is_training_: True})
 
                 duration = time.time() - start_time
 
@@ -428,8 +436,8 @@ def detector():
                         format_str.format(datetime.now(), step, loss_value,
                                           examples_per_sec, sec_per_batch))
                     # log train values
-                    summary_lines = sess.run(train_summaries,
-                                             feed_dict={is_training_: True})
+                    summary_lines = sess.run(
+                        train_summaries, feed_dict={is_training_: True})
                     train_log.add_summary(summary_lines, global_step=step)
 
                 # Save the model checkpoint at the end of every epoch
@@ -440,8 +448,8 @@ def detector():
                     train_saver.save(sess, checkpoint_path, global_step=step)
 
                     # train metrics
-                    ta_value = sess.run(train_accuracy,
-                                        feed_dict={is_training_: False})
+                    ta_value = sess.run(
+                        train_accuracy, feed_dict={is_training_: False})
 
                     summary_line = sess.run(
                         accuracy_summary, feed_dict={accuracy_value_: ta_value})
@@ -449,8 +457,8 @@ def detector():
 
                     # TODO: validation metrics
 
-                    print('{} ({}): train acc: {:.3f}'.format(datetime.now(
-                    ), int(step / STEPS_PER_EPOCH), ta_value))
+                    print('{} ({}): train acc: {:.3f}'.format(
+                        datetime.now(), int(step / STEPS_PER_EPOCH), ta_value))
 
                     # TODO: save best model
                     #if validation_iou_value > best_iou:
@@ -513,8 +521,7 @@ def log_io(inputs, outputs=None):
     with tf.variable_scope('visualization'):
         grid_side = math.floor(math.sqrt(ARGS.batch_size))
         inputs = put_kernels_on_grid(
-            tf.transpose(
-                inputs, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            tf.transpose(inputs, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
             grid_side)
 
         if outputs is None:
@@ -523,12 +530,13 @@ def log_io(inputs, outputs=None):
 
         inputs = tf.pad(inputs, [[0, 0], [0, 0], [0, 10], [0, 0]])
         outputs = put_kernels_on_grid(
-            tf.transpose(
-                outputs, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
+            tf.transpose(outputs, perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2],
             grid_side)
         tf_log(
             tf.summary.image(
-                'input_output', tf.concat(2, [inputs, outputs]), max_outputs=1))
+                'input_output',
+                tf.concat([inputs, outputs], axis=2),
+                max_outputs=1))
 
 
 def build_savers(variables_to_add):
@@ -570,11 +578,9 @@ def eval_model(checkpoint_dir, input_type):
     InputType.check(input_type)
 
     if isinstance(MODEL, Classifier):
-        return evaluate.accuracy(
-            checkpoint_dir, MODEL, DATASET, input_type, device=ARGS.eval_device)
+        return evaluate.accuracy(checkpoint_dir, MODEL, DATASET, input_type)
     if isinstance(MODEL, Autoencoder):
-        return evaluate.error(
-            checkpoint_dir, MODEL, DATASET, input_type, device=ARGS.eval_device)
+        return evaluate.error(checkpoint_dir, MODEL, DATASET, input_type)
     raise ValueError("Evaluate method not defined for this model type")
 
 
@@ -618,6 +624,7 @@ if __name__ == '__main__':
 
     # Use the 'best' model to calculate the error on the test set
     with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
-        res.write('{} {}: {} {}\n'.format(datetime.now(
-        ), ARGS.model, NAME, eval_model(BEST_MODEL_DIR, InputType.test)))
+        res.write(
+            '{} {}: {} {}\n'.format(datetime.now(), ARGS.model, NAME,
+                                    eval_model(BEST_MODEL_DIR, InputType.test)))
     sys.exit()

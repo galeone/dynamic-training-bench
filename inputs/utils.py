@@ -66,10 +66,9 @@ def yuv2rgb(yuv):
     temp = tf.nn.conv2d(yuv, yuv2rgb_filter, [1, 1, 1, 1], 'SAME')
     temp = tf.nn.bias_add(temp, yuv2rgb_bias)
     temp = tf.maximum(temp, tf.zeros(temp.get_shape(), dtype=tf.float32))
-    temp = tf.minimum(
-        temp, tf.multiply(
-            tf.ones(
-                temp.get_shape(), dtype=tf.float32), 255))
+    temp = tf.minimum(temp,
+                      tf.multiply(
+                          tf.ones(temp.get_shape(), dtype=tf.float32), 255))
     temp = tf.divide(temp, 255)
     temp = tf.squeeze(temp, [0])
     return temp
@@ -118,7 +117,7 @@ def scale_image(image):
     Args:
         image: [height, width, depth] tensor with values in [0,1]
     """
-    image = tf.sub(image, 0.5)
+    image = tf.subtract(image, 0.5)
     # now image has values with zero mean in range [-0.5, 0.5]
     image = tf.multiply(image, 2.0)
     # now image has values with zero mean in range [-1, 1]
@@ -133,8 +132,7 @@ def read_image_jpg(image_path, depth=3):
     """
     return scale_image(
         tf.image.convert_image_dtype(
-            tf.image.decode_jpeg(
-                tf.read_file(image_path), channels=depth),
+            tf.image.decode_jpeg(tf.read_file(image_path), channels=depth),
             dtype=tf.float32))
 
 
@@ -146,8 +144,7 @@ def read_image_png(image_path, depth=3):
     """
     return scale_image(
         tf.image.convert_image_dtype(
-            tf.image.decode_png(
-                tf.read_file(image_path), channels=depth),
+            tf.image.decode_png(tf.read_file(image_path), channels=depth),
             dtype=tf.float32))
 
 

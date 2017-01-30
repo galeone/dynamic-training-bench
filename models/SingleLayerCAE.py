@@ -101,7 +101,7 @@ class SingleLayerCAE(Autoencoder):
             mse = tf.divide(
                 tf.reduce_mean(
                     tf.square(tf.subtract(predictions, real_values))),
-                2,
+                2.,
                 name="mse")
             tf.add_to_collection(utils.LOSSES_COLLECTION, mse)
 

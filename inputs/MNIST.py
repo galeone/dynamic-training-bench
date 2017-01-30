@@ -124,9 +124,9 @@ class MNIST(Input):
             min_fraction_of_examples_in_queue = 0.4
             min_queue_examples = int(self._num_examples_per_epoch_for_train *
                                      min_fraction_of_examples_in_queue)
-            print((
-                'Filling queue with {} MNIST images before starting to train. '
-                'This will take a few minutes.').format(min_queue_examples))
+            print(
+                ('Filling queue with {} MNIST images before starting to train. '
+                 'This will take a few minutes.').format(min_queue_examples))
 
             # Generate a batch of images and labels by building up a queue of examples.
             return utils.generate_image_and_label_batch(

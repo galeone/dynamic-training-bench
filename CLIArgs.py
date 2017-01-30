@@ -81,8 +81,6 @@ class CLIArgs(object):
 
         parser.add_argument('--batch_size', type=int, default=128)
 
-        # Hardware
-        parser.add_argument('--eval_device', default='/gpu:0')
         return parser
 
     def _get_model_dataset(self):
@@ -116,6 +114,9 @@ class CLIArgs(object):
             required=True,
             help='the path to a checkpoint from which load the model')
         parser.add_argument("--test", action="store_true", help='use test set')
+
+        # Hardware
+        parser.add_argument('--eval_device', default='/gpu:0')
         self._args = parser.parse_args()
         # Get model and dataset objects
         model, dataset = self._get_model_dataset()
@@ -198,6 +199,19 @@ class CLIArgs(object):
             default='',
             help='comment string to preprend to the model name')
 
+        # Fine tuning & graph manipulation
+        parser.add_argument(
+            '--exclude_scopes',
+            help='comma separated list of scopes of variables to exclude from the checkpoint restoring',
+            default=None,
+            type=lambda scope_list: [scope for scope in scope_list.split(',')])
+
+        parser.add_argument(
+            '--trainable_scopes',
+            help='comma-separated list of scopes to filter the set of variables to train',
+            default=None,
+            type=lambda scope_list: [scope for scope in scope_list.split(',')])
+
         # Build the object
         self._args = parser.parse_args()
 
@@ -208,7 +222,6 @@ class CLIArgs(object):
         model, dataset = self._get_model_dataset()
 
         print('Model name {}\nArgs: {}'.format(
-            name, pprint.pformat(
-                vars(self._args), indent=4)))
+            name, pprint.pformat(vars(self._args), indent=4)))
 
         return self._args, name, model, dataset

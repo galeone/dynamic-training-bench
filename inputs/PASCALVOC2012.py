@@ -164,10 +164,8 @@ class PASCALVOC2012(Input):
 
             cropped_image = tf.squeeze(
                 tf.image.crop_and_resize(
-                    tf.expand_dims(
-                        image, axis=0),
-                    tf.expand_dims(
-                        bbox, axis=0), [0],
+                    tf.expand_dims(image, axis=0),
+                    tf.expand_dims(bbox, axis=0), [0],
                     [self._image_height, self._image_width]))
 
             # the bounding box to predict, should be a box that has the same
@@ -186,7 +184,7 @@ class PASCALVOC2012(Input):
 
             # expand dims required to get a format [num_box = 1, degree, label]
             angle_and_label = tf.expand_dims(
-                tf.concat(0, [degree, label]), axis=0)
+                tf.concat([degree, label], axis=2), axis=0)
 
             # Generate a batch of images and labels by building up a queue of examples.
             return utils.generate_image_and_label_batch(
@@ -323,8 +321,8 @@ class PASCALVOC2012(Input):
         # Now self._data dir contains VOCDevkit folder
         # Build train.csv and validation.csv file in self._data_dir
         csv_header = ["filename", "y_min", "x_min", "y_max", "x_max", "label"]
-        if os.path.exists(os.path.join(
-                self._data_dir, 'train.csv')) and os.path.exists(
+        if os.path.exists(
+                os.path.join(self._data_dir, 'train.csv')) and os.path.exists(
                     os.path.join(self._data_dir, 'val.csv')):
             return
 

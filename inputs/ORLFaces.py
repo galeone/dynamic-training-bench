@@ -213,8 +213,7 @@ class ORLFaces(Input):
             for pgm in glob.glob("{}/*/*.pgm".format(
                     os.path.join(dest_directory, filename.split('.')[-2]))):
                 images.append(
-                    np.expand_dims(
-                        np.asarray(Image.open(pgm)), axis=2))
+                    np.expand_dims(np.asarray(Image.open(pgm)), axis=2))
                 labels.append(int(pgm.split("/")[-2].strip("s")))
 
             # Create dataset object

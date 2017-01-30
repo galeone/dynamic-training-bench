@@ -48,14 +48,11 @@ class StackedDenoisingCAE(Autoencoder):
         with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
             input_x = tf.identity(images)
             if train_phase:
-                input_x_noise = tf.clip_by_value(
-                    input_x + tf.random_uniform(
-                        input_x.get_shape(),
-                        minval=-0.5,
-                        maxval=0.5,
-                        dtype=input_x.dtype),
-                    -1.0,
-                    1.0)
+                input_x_noise = tf.clip_by_value(input_x + tf.random_uniform(
+                    input_x.get_shape(),
+                    minval=-0.5,
+                    maxval=0.5,
+                    dtype=input_x.dtype), -1.0, 1.0)
             else:
                 input_x_noise = input_x
             input_padded_noise = self._pad(input_x_noise, filter_side)
@@ -108,7 +105,7 @@ class StackedDenoisingCAE(Autoencoder):
         # 1/2n \sum^{n}_{i=i}{(x_i - x'_i)^2}
         return tf.divide(
             tf.reduce_mean(tf.square(tf.subtract(input_x, output_x))),
-            2,
+            2.,
             name="mse")
 
     def loss(self, predictions, real_values):

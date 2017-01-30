@@ -5,7 +5,7 @@ Dynamic Training Bench (DTB) helps the developers to train and manage ML models 
 
 Developers should focus on the model and inputs definitions only: they shouldn't waste their time rewriting training procedures, visualizations, metrics and so on.
 
-DTB uses python 3 and the latest Tensorflow release.
+DTB uses python 3.6 and the latest Tensorflow release (r1.0)
 
 # Standard workflow
 
