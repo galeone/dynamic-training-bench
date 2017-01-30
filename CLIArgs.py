@@ -202,15 +202,15 @@ class CLIArgs(object):
         # Fine tuning & graph manipulation
         parser.add_argument(
             '--exclude_scopes',
-            help='comma separated list of scopes of variables to exclude from the checkpoint restoring',
-            default=None,
-            type=lambda scope_list: [scope for scope in scope_list.split(',')])
+            help='comma separated list of scopes of variables to exclude from the checkpoint restoring.',
+            default=[],
+            type=lambda scope_list: [scope.strip() for scope in scope_list.split(',')])
 
         parser.add_argument(
-            '--trainable_scopes',
-            help='comma-separated list of scopes to filter the set of variables to train',
-            default=None,
-            type=lambda scope_list: [scope for scope in scope_list.split(',')])
+            "--checkpoint_path",
+            required=False,
+            default='',
+            help='the path to a checkpoint from which load the model')
 
         # Build the object
         self._args = parser.parse_args()

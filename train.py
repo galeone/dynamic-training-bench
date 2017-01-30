@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow as tf
 import evaluate
 from inputs.utils import InputType
-from models.utils import variables_to_save, tf_log, MODEL_SUMMARIES
+from models.utils import variables_to_save, variables_to_restore, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from models.interfaces.Autoencoder import Autoencoder
 from models.interfaces.Classifier import Classifier
@@ -59,9 +59,6 @@ def classifier():
         optimizer = build_optimizer(global_step)
         train_op = optimizer.minimize(loss, global_step=global_step)
 
-        # Create the train saver.
-        train_saver, best_saver = build_savers([global_step])
-
         # Train accuracy ops
         with tf.variable_scope('accuracy'):
             top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -91,11 +88,24 @@ def classifier():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-            if not ARGS.restart:  # continue from the saved checkpoint
+            # Create the savers.
+            restore_saver = build_restore_saver(
+                [global_step] if ARGS.checkpoint_path == '' else [],
+                scopes_to_remove=ARGS.exclude_scopes)
+            train_saver, best_saver = build_train_savers([global_step])
+
+            if ARGS.checkpoint_path != '':
+                checkpoint = tf.train.latest_checkpoint(ARGS.checkpoint_path)
+                if checkpoint:
+                    restore_saver.restore(sess, checkpoint)
+                else:
+                    print("[E] {} not valid".format(ARGS.checkpoint_path))
+                    sys.exit(-1)
+            elif not ARGS.restart:  # continue from the saved checkpoint
                 # restore previous session if exists
                 checkpoint = tf.train.latest_checkpoint(LOG_DIR)
                 if checkpoint:
-                    train_saver.restore(sess, checkpoint)
+                    restore_saver.restore(sess, checkpoint)
                 else:
                     print('[I] Unable to restore from checkpoint')
 
@@ -209,9 +219,6 @@ def autoencoder():
         # Training op
         train_op = optimizer.minimize(loss, global_step=global_step)
 
-        # Create the savers
-        train_saver, best_saver = build_savers([global_step])
-
         # read collection after that every op added its own
         # summaries in the train_summaries collection
         train_summaries = tf.summary.merge(
@@ -233,11 +240,24 @@ def autoencoder():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-            if not ARGS.restart:  # continue from the saved checkpoint
+            # Create the savers.
+            restore_saver = build_restore_saver(
+                [global_step] if ARGS.checkpoint_path == '' else [],
+                scopes_to_remove=ARGS.exclude_scopes)
+            train_saver, best_saver = build_train_savers([global_step])
+
+            if ARGS.checkpoint_path != '':
+                checkpoint = tf.train.latest_checkpoint(ARGS.checkpoint_path)
+                if checkpoint:
+                    restore_saver.restore(sess, checkpoint)
+                else:
+                    print("[E] {} not valid".format(ARGS.checkpoint_path))
+                    sys.exit(-1)
+            elif not ARGS.restart:  # continue from the saved checkpoint
                 # restore previous session if exists
                 checkpoint = tf.train.latest_checkpoint(LOG_DIR)
                 if checkpoint:
-                    train_saver.restore(sess, checkpoint)
+                    restore_saver.restore(sess, checkpoint)
                 else:
                     print('[I] Unable to restore from checkpoint')
 
@@ -360,9 +380,6 @@ def detector():
         optimizer = build_optimizer(global_step)
         train_op = optimizer.minimize(loss, global_step=global_step)
 
-        # Create the train saver.
-        train_saver, best_saver = build_savers([global_step])
-
         #iou_value_ = tf.placeholder(tf.float32, shape=())
         #iou_summary = tf.summary.scalar('iou', iou_value_)
 
@@ -400,11 +417,24 @@ def detector():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-            if not ARGS.restart:  # continue from the saved checkpoint
+            # Create the savers.
+            restore_saver = build_restore_saver(
+                [global_step] if ARGS.checkpoint_path == '' else [],
+                scopes_to_remove=ARGS.exclude_scopes)
+            train_saver, best_saver = build_train_savers([global_step])
+
+            if ARGS.checkpoint_path != '':
+                checkpoint = tf.train.latest_checkpoint(ARGS.checkpoint_path)
+                if checkpoint:
+                    restore_saver.restore(sess, checkpoint)
+                else:
+                    print("[E] {} not valid".format(ARGS.checkpoint_path))
+                    sys.exit(-1)
+            elif not ARGS.restart:  # continue from the saved checkpoint
                 # restore previous session if exists
                 checkpoint = tf.train.latest_checkpoint(LOG_DIR)
                 if checkpoint:
-                    train_saver.restore(sess, checkpoint)
+                    restore_saver.restore(sess, checkpoint)
                 else:
                     print('[I] Unable to restore from checkpoint')
 
@@ -539,7 +569,15 @@ def log_io(inputs, outputs=None):
                 max_outputs=1))
 
 
-def build_savers(variables_to_add):
+def build_restore_saver(variables_to_add=[], scopes_to_remove=[]):
+    """Return a saver that restores every trainable variable that's not
+    under a scope to remove"""
+    restore_saver = tf.train.Saver(
+        variables_to_restore(variables_to_add, scopes_to_remove))
+    return restore_saver
+
+
+def build_train_savers(variables_to_add=[]):
     """Add variables_to_add to the collection of variables to save.
     Returns:
         train_saver: saver to use to log the training model

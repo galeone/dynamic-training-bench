@@ -261,17 +261,31 @@ def batch_norm(layer_output, is_training_, decay=0.9):
         scope=None)
 
 
-def variables_to_save(addlist=[]):
-    """Create a list of all trained variables and required variables of the model.
-    Appends to the list, the addlist passed as argument.
-
-    Args:
-        addlist: (list, of, variables, to, save)
-    Returns:
-        a a list of variables"""
-
+def variables_to_save(add_list=[]):
+    """Returns a list of variables to save.
+    add_list variables are always added to the list
+    """
     return tf.trainable_variables() + tf.get_collection_ref(
-        REQUIRED_NON_TRAINABLES) + addlist
+        REQUIRED_NON_TRAINABLES) + add_list
+
+
+def variables_to_restore(add_list=[], exclude_scope_list=[]):
+    """Returns a list of variables to restore to made the model working
+    properly.
+    The list is made by the trainable variables + required non trainable variables
+    such as statistics of batch norm layers.
+    Remove from the list variables that are in the exclude_scope_list.
+    Add variables in the add_list
+    """
+
+    variables = variables_to_save()
+    if len(exclude_scope_list) > 0:
+        variables[:] = [
+            variable for variable in variables
+            if not variable.name.startswith(
+                tuple(scope for scope in exclude_scope_list))
+        ]
+    return variables + add_list
 
 
 def num_neurons_and_shape(layer):
