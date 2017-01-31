@@ -110,7 +110,7 @@ class PASCALVOC2012(Input):
 
         # image is normalized in [-1,1]
         image = utils.read_image_jpg(image_path)
-        return image, tf.pack([y_min, x_min, y_max, x_max, label])
+        return image, tf.stack([y_min, x_min, y_max, x_max, label])
 
     def distorted_inputs(self, batch_size):
         """Construct distorted input for PASCALVOC2012 training using the Reader ops.
@@ -160,7 +160,7 @@ class PASCALVOC2012(Input):
 
             xmin = tf.minimum(xmin, xmax)
             xmax = tf.maximum(xmax, xmin)
-            bbox = tf.clip_by_value(tf.pack([ymin, xmin, ymax, xmax]), 0., 1.)
+            bbox = tf.clip_by_value(tf.stack([ymin, xmin, ymax, xmax]), 0., 1.)
 
             cropped_image = tf.squeeze(
                 tf.image.crop_and_resize(
@@ -184,7 +184,7 @@ class PASCALVOC2012(Input):
 
             # expand dims required to get a format [num_box = 1, degree, label]
             angle_and_label = tf.expand_dims(
-                tf.concat([degree, label], axis=2), axis=0)
+                tf.concat([degree, label], axis=0), axis=0)
 
             # Generate a batch of images and labels by building up a queue of examples.
             return utils.generate_image_and_label_batch(
