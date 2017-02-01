@@ -1,4 +1,4 @@
-numpy==1.11.2
+numpy==1.11.0
 six==1.10.0
-tensorflow==0.12.1
-Pillow==3.4.2
+tensorflow_gpu==1.0.0rc0
+Pillow==4.0.0
