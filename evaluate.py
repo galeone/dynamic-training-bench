@@ -13,6 +13,7 @@ from datetime import datetime
 import math
 
 import tensorflow as tf
+import utils
 from inputs.utils import InputType
 from models.utils import variables_to_restore
 from models.interfaces.Autoencoder import Autoencoder
@@ -39,14 +40,11 @@ def accuracy(checkpoint_path, model, dataset, input_type, batch_size=200):
         images, labels = dataset.inputs(
             input_type=input_type, batch_size=batch_size)
 
-    labels = tf.squeeze(labels)
-
     # Build a Graph that computes the predictions from the inference model.
     _, predictions = model.get(images, dataset.num_classes(), train_phase=False)
 
-    # Calculate correct predictions.
-    correct_predictions = tf.reduce_sum(
-        tf.cast(tf.nn.in_top_k(predictions, labels, 1), tf.int32))
+    # Accuracy op
+    accuracy = utils.accuracy_op(predictions, labels)
 
     saver = tf.train.Saver(variables_to_restore())
     accuracy_value = 0.0
@@ -71,14 +69,14 @@ def accuracy(checkpoint_path, model, dataset, input_type, batch_size=200):
             num_iter = int(
                 math.ceil(dataset.num_examples(input_type) / batch_size))
             # Counts the number of correct predictions.
-            true_count = 0
+            accuracy_sum = 0.0
             total_sample_count = num_iter * batch_size
             step = 0
             while step < num_iter and not coord.should_stop():
-                true_count += sess.run(correct_predictions)
+                accuracy_sum += sess.run(accuracy)
                 step += 1
 
-            accuracy_value = true_count / total_sample_count
+            accuracy_value = accuracy_sum / step
         except Exception as exc:
             coord.request_stop(exc)
         finally:

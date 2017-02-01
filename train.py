@@ -16,6 +16,7 @@ import math
 import numpy as np
 import tensorflow as tf
 import evaluate
+import utils
 from inputs.utils import InputType
 from models.utils import variables_to_save, variables_to_restore, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
@@ -58,19 +59,10 @@ def classifier():
         optimizer = build_optimizer(global_step)
         train_op = optimizer.minimize(loss, global_step=global_step)
 
-        # Train accuracy ops
-        with tf.variable_scope('accuracy'):
-            # handle fully convolutional classifiers
-            logits_shape = logits.shape
-            if len(logits_shape) == 4 and logits_shape[1:3] == [1, 1]:
-                top_k_logits = tf.squeeze(logits, [1, 2])
-            else:
-                top_k_logits = logits
-            top_k_op = tf.nn.in_top_k(top_k_logits, labels, 1)
-            train_accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
-            # General validation summary
-            accuracy_value_ = tf.placeholder(tf.float32, shape=())
-            accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
+        train_accuracy = utils.accuracy_op(logits, labels)
+        # General validation summary
+        accuracy_value_ = tf.placeholder(tf.float32, shape=())
+        accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
 
         # read collection after that every op added its own
         # summaries in the train_summaries collection
@@ -388,13 +380,12 @@ def detector():
         #iou_value_ = tf.placeholder(tf.float32, shape=())
         #iou_summary = tf.summary.scalar('iou', iou_value_)
 
-        # Train accuracy ops
-        with tf.variable_scope('accuracy'):
-            top_k_op = tf.nn.in_top_k(logits, labels, 1)
-            train_accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
-            # General validation summary
-            accuracy_value_ = tf.placeholder(tf.float32, shape=())
-            accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
+        # Train accuracy op
+        train_accuracy = utils.accuracy_op(logits, labels)
+
+        # General validation summary
+        accuracy_value_ = tf.placeholder(tf.float32, shape=())
+        accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
 
         with tf.variable_scope("angle_distance"):
             angle_distance = tf.reduce_mean(180. - tf.mod(
