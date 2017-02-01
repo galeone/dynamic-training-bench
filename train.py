@@ -41,7 +41,6 @@ def classifier():
         # Get images and labels
         with tf.device('/cpu:0'):
             images, labels = DATASET.distorted_inputs(ARGS.batch_size)
-        labels = tf.squeeze(labels)
         log_io(images)
         # Build a Graph that computes the logits predictions from the
         # inference model.
@@ -61,7 +60,13 @@ def classifier():
 
         # Train accuracy ops
         with tf.variable_scope('accuracy'):
-            top_k_op = tf.nn.in_top_k(logits, labels, 1)
+            # handle fully convolutional classifiers
+            logits_shape = logits.shape
+            if len(logits_shape) == 4 and logits_shape[1:3] == [1, 1]:
+                top_k_logits = tf.squeeze(logits, [1, 2])
+            else:
+                top_k_logits = logits
+            top_k_op = tf.nn.in_top_k(top_k_logits, labels, 1)
             train_accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
             # General validation summary
             accuracy_value_ = tf.placeholder(tf.float32, shape=())
