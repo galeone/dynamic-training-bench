@@ -105,8 +105,8 @@ class Cifar10(Input):
         record_bytes = tf.decode_raw(value, tf.uint8)
 
         # The first bytes represent the label, which we convert from uint8->int32.
-        result["label"] = tf.cast(
-            tf.slice(record_bytes, [0], [label_bytes]), tf.int32)
+        result["label"] = tf.squeeze(
+            tf.cast(tf.slice(record_bytes, [0], [label_bytes]), tf.int32))
 
         # The remaining bytes after the label represent the image, which we reshape
         # from [depth * height * width] to [depth, height, width].

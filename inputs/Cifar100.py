@@ -108,8 +108,8 @@ class Cifar100(Input):
 
         # The first byte represent the coarse-label.
         # Extract the second byte that's the fine-label and convert it from uint8->int32.
-        result["label"] = tf.cast(
-            tf.slice(record_bytes, [1], [label_bytes - 1]), tf.int32)
+        result["label"] = tf.squeeze(
+            tf.cast(tf.slice(record_bytes, [1], [label_bytes - 1]), tf.int32))
 
         # The remaining bytes after the label represent the image, which we reshape
         # from [depth * height * width] to [depth, height, width].
