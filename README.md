@@ -120,23 +120,36 @@ usage: train.py [-h] --model --dataset
   -h, --help            show this help message and exit
   --model {<list of models in the models/ folder, without the .py suffix>}
   --dataset {<list of inputs in the inputs/folder, without the .py suffix}
-  --restart
-  --lr_decay
-  --lr_decay_epochs LR_DECAY_EPOCHS
-  --lr_decay_factor LR_DECAY_FACTOR
-  --l2_penalty L2_PENALTY
-  --optimizer {<list of tensorflow available optimizers>}
-  --optimizer_args OPTIMIZER_ARGS
   --batch_size BATCH_SIZE
-  --epochs EPOCHS
+  --restart             restart the training process DELETING the old
+                        checkpoint files
+  --lr_decay            enable the learning rate decay
+  --lr_decay_epochs LR_DECAY_EPOCHS
+                        decay the learning rate every lr_decay_epochs epochs
+  --lr_decay_factor LR_DECAY_FACTOR
+                        decay of lr_decay_factor the initial learning rate
+                        after lr_decay_epochs epochs
+  --l2_penalty L2_PENALTY
+                        L2 penalty term to apply ad the trained parameters
+  --optimizer {<list of tensorflow available optimizers>}
+                        the optimizer to use
+  --optimizer_args OPTIMIZER_ARGS
+                        the optimizer parameters
+  --epochs EPOCHS       number of epochs to train the model
   --train_device TRAIN_DEVICE
-  --eval_device EVAL_DEVICE
-  --comment COMMENT
+                        the device on which place the the model during the
+                        trining phase
+  --comment COMMENT     comment string to preprend to the model name
+  --exclude_scopes EXCLUDE_SCOPES
+                        comma separated list of scopes of variables to exclude
+                        from the checkpoint restoring.
+  --checkpoint_path CHECKPOINT_PATH
+                        the path to a checkpoint from which load the model
 ```
 
 # Best models & results
 
-DTB saves for you, in the log folder of every model,  the "best" model with respect to the metric defined in the train file.
+DTB saves for you, in the log folder of every model, the "best" model with respect to the metric defined in the train file.
 
 For example, for the `LeNet` model created with the first command in the previous script, the following directory structure is created:
 
@@ -151,7 +164,6 @@ log/LeNet/
 `train` and `validation` folders contain the logs, used by Tensorboard to display in the same graphs train and validation metrics.
 
 The `best` folder contains one single checkpoint file that is the model with the highest quality obtained during the training phase.
-
 
 This model is used at the end of the training process to add a line to the `test_results.txt` and `validation_results.txt` files.
 
@@ -177,6 +189,28 @@ python evaluate.py  \
            --test
 # outputs something like: test accuracy = 0.993
 ```
+
+# Fine Tuning & network surgery
+
+A trained model can be used to build a new model exploiting the learned parameters: this helps to speed up the learning process of new models.
+
+DTB allows to restore a model from its checkpoint file, remove some layer that's not necessary for the new model, and add new layers to train.
+
+For example, a VGG model trained on the Cifar10 dataset, can be used to train a VGG model but on the Cifar100 dataset.
+
+```
+python train.py
+	--model VGG \
+	--dataset Cifar100 \
+    --checkpoint_path log/VGG/Cifar10_Momentum_lr\=0.01/best/ \
+	--exclude_scopes softmax_linear
+```
+
+This training process loads the "best" VGG model weights trained on Cifar10 from the `checkpoint_path`, then the weights are used to initialize the VGG model (so the VGG model must be compatible, at least for the non excluded scopes, to the loaded model) except for the layers under the `excluded_scopes` list.
+
+Then the `softmax_linear` layers are replaced with the ones defined in the `VGG` model, that when trained on Cifar100 adapt themself to output 100 classes instead of 10.
+
+So the above command starts a new training from the pre-trained model and trains the new output layer (with 100 outputs) that the VGG model defines.
 
 # Data visualization
 
