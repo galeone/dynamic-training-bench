@@ -98,7 +98,8 @@ class StackedDenoisingCAE(Autoencoder):
 
         # The is_training_ placeholder is not used, but we define and return it
         # in order to respect the expected output cardinality of the get method
-        is_training_ = tf.placeholder(tf.bool, shape=(), name="is_training_")
+        is_training_ = tf.placeholder_with_default(
+            False, shape=(), name="is_training_")
         return is_training_, output_x_noise
 
     def _mse(self, input_x, output_x):

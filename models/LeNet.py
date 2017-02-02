@@ -116,7 +116,8 @@ class LeNet(Classifier):
             is_training_: tf.bool placeholder enable/disable training ops at run time
             logits: the model output
         """
-        is_training_ = tf.placeholder(tf.bool, shape=(), name="is_training_")
+        is_training_ = tf.placeholder_with_default(
+            False, shape=(), name="is_training_")
         # build a graph that computes the logits predictions from the images
         logits = self._inference(images, num_classes, is_training_, train_phase,
                                  l2_penalty)

@@ -288,6 +288,20 @@ def variables_to_restore(add_list=[], exclude_scope_list=[]):
     return variables + add_list
 
 
+def variables_to_train(scope_list=[]):
+    """Returns a list of variables to train, filtered by the scopes.
+    Returns:
+        the list of variables to train by the optimizer
+    """
+    if len(scope_list) == 0:
+        return tf.trainable_variables()
+    variables_to_train = []
+    for scope in scope_list:
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+        variables_to_train.extend(variables)
+    return variables_to_train
+
+
 def num_neurons_and_shape(layer):
     """Count the number of neurons in a single element of the layer, returns this
     number and the shape of the single layer.
