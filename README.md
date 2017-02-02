@@ -200,17 +200,29 @@ For example, a VGG model trained on the Cifar10 dataset, can be used to train a 
 
 ```
 python train.py
-	--model VGG \
-	--dataset Cifar100 \
+    --model VGG \
+    --dataset Cifar100 \
     --checkpoint_path log/VGG/Cifar10_Momentum_lr\=0.01/best/ \
-	--exclude_scopes softmax_linear
+    --exclude_scopes softmax_linear
 ```
 
 This training process loads the "best" VGG model weights trained on Cifar10 from the `checkpoint_path`, then the weights are used to initialize the VGG model (so the VGG model must be compatible, at least for the non excluded scopes, to the loaded model) except for the layers under the `excluded_scopes` list.
 
 Then the `softmax_linear` layers are replaced with the ones defined in the `VGG` model, that when trained on Cifar100 adapt themself to output 100 classes instead of 10.
 
-So the above command starts a new training from the pre-trained model and trains the new output layer (with 100 outputs) that the VGG model defines.
+So the above command starts a new training from the pre-trained model and trains the new output layer (with 100 outputs) that the VGG model defines, refining every other weights imported.
+
+If you don't want to train the imported weights, you have to point out which scopes to train, using `trainable_scopes`:
+
+```
+python train.py \
+    --model VGG \
+    --dataset Cifar100 \
+    --checkpoint_path log/VGG/Cifar10_Momentum_lr\=0.01/best/ \
+    --exclude_scopes softmax_linear \
+    --trainable_scopes softmax_linear
+```
+With the above command your instructing DTB to exclude the `softmax_linear` scope from the checkpoint_file and to train only the scope named `softmax_linear` in the new defined model.
 
 # Data visualization
 

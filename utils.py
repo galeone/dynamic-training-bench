@@ -31,3 +31,42 @@ def accuracy_op(logits, labels):
         accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
 
     return accuracy
+
+
+def iou_op(real_coordinates, coordinates):
+    """Returns the average interserction over union operation between a batch of
+    real_coordinates and a batch of coordinates.
+    Args:
+        real_coordinates: a tensor with shape [batch_size, 4]
+        coordinates: a tensor with shape [batch_size, 4]
+    Returns:
+        iou: avewrage interserction over union in the batch
+    """
+
+    with tf.variable_scope('iou'):
+        ymin_orig = real_coordinates[:, 0]
+        xmin_orig = real_coordinates[:, 1]
+        ymax_orig = real_coordinates[:, 2]
+        xmax_orig = real_coordinates[:, 3]
+        area_orig = (ymax_orig - ymin_orig) * (xmax_orig - xmin_orig)
+
+        ymin = coordinates[:, 0]
+        xmin = coordinates[:, 1]
+        ymax = coordinates[:, 2]
+        xmax = coordinates[:, 3]
+        area_pred = (ymax - ymin) * (xmax - xmin)
+
+        intersection_ymin = tf.maximum(ymin, ymin_orig)
+        intersection_xmin = tf.maximum(xmin, xmin_orig)
+        intersection_ymax = tf.minimum(ymax, ymax_orig)
+        intersection_xmax = tf.minimum(xmax, xmax_orig)
+
+        intersection_area = tf.maximum(
+            intersection_ymax - intersection_ymin,
+            tf.zeros_like(intersection_ymax)) * tf.maximum(
+                intersection_xmax - intersection_xmin,
+                tf.zeros_like(intersection_ymax))
+
+        iou = tf.reduce_mean(intersection_area /
+                             (area_orig + area_pred - intersection_area))
+        return iou

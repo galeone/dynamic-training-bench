@@ -102,13 +102,19 @@ def error(checkpoint_path, model, dataset, input_type, batch_size=200):
 
     # Get images and labels from the dataset
     with tf.device('/cpu:0'):
-        images, _ = dataset.inputs(input_type=input_type, batch_size=batch_size)
+        images, labels = dataset.inputs(
+            input_type=input_type, batch_size=batch_size)
 
-    # Build a Graph that computes the reconstructions from the inference model.
-    _, reconstructions = model.get(images, train_phase=False, l2_penalty=0.0)
-
-    # Calculate loss.
-    loss = model.loss(reconstructions, images)
+    # Build a Graph that computes the predictions from the inference model.
+    if isinstance(model, Autoencoder):
+        # Autoencoder does not use num_classes and the reconstruction is among
+        # reconstructions (predictions) and images
+        _, predictions = model.get(images, train_phase=False, l2_penalty=0.0)
+        loss = model.loss(predictions, images)
+    else:
+        _, predictions = model.get(
+            images, dataset.num_classes(), train_phase=False, l2_penalty=0.0)
+        loss = model.loss(predictions, labels)
 
     saver = tf.train.Saver(variables_to_restore())
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
@@ -145,49 +151,6 @@ def error(checkpoint_path, model, dataset, input_type, batch_size=200):
 
         coord.join(threads)
     return average_error
-
-
-def iou(checkpoint_path, model, dataset, input_type, batch_size=200):
-    """
-    Reads the checkpoint and use it to evaluate the model
-    Args:
-        checkpoint_path: checkpoint folder
-        model: python package containing the model saved
-        dataset: python package containing the dataset to use
-        input_type: InputType enum, the input type of the input examples
-        batch_size: batch size for the evaluation in batches
-    Returns:
-        average_accuracy: the average accuracy
-    """
-    InputType.check(input_type)
-
-    #TODO
-    with tf.variable_scope('iou'):
-        ymin_orig = real_coordinates[:, 0]
-        xmin_orig = real_coordinates[:, 1]
-        ymax_orig = real_coordinates[:, 2]
-        xmax_orig = real_coordinates[:, 3]
-        area_orig = (ymax_orig - ymin_orig) * (xmax_orig - xmin_orig)
-
-        ymin = coordinates[:, 0]
-        xmin = coordinates[:, 1]
-        ymax = coordinates[:, 2]
-        xmax = coordinates[:, 3]
-        area_pred = (ymax - ymin) * (xmax - xmin)
-
-        intersection_ymin = tf.maximum(ymin, ymin_orig)
-        intersection_xmin = tf.maximum(xmin, xmin_orig)
-        intersection_ymax = tf.minimum(ymax, ymax_orig)
-        intersection_xmax = tf.minimum(xmax, xmax_orig)
-
-        intersection_area = tf.maximum(
-            intersection_ymax - intersection_ymin,
-            tf.zeros_like(intersection_ymax)) * tf.maximum(
-                intersection_xmax - intersection_xmin,
-                tf.zeros_like(intersection_ymax))
-
-        iou = tf.reduce_mean(intersection_area /
-                             (area_orig + area_pred - intersection_area))
 
 
 if __name__ == '__main__':

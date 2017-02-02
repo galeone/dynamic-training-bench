@@ -207,6 +207,12 @@ class CLIArgs(object):
             type=lambda scope_list: [scope.strip() for scope in scope_list.split(',')])
 
         parser.add_argument(
+            '--trainable_scopes',
+            help='comma separated list of scopes of variables to train. If empty every variable is trained',
+            default=[],
+            type=lambda scope_list: [scope.strip() for scope in scope_list.split(',')])
+
+        parser.add_argument(
             "--checkpoint_path",
             required=False,
             default='',
