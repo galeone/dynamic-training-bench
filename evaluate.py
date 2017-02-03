@@ -18,6 +18,7 @@ from inputs.utils import InputType
 from models.utils import variables_to_restore
 from models.interfaces.Autoencoder import Autoencoder
 from models.interfaces.Classifier import Classifier
+from models.interfaces.Regressor import Regressor
 from CLIArgs import CLIArgs
 
 
@@ -171,7 +172,7 @@ if __name__ == '__main__':
                 datetime.now(), 'test' if ARGS.test else 'validation',
                 accuracy(ARGS.checkpoint_path, MODEL, DATASET, INPUT_TYPE)))
 
-    if isinstance(MODEL, Autoencoder):
+    if isinstance(MODEL, Autoencoder) or isinstance(MODEL, Regressor):
         with tf.device('/cpu:0'):
             IMAGES, _ = DATASET.inputs(input_type=INPUT_TYPE, batch_size=1)
         with tf.device(ARGS.eval_device):
