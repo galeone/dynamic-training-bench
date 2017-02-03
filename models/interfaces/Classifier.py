@@ -7,15 +7,14 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to work with classifiers"""
 
-import abc
+from .Model import Model
 
 
-class Classifier(object, metaclass=abc.ABCMeta):
+class Classifier(object, metaclass=Model):
     """Classifier is the interface that classifiers must implement"""
 
-    @abc.abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
-        """ define the model with its inputs.
+        """Define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
 
@@ -32,7 +31,6 @@ class Classifier(object, metaclass=abc.ABCMeta):
         raise NotImplementedError(
             'users must define get to use this base class')
 
-    @abc.abstractmethod
     def loss(self, logits, labels):
         """Return the loss operation between logits and labels
         Args:
