@@ -55,11 +55,8 @@ def restore_or_restart(sess, global_step):
 
 
 def classifier():
-    """Trains the classifier, returns the best validation accuracy reached
-    and saves the best model (with the highest validation accuracy).
-
-    Returns:
-        best_va: best validation accuracy
+    """Trains the classifier and saves the best model:
+    that's the model with the highest validation accuracy).
     """
 
     best_va = 0.0
@@ -192,15 +189,11 @@ def classifier():
             coord.request_stop()
             # Wait for threads to finish.
             coord.join(threads)
-    return best_va
 
 
 def autoencoder():
-    """Train the autoencoder, returns the best validation error reached
-    and saves the best model (with the lower validation error).
-
-    Returns:
-        best_ve: best validation error
+    """Train the autoencoder and saves the best model:
+    that's the model with the lower validation error.
     """
 
     best_ve = float('inf')
@@ -323,15 +316,11 @@ def autoencoder():
             coord.request_stop()
             # Wait for threads to finish.
             coord.join(threads)
-    return best_ve
 
 
 def regressor():
-    """Train the regressor, returns the best validation error reached
-    and saves the best model (with the lower validation error).
-
-    Returns:
-        best_ve: best validation error
+    """Train the regressor and saves the best model:
+    that's the model with the lower validation error.
     """
 
     best_ve = float('inf')
@@ -458,15 +447,11 @@ def regressor():
             coord.request_stop()
             # Wait for threads to finish.
             coord.join(threads)
-    return best_ve
 
 
 def detector():
-    """Trains the detector, returns the best average precision (AP) reached
-    and saves the best model (with the highest validation AP).
-
-    Returns:
-        best_iou: best average precision
+    """Trains the detector and saves the best model:
+    that's the model with the highest IoU.
     """
 
     best_iou = 0.0
@@ -620,7 +605,6 @@ def detector():
             coord.request_stop()
             # Wait for threads to finish.
             coord.join(threads)
-    return best_iou
 
 
 def build_optimizer(global_step):
@@ -739,13 +723,13 @@ def eval_model(checkpoint_dir, input_type):
 def train():
     """Execute the right training proceudre for the current MODEL"""
     if isinstance(MODEL, Classifier):
-        return classifier()
+        classifier()
     if isinstance(MODEL, Autoencoder):
-        return autoencoder()
+        autoencoder()
     if isinstance(MODEL, Regressor):
-        return regressor()
+        regressor()
     if isinstance(MODEL, Detector):
-        return detector()
+        detector()
     raise ValueError("train method not defined for this model type")
 
 
@@ -768,13 +752,13 @@ if __name__ == '__main__':
     if not tf.gfile.Exists(BEST_MODEL_DIR):
         tf.gfile.MakeDirs(BEST_MODEL_DIR)
 
-    # Start train and get the best value for the metric
-    VALIDATION_METRIC = train()
+    # Start train and save in the BEST_MODEL_DIR the best model
+    train()
 
     # Save the best error value on the validation set
     with open(os.path.join(CURRENT_DIR, 'validation_results.txt'), 'a') as res:
-        res.write('{} {}: {} {}\n'.format(datetime.now(), ARGS.model, NAME,
-                                          VALIDATION_METRIC))
+        res.write('{} {}: {} {}\n'.format(datetime.now(
+        ), ARGS.model, NAME, eval_model(BEST_MODEL_DIR, InputType.validation)))
 
     # Use the 'best' model to calculate the error on the test set
     with open(os.path.join(CURRENT_DIR, 'test_results.txt'), 'a') as res:
