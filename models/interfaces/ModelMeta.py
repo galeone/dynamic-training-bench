@@ -5,13 +5,13 @@
 #file, you can obtain one at http://mozilla.org/MPL/2.0/.
 #Exhibit B is not attached; this software is compatible with the
 #licenses expressed under Section 1.12 of the MPL v2.
-"""Class that defines a Model and its hinner fields """
+"""Class that defines a ModelMeta and its hinner fields """
 
 from functools import wraps
 
 
-class Model(type):
-    """Class that defines a Model and its hinner fields.
+class ModelMeta(type):
+    """Class that defines a ModelMeta and its hinner fields.
     This MetaClass wraps the get method of every model,
     and made the model definition in train and evaluation mode
     run only once.
@@ -22,7 +22,7 @@ class Model(type):
     def __new__(cls, name, bases, attrs):
         attrs["_trainable_model"], attrs["_evaluation_model"] = None, None
         attrs["get"] = cls._single(attrs["get"])
-        return super(Model, cls).__new__(cls, name, bases, attrs)
+        return super(ModelMeta, cls).__new__(cls, name, bases, attrs)
 
     @classmethod
     def _single(cls, get):

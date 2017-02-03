@@ -9,26 +9,7 @@
 
 import os
 import multiprocessing
-from enum import Enum, unique
 import tensorflow as tf
-
-
-@unique
-class InputType(Enum):
-    """ Enum to specify the data type requested """
-    validation = 'validation'
-    train = 'train'
-    test = 'test'
-
-    def __str__(self):
-        """Return the string representation of the enum"""
-        return self.value
-
-    @staticmethod
-    def check(input_type):
-        """Check if input_type is an element of this Enum"""
-        if not isinstance(input_type, InputType):
-            raise ValueError("Invalid input_type, required a valid InputType")
 
 
 # Adapted from

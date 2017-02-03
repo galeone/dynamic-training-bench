@@ -19,6 +19,7 @@ from six.moves import urllib
 import tensorflow as tf
 from . import utils
 from .interfaces.Input import Input
+from .interfaces.InputType import InputType
 
 
 class Cifar100(Input):
@@ -46,11 +47,11 @@ class Cifar100(Input):
         Args:
             input_type: InputType enum
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             return self._num_examples_per_epoch_for_train
-        elif input_type == utils.InputType.test:
+        elif input_type == InputType.test:
             return self._num_examples_per_epoch_for_test
         return self._num_examples_per_epoch_for_eval
 
@@ -142,7 +143,7 @@ class Cifar100(Input):
         if not tf.gfile.Exists(filename):
             raise ValueError('Failed to find file: ' + filename)
 
-        with tf.variable_scope("{}_input".format(utils.InputType.train)):
+        with tf.variable_scope("{}_input".format(InputType.train)):
             # Create a queue that produces the filenames to read.
             filename_queue = tf.train.string_input_producer([filename])
 
@@ -179,9 +180,9 @@ class Cifar100(Input):
             images: Images. 4D tensor of [batch_size, self._image_height, self._image_width, self._image_depth] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             filename = os.path.join(self._data_dir,
                                     'cifar-100-binary/train.bin')
             num_examples_per_epoch = self._num_examples_per_epoch_for_train

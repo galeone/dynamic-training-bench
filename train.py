@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow as tf
 import evaluate
 import utils
-from inputs.utils import InputType
+from inputs.interfaces.InputType import InputType
 from models.utils import variables_to_save, variables_to_restore, variables_to_train, tf_log, MODEL_SUMMARIES
 from models.utils import put_kernels_on_grid
 from models.interfaces.Autoencoder import Autoencoder

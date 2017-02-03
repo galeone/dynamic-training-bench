@@ -13,6 +13,7 @@ import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets import mnist
 from . import utils
 from .interfaces.Input import Input
+from .interfaces.InputType import InputType
 
 
 class MNIST(Input):
@@ -40,11 +41,11 @@ class MNIST(Input):
         Args:
             input_type: InputType enum
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             return self._num_examples_per_epoch_for_train
-        elif input_type == utils.InputType.test:
+        elif input_type == InputType.test:
             return self._num_examples_per_epoch_for_test
         return self._num_examples_per_epoch_for_eval
 
@@ -112,7 +113,7 @@ class MNIST(Input):
             labels: Labels. 1D tensor of [batch_size] size.
         """
 
-        with tf.variable_scope("{}_input".format(utils.InputType.train)):
+        with tf.variable_scope("{}_input".format(InputType.train)):
             # Create a queue that produces the filenames to read.
             filename = os.path.join(self._data_dir, 'train.tfrecords')
             filename_queue = tf.train.string_input_producer([filename])
@@ -147,15 +148,15 @@ class MNIST(Input):
             images: Images. 4D tensor of [batch_size, self._image_width, self._image_height, self._image_depth] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             filename = os.path.join(self._data_dir, 'train.tfrecords')
             num_examples_per_epoch = self._num_examples_per_epoch_for_train
-        elif input_type == utils.InputType.validation:
+        elif input_type == InputType.validation:
             filename = os.path.join(self._data_dir, 'validation.tfrecords')
             num_examples_per_epoch = self._num_examples_per_epoch_for_eval
-        elif input_type == utils.InputType.test:
+        elif input_type == InputType.test:
             filename = os.path.join(self._data_dir, 'test.tfrecords')
             num_examples_per_epoch = self._num_examples_per_epoch_for_test
 

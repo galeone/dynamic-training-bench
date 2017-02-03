@@ -7,10 +7,10 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to work with detectors"""
 
-from .Model import Model
+from .ModelMeta import ModelMeta
 
 
-class Detector(object, metaclass=Model):
+class Detector(object, metaclass=ModelMeta):
     """Detector is the interface that detectors must implement"""
 
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):

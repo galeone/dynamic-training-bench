@@ -18,6 +18,7 @@ import tensorflow as tf
 import numpy as np
 from . import utils
 from .interfaces.Input import Input
+from .interfaces.InputType import InputType
 
 
 class ORLFaces(Input):
@@ -45,11 +46,11 @@ class ORLFaces(Input):
         Args:
             input_type: InputType enum
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             return self._num_examples_per_epoch_for_train
-        elif input_type == utils.InputType.test:
+        elif input_type == InputType.test:
             return self._num_examples_per_epoch_for_test
         return self._num_examples_per_epoch_for_eval
 
@@ -119,7 +120,7 @@ class ORLFaces(Input):
             labels: Labels. 1D tensor of [batch_size] size.
         """
 
-        with tf.variable_scope("{}_input".format(utils.InputType.train)):
+        with tf.variable_scope("{}_input".format(InputType.train)):
             # Create a queue that produces the filenames to read.
             filename = os.path.join(self._data_dir, 'faces.tfrecords')
             filename_queue = tf.train.string_input_producer([filename])
@@ -154,7 +155,7 @@ class ORLFaces(Input):
             images: Images. 4D tensor of [batch_size, self._image_width, self._image_height, self._image_depth] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
         with tf.variable_scope("{}_input".format(input_type)):
             filename = os.path.join(self._data_dir, 'faces.tfrecords')

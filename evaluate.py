@@ -14,7 +14,7 @@ import math
 
 import tensorflow as tf
 import utils
-from inputs.utils import InputType
+from inputs.interfaces.InputType import InputType
 from models.utils import variables_to_restore
 from models.interfaces.Autoencoder import Autoencoder
 from models.interfaces.Classifier import Classifier

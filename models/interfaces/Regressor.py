@@ -7,10 +7,10 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to work with regressors"""
 
-from .Model import Model
+from .ModelMeta import ModelMeta
 
 
-class Regressor(object, metaclass=Model):
+class Regressor(object, metaclass=ModelMeta):
     """Regressor is the interface that regressors must implement"""
 
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):

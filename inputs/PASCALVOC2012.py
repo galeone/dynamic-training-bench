@@ -18,6 +18,7 @@ from six.moves import urllib
 import tensorflow as tf
 from . import utils
 from .interfaces.Input import Input
+from .interfaces.InputType import InputType
 
 
 class PASCALVOC2012(Input):
@@ -60,11 +61,11 @@ class PASCALVOC2012(Input):
         Args:
             input_type: InputType enum
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             return self._num_examples_per_epoch_for_train
-        elif input_type == utils.InputType.test:
+        elif input_type == InputType.test:
             return self._num_examples_per_epoch_for_test
         return self._num_examples_per_epoch_for_eval
 
@@ -78,7 +79,7 @@ class PASCALVOC2012(Input):
         Returns:
             image, bboxes
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
         reader = tf.TextLineReader(skip_header_lines=False)
         _, filename = reader.read(filename_queue)
@@ -134,7 +135,7 @@ class PASCALVOC2012(Input):
         min_queue_examples = int(self._num_examples_per_epoch_for_train *
                                  min_fraction_of_examples_in_queue)
 
-        with tf.variable_scope("{}_input".format(utils.InputType.train)):
+        with tf.variable_scope("{}_input".format(InputType.train)):
             # Create a queue that produces the filenames to read.
             filename_queue = tf.train.string_input_producer(filenames)
 
@@ -205,9 +206,9 @@ class PASCALVOC2012(Input):
             labels: A tensor with shape [batch_size, num_bboxes_max, 5]. num_bboxes_max are the maximum bboxes found in the
             requested set (train/test/validation). Where the bbox is fake, a -1,-1,-1,-1,-1 value is present
         """
-        utils.InputType.check(input_type)
+        InputType.check(input_type)
 
-        if input_type == utils.InputType.train:
+        if input_type == InputType.train:
             filenames = [
                 os.path.join(self._data_dir, 'VOCdevkit', 'VOC2012',
                              'ImageSets', 'Main', 'train.txt')
