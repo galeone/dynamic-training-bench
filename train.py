@@ -723,13 +723,13 @@ def eval_model(checkpoint_dir, input_type):
 def train():
     """Execute the right training proceudre for the current MODEL"""
     if isinstance(MODEL, Classifier):
-        classifier()
+        return classifier()
     if isinstance(MODEL, Autoencoder):
-        autoencoder()
+        return autoencoder()
     if isinstance(MODEL, Regressor):
-        regressor()
+        return regressor()
     if isinstance(MODEL, Detector):
-        detector()
+        return detector()
     raise ValueError("train method not defined for this model type")
 
 
