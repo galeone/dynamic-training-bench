@@ -18,8 +18,8 @@ import tensorflow as tf
 import evaluate
 import utils
 from inputs.interfaces.InputType import InputType
-from models.utils import variables_to_save, variables_to_restore, variables_to_train, tf_log, MODEL_SUMMARIES
-from models.utils import put_kernels_on_grid
+from models.utils import variables_to_save, variables_to_restore, variables_to_train
+from models.utils import tf_log, MODEL_SUMMARIES, put_kernels_on_grid
 from models.interfaces.Autoencoder import Autoencoder
 from models.interfaces.Classifier import Classifier
 from models.interfaces.Detector import Detector
@@ -35,21 +35,31 @@ def restore_or_restart(sess, global_step):
         sess: session
         global_step: global_step tensor
     """
-    restore_saver = build_restore_saver(
-        [global_step] if ARGS.checkpoint_path == '' else [],
-        scopes_to_remove=ARGS.exclude_scopes)
+
+    # first check if exists and checkpoint_path passed
+    # from where to load the weights.
+    # Return error if there's not
+    pretrained_checkpoint = None
     if ARGS.checkpoint_path != '':
-        checkpoint = tf.train.latest_checkpoint(ARGS.checkpoint_path)
-        if checkpoint:
-            restore_saver.restore(sess, checkpoint)
-        else:
+        pretrained_checkpoint = tf.train.latest_checkpoint(ARGS.checkpoint_path)
+        if not pretrained_checkpoint:
             print("[E] {} not valid".format(ARGS.checkpoint_path))
             sys.exit(-1)
-    elif not ARGS.restart:  # continue from the saved checkpoint
-        # restore previous session if exists
-        checkpoint = tf.train.latest_checkpoint(LOG_DIR)
-        if checkpoint:
-            restore_saver.restore(sess, checkpoint)
+
+    if not ARGS.restart:
+        # continue training checkpoint
+        continue_checkpoint = tf.train.latest_checkpoint(LOG_DIR)
+        if continue_checkpoint:
+            restore_saver = build_restore_saver(
+                [global_step], scopes_to_remove=ARGS.exclude_scopes)
+            restore_saver.restore(sess, continue_checkpoint)
+        # else if the continue checkpoint does not exists
+        # and the pretrained checkpoint has been specified
+        # load the weights from the pretrained checkpoint
+        elif pretrained_checkpoint:
+            restore_saver = build_restore_saver(
+                [], scopes_to_remove=ARGS.exclude_scopes)
+            restore_saver.restore(sess, pretrained_checkpoint)
         else:
             print('[I] Unable to restore from checkpoint')
 
