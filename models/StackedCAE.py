@@ -45,7 +45,7 @@ class StackedCAE(Autoencoder):
         num_layers = 9
         filter_side = 3
         filters_number = 9
-        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
+        with tf.variable_scope(self.__class__.__name__):
             input_x = tf.identity(images)
             input_padded = self._pad(input_x, filter_side)
             for layer in range(num_layers):

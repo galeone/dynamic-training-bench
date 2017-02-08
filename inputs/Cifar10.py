@@ -53,6 +53,7 @@ class Cifar10(Input):
             return self._num_examples_per_epoch_for_test
         return self._num_examples_per_epoch_for_eval
 
+    @property
     def num_classes(self):
         """Returns the number of classes"""
         return self._num_classes

@@ -7,12 +7,13 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to work with regressors"""
 
-from .ModelMeta import ModelMeta
+from abc import ABCMeta, abstractmethod
 
 
-class Regressor(object, metaclass=ModelMeta):
+class Regressor(object, metaclass=ABCMeta):
     """Regressor is the interface that regressors must implement"""
 
+    @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
@@ -28,9 +29,8 @@ class Regressor(object, metaclass=ModelMeta):
             is_training_: tf.bool placeholder enable/disable training ops at run time
             predictions: the model output
         """
-        raise NotImplementedError(
-            'users must define get to use this base class')
 
+    @abstractmethod
     def loss(self, predictions, labels):
         """Return the loss operation between predictions and labels
         Args:
@@ -41,5 +41,3 @@ class Regressor(object, metaclass=ModelMeta):
         Returns:
           Loss tensor of type float.
         """
-        raise NotImplementedError(
-            'users must define loss to use this base class')

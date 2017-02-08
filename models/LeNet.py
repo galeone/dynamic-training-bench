@@ -34,7 +34,7 @@ class LeNet(Classifier):
           Logits.
         """
 
-        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
+        with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv_layer(
                     images, [5, 5, 1, 32],

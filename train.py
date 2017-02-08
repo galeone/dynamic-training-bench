@@ -71,7 +71,7 @@ def classifier():
 
     best_va = 0.0
 
-    with tf.device(ARGS.train_device):
+    with tf.Graph().as_default(), tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and labels
@@ -82,7 +82,7 @@ def classifier():
         # inference model.
         is_training_, logits = MODEL.get(
             images,
-            DATASET.num_classes(),
+            DATASET.num_classes,
             train_phase=True,
             l2_penalty=ARGS.l2_penalty)
 
@@ -207,7 +207,7 @@ def autoencoder():
     """
 
     best_ve = float('inf')
-    with tf.device(ARGS.train_device):
+    with tf.Graph().as_default(), tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and discard labels
@@ -334,7 +334,7 @@ def regressor():
     """
 
     best_ve = float('inf')
-    with tf.device(ARGS.train_device):
+    with tf.Graph().as_default(), tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         # Get images and discard labels
@@ -345,7 +345,7 @@ def regressor():
         # inference model.
         is_training_, predictions = MODEL.get(
             images,
-            DATASET.num_classes(),
+            DATASET.num_classes,
             train_phase=True,
             l2_penalty=ARGS.l2_penalty)
 
@@ -466,7 +466,7 @@ def detector():
 
     best_iou = 0.0
 
-    with tf.device(ARGS.train_device):
+    with tf.Graph().as_default(), tf.device(ARGS.train_device):
         global_step = tf.Variable(0, trainable=False, name='global_step')
 
         with tf.device('/cpu:0'):
@@ -479,7 +479,7 @@ def detector():
         # n & m = 1 when training and input has the expected shape of the network
         is_training_, predictions = MODEL.get(
             images,
-            DATASET.num_classes(),
+            DATASET.num_classes,
             train_phase=True,
             l2_penalty=ARGS.l2_penalty)
 

@@ -45,7 +45,7 @@ class StackedDenoisingCAE(Autoencoder):
         num_layers = 9
         filter_side = 3
         filters_number = 9
-        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
+        with tf.variable_scope(self.__class__.__name__):
             input_x = tf.identity(images)
             if train_phase:
                 input_x_noise = tf.clip_by_value(input_x + tf.random_uniform(

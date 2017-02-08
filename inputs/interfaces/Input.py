@@ -7,12 +7,13 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to defined an input"""
 
-from .InputMeta import InputMeta
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 
-class Input(object, metaclass=InputMeta):
+class Input(object, metaclass=ABCMeta):
     """Input is the interface that classifiers must implement"""
 
+    @abstractmethod
     def distorted_inputs(self, batch_size):
         """Construct distorted input for training using the Reader ops.
 
@@ -23,9 +24,9 @@ class Input(object, metaclass=InputMeta):
             elements: distorted elements. Tensor of with batch_size elements
             ground_truth: tensor with batch_size elements
         """
-        raise NotImplementedError(
-            'users must define distorted_inputs to use this base class')
+        pass
 
+    @abstractmethod
     def inputs(self, input_type, batch_size):
         """Construct input for evaluation using the Reader ops.
 
@@ -37,19 +38,18 @@ class Input(object, metaclass=InputMeta):
             elements:  tensor of with batch_size elements
             ground_truth: tensor with batch_size elements
         """
-        raise NotImplementedError(
-            'users must define inputs to use this base class')
+        pass
 
+    @abstractmethod
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
 
         Args:
             input_type: InputType enum
         """
-        raise NotImplementedError(
-            'users must define num_examples to use this base class')
+        pass
 
+    @abstractproperty
     def num_classes(self):
         """Returns the number of classes """
-        raise NotImplementedError(
-            'users must define num_classes to use this base class')
+        pass

@@ -7,12 +7,13 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to work with detectors"""
 
-from .ModelMeta import ModelMeta
+from abc import ABCMeta, abstractmethod
 
 
-class Detector(object, metaclass=ModelMeta):
+class Detector(object, metaclass=ABCMeta):
     """Detector is the interface that detectors must implement"""
 
+    @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
@@ -30,9 +31,8 @@ class Detector(object, metaclass=ModelMeta):
             bboxes: the predicted coordinates for every detected object in the input image
                     this must have the same number of rows of logits
         """
-        raise NotImplementedError(
-            'users must define get to use this base class')
 
+    @abstractmethod
     def loss(self, label_relations, bboxes_relations):
         """Return the loss operation.
         Args:
@@ -44,5 +44,3 @@ class Detector(object, metaclass=ModelMeta):
         Returns:
             Loss tensor of type float.
         """
-        raise NotImplementedError(
-            'users must define loss to use this base class')

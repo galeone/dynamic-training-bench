@@ -44,7 +44,7 @@ class SingleLayerCAE(Autoencoder):
         """
         filter_side = 3
         filters_number = 32
-        with tf.variable_scope(self.__class__.__name__, reuse=not train_phase):
+        with tf.variable_scope(self.__class__.__name__):
             input_x = self._pad(images, filter_side)
 
             with tf.variable_scope("encode"):

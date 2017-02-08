@@ -36,55 +36,59 @@ def accuracy(checkpoint_path, model, dataset, input_type, batch_size=200):
     """
     InputType.check(input_type)
 
-    # Get images and labels from the dataset
-    with tf.device('/cpu:0'):
-        images, labels = dataset.inputs(
-            input_type=input_type, batch_size=batch_size)
+    with tf.Graph().as_default():
+        # Get images and labels from the dataset
+        with tf.device('/cpu:0'):
+            images, labels = dataset.inputs(
+                input_type=input_type, batch_size=batch_size)
 
-    # Build a Graph that computes the predictions from the inference model.
-    _, predictions = model.get(images, dataset.num_classes(), train_phase=False)
+        # Build a Graph that computes the predictions from the inference model.
+        _, predictions = model.get(
+            images, dataset.num_classes, train_phase=False)
 
-    # Accuracy op
-    accuracy = utils.accuracy_op(predictions, labels)
+        # Accuracy op
+        accuracy = utils.accuracy_op(predictions, labels)
 
-    saver = tf.train.Saver(variables_to_restore())
-    accuracy_value = 0.0
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        ckpt = tf.train.get_checkpoint_state(checkpoint_path)
-        if ckpt and ckpt.model_checkpoint_path:
-            # Restores from checkpoint
-            saver.restore(sess, ckpt.model_checkpoint_path)
-        else:
-            print('[!] No checkpoint file found')
-            return
+        saver = tf.train.Saver(variables_to_restore())
+        accuracy_value = 0.0
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True)) as sess:
+            ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+            if ckpt and ckpt.model_checkpoint_path:
+                # Restores from checkpoint
+                saver.restore(sess, ckpt.model_checkpoint_path)
+            else:
+                print('[!] No checkpoint file found')
+                return
 
-        # Start the queue runners.
-        coord = tf.train.Coordinator()
-        try:
-            threads = []
-            for queue_runner in tf.get_collection(tf.GraphKeys.QUEUE_RUNNERS):
-                threads.extend(
-                    queue_runner.create_threads(
-                        sess, coord=coord, daemon=True, start=True))
+            # Start the queue runners.
+            coord = tf.train.Coordinator()
+            try:
+                threads = []
+                for queue_runner in tf.get_collection(
+                        tf.GraphKeys.QUEUE_RUNNERS):
+                    threads.extend(
+                        queue_runner.create_threads(
+                            sess, coord=coord, daemon=True, start=True))
 
-            num_iter = int(
-                math.ceil(dataset.num_examples(input_type) / batch_size))
-            # Counts the number of correct predictions.
-            accuracy_sum = 0.0
-            total_sample_count = num_iter * batch_size
-            step = 0
-            while step < num_iter and not coord.should_stop():
-                accuracy_sum += sess.run(accuracy)
-                step += 1
+                num_iter = int(
+                    math.ceil(dataset.num_examples(input_type) / batch_size))
+                # Counts the number of correct predictions.
+                accuracy_sum = 0.0
+                total_sample_count = num_iter * batch_size
+                step = 0
+                while step < num_iter and not coord.should_stop():
+                    accuracy_sum += sess.run(accuracy)
+                    step += 1
 
-            accuracy_value = accuracy_sum / step
-        except Exception as exc:
-            coord.request_stop(exc)
-        finally:
-            coord.request_stop()
+                accuracy_value = accuracy_sum / step
+            except Exception as exc:
+                coord.request_stop(exc)
+            finally:
+                coord.request_stop()
 
-        coord.join(threads)
-    return accuracy_value
+            coord.join(threads)
+        return accuracy_value
 
 
 def error(checkpoint_path, model, dataset, input_type, batch_size=200):
@@ -101,57 +105,62 @@ def error(checkpoint_path, model, dataset, input_type, batch_size=200):
     """
     InputType.check(input_type)
 
-    # Get images and labels from the dataset
-    with tf.device('/cpu:0'):
-        images, labels = dataset.inputs(
-            input_type=input_type, batch_size=batch_size)
+    with tf.Graph().as_default():
+        # Get images and labels from the dataset
+        with tf.device('/cpu:0'):
+            images, labels = dataset.inputs(
+                input_type=input_type, batch_size=batch_size)
 
-    # Build a Graph that computes the predictions from the inference model.
-    if isinstance(model, Autoencoder):
-        # Autoencoder does not use num_classes and the reconstruction is among
-        # reconstructions (predictions) and images
-        _, predictions = model.get(images, train_phase=False, l2_penalty=0.0)
-        loss = model.loss(predictions, images)
-    else:
-        _, predictions = model.get(
-            images, dataset.num_classes(), train_phase=False, l2_penalty=0.0)
-        loss = model.loss(predictions, labels)
-
-    saver = tf.train.Saver(variables_to_restore())
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        ckpt = tf.train.get_checkpoint_state(checkpoint_path)
-        if ckpt and ckpt.model_checkpoint_path:
-            # Restores from checkpoint
-            saver.restore(sess, ckpt.model_checkpoint_path)
+        # Build a Graph that computes the predictions from the inference model.
+        if isinstance(model, Autoencoder):
+            # Autoencoder does not use num_classes and the reconstruction is among
+            # reconstructions (predictions) and images
+            _, predictions = model.get(
+                images, train_phase=False, l2_penalty=0.0)
+            loss = model.loss(predictions, images)
         else:
-            print('[!] No checkpoint file found')
-            return
+            _, predictions = model.get(
+                images, dataset.num_classes, train_phase=False, l2_penalty=0.0)
+            loss = model.loss(predictions, labels)
 
-        # Start the queue runners.
-        coord = tf.train.Coordinator()
-        try:
-            threads = []
-            for queue_runner in tf.get_collection(tf.GraphKeys.QUEUE_RUNNERS):
-                threads.extend(
-                    queue_runner.create_threads(
-                        sess, coord=coord, daemon=True, start=True))
+        saver = tf.train.Saver(variables_to_restore())
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True)) as sess:
+            ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+            if ckpt and ckpt.model_checkpoint_path:
+                # Restores from checkpoint
+                saver.restore(sess, ckpt.model_checkpoint_path)
+            else:
+                print('[!] No checkpoint file found')
+                return
 
-            num_iter = int(
-                math.ceil(dataset.num_examples(input_type) / batch_size))
-            step = 0
-            average_error = 0.0
-            while step < num_iter and not coord.should_stop():
-                error_value = sess.run(loss)
-                step += 1
-                average_error += error_value
-            average_error /= step
-        except Exception as exc:
-            coord.request_stop(exc)
-        finally:
-            coord.request_stop()
+            # Start the queue runners.
+            coord = tf.train.Coordinator()
+            try:
+                threads = []
+                for queue_runner in tf.get_collection(
+                        tf.GraphKeys.QUEUE_RUNNERS):
+                    threads.extend(
+                        queue_runner.create_threads(
+                            sess, coord=coord, daemon=True, start=True))
 
-        coord.join(threads)
-    return average_error
+                num_iter = int(
+                    math.ceil(dataset.num_examples(input_type) / batch_size))
+                step = 0
+                average_error = 0.0
+                while step < num_iter and not coord.should_stop():
+                    error_value = sess.run(loss)
+                    step += 1
+                    average_error += error_value
+
+                average_error /= step
+            except Exception as exc:
+                coord.request_stop(exc)
+            finally:
+                coord.request_stop()
+
+            coord.join(threads)
+        return average_error
 
 
 if __name__ == '__main__':
@@ -159,24 +168,26 @@ if __name__ == '__main__':
         description="Evaluate the model").parse_eval()
 
     INPUT_TYPE = InputType.test if ARGS.test else InputType.validation
-    # models need to be instantiated in "train mode" in order to define
-    # the complete graph. Then the evaluation reinstantiate the model but
-    # in "test" mode, reusing the previosly defined variable.
-    if isinstance(MODEL, Classifier):
-        with tf.device('/cpu:0'):
-            IMAGES, _ = DATASET.inputs(input_type=INPUT_TYPE, batch_size=1)
 
-        with tf.device(ARGS.eval_device):
-            _ = MODEL.get(IMAGES, DATASET.num_classes(), train_phase=True)
+    with tf.device(ARGS.eval_device):
+        if isinstance(MODEL, Classifier):
             print('{}: {} accuracy = {:.3f}'.format(
                 datetime.now(), 'test' if ARGS.test else 'validation',
-                accuracy(ARGS.checkpoint_path, MODEL, DATASET, INPUT_TYPE)))
+                accuracy(
+                    ARGS.checkpoint_path,
+                    MODEL,
+                    DATASET,
+                    INPUT_TYPE,
+                    batch_size=ARGS.batch_size)))
 
-    if isinstance(MODEL, Autoencoder) or isinstance(MODEL, Regressor):
-        with tf.device('/cpu:0'):
-            IMAGES, _ = DATASET.inputs(input_type=INPUT_TYPE, batch_size=1)
-        with tf.device(ARGS.eval_device):
-            _ = MODEL.get(IMAGES, train_phase=True)
+        if isinstance(MODEL, Autoencoder):
             print('{}: {} error = {:.3f}'.format(
                 datetime.now(), 'test' if ARGS.test else 'validation',
-                error(ARGS.checkpoint_path, MODEL, DATASET, INPUT_TYPE)))
+                error(ARGS.checkpoint_path, MODEL, DATASET, INPUT_TYPE,
+                      ARGS.batch_size)))
+
+        if isinstance(MODEL, Regressor):
+            print('{}: {} error = {:.3f}'.format(
+                datetime.now(), 'test' if ARGS.test else 'validation',
+                error(ARGS.checkpoint_path, MODEL, DATASET, INPUT_TYPE,
+                      ARGS.batch_size)))

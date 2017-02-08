@@ -7,12 +7,13 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to work with Autoencoders"""
 
-from .ModelMeta import ModelMeta
+from abc import ABCMeta, abstractmethod
 
 
-class Autoencoder(object, metaclass=ModelMeta):
+class Autoencoder(object, metaclass=ABCMeta):
     """Autoencoder is the interface that classifiers must implement"""
 
+    @abstractmethod
     def get(self, images, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
@@ -27,9 +28,8 @@ class Autoencoder(object, metaclass=ModelMeta):
             is_training_: tf.bool placeholder enable/disable training ops at run time
             predictions: the model output
         """
-        raise NotImplementedError(
-            'users must define get to use this base class')
 
+    @abstractmethod
     def loss(self, predictions, real_values):
         """Return the loss operation between predictions and real_values
         Args:
@@ -39,5 +39,3 @@ class Autoencoder(object, metaclass=ModelMeta):
         Returns:
           Loss tensor of type float.
         """
-        raise NotImplementedError(
-            'users must define loss to use this base class')
