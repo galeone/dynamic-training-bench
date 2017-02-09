@@ -16,7 +16,7 @@ import math
 import numpy as np
 import tensorflow as tf
 import evaluate
-import utils
+import metrics
 from inputs.interfaces.InputType import InputType
 from models.utils import variables_to_save, variables_to_restore, variables_to_train
 from models.utils import tf_log, MODEL_SUMMARIES, put_kernels_on_grid
@@ -97,7 +97,7 @@ def classifier():
             global_step=global_step,
             var_list=variables_to_train(ARGS.trainable_scopes))
 
-        train_accuracy = utils.accuracy_op(logits, labels)
+        train_accuracy = metrics.accuracy_op(logits, labels)
         # General validation summary
         accuracy_value_ = tf.placeholder(tf.float32, shape=())
         accuracy_summary = tf.summary.scalar('accuracy', accuracy_value_)
@@ -512,7 +512,7 @@ def detector():
         #iou_summary = tf.summary.scalar('iou', iou_value_)
 
         # Train accuracy op
-        train_accuracy = utils.accuracy_op(logits, labels)
+        train_accuracy = metrics.accuracy_op(logits, labels)
 
         # General validation summary
         accuracy_value_ = tf.placeholder(tf.float32, shape=())

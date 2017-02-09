@@ -13,7 +13,7 @@ from datetime import datetime
 import math
 
 import tensorflow as tf
-import utils
+import metrics
 from inputs.interfaces.InputType import InputType
 from models.utils import variables_to_restore
 from models.interfaces.Autoencoder import Autoencoder
@@ -47,7 +47,7 @@ def accuracy(checkpoint_path, model, dataset, input_type, batch_size=200):
             images, dataset.num_classes, train_phase=False)
 
         # Accuracy op
-        accuracy = utils.accuracy_op(predictions, labels)
+        accuracy = metrics.accuracy_op(predictions, labels)
 
         saver = tf.train.Saver(variables_to_restore())
         accuracy_value = 0.0
