@@ -16,8 +16,10 @@ DTB uses python 3.6 and the latest Tensorflow release (r1.0)
 
 The model definition must be an implementation of one of the available interfaces:
 
-1. [models/Classifier.py](models/Classifier.py)
-2. [models/Autoencoder.py](models/Autoencoder.py)
+1. [models/interfaces/Classifier.py](models/interfaces/Classifier.py)
+2. [models/interfaces/Autoencoder.py](models/interfaces/Autoencoder.py)
+3. [models/interfaces/Regressor.py](models/interfaces/Regressor.py)
+4. [models/interfaces/Detector.py](models/interfaces/Detector.py)
 
 The interface implementation must follow these rules:
 
