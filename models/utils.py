@@ -90,9 +90,11 @@ def put_kernels_on_grid(kernel, grid_side, pad=1):
 def weight(name,
            shape,
            initializer=tf.contrib.layers.variance_scaling_initializer(
-               factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32)):
+               factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32),
+           wd=0.0):
     """Returns a tensor with the requested shape, initialized
-      using the provided intitializer (default: He init)."""
+      using the provided intitializer (default: He init).
+      Applies L2 weight decay penalyt using wd term"""
     weights = tf.get_variable(
         name, shape=shape, initializer=initializer, dtype=tf.float32)
 
@@ -108,19 +110,24 @@ def weight(name,
                                                          2], grid_side,
                                                  grid_side)))
 
+    # Add weight decay to W
+    tf.add_to_collection(LOSSES_COLLECTION,
+                         tf.multiply(tf.nn.l2_loss(weights), wd))
     tf_log(tf.summary.histogram(name, weights))
     return weights
 
 
 def bias(name, shape, initializer=tf.constant_initializer(value=0.0)):
-    """Returns a bias variabile initializeted wuth the provided initializer"""
-    return weight(name, shape, initializer)
+    """Returns a bias variabile initializeted wuth the provided initializer.
+    No weight decay applied to the bias terms"""
+    return weight(name, shape, initializer, wd=0.0)
 
 
 def atrous_conv_layer(input_x,
                       shape,
                       rate,
                       padding,
+                      bias_term=True,
                       activation=tf.identity,
                       wd=0.0):
     """ Define an atrous conv layer.
@@ -133,16 +140,17 @@ def atrous_conv_layer(input_x,
             across the height and width dimensions. In the literature, the same
             parameter is sometimes called input stride or dilation
          padding: 'VALID' or 'SAME'
+         bias_term: a boolean to add (if True) the bias term. Usually disable when
+             the layer is wrapped in a batch norm layer
          activation: activation function. Default linear
          wd: weight decay
     Rerturns the conv2d op"""
-    W = weight("W", shape)
-    b = bias("b", [shape[3]])
-    # Add weight decay to W
-    weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection(LOSSES_COLLECTION, weight_decay)
 
-    result = tf.nn.bias_add(tf.nn.atrous_conv2d(input_x, W, rate, padding), b)
+    W = weight("W", shape, wd=wd)
+    result = tf.nn.atrous_conv2d(input_x, W, rate, padding)
+    if bias_term:
+        b = bias("b", [shape[3]])
+        result = tf.nn.bias_add(result, b)
 
     # apply nonlinearity
     out = activation(result)
@@ -171,24 +179,30 @@ def atrous_conv_layer(input_x,
     return out
 
 
-def conv_layer(input_x, shape, stride, padding, activation=tf.identity, wd=0.0):
+def conv_layer(input_x,
+               shape,
+               stride,
+               padding,
+               bias_term=True,
+               activation=tf.identity,
+               wd=0.0):
     """ Define a conv layer.
     Args:
          input_x: a 4D tensor
          shape: weight shape
          stride: a single value supposing equal stride along X and Y
          padding: 'VALID' or 'SAME'
+         bias_term: a boolean to add (if True) the bias term. Usually disable when
+             the layer is wrapped in a batch norm layer
          activation: activation function. Default linear
          wd: weight decay
     Rerturns the conv2d op"""
-    W = weight("W", shape)
-    b = bias("b", [shape[3]])
-    # Add weight decay to W
-    weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection(LOSSES_COLLECTION, weight_decay)
 
-    result = tf.nn.bias_add(
-        tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding), b)
+    W = weight("W", shape, wd=wd)
+    result = tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding)
+    if bias_term:
+        b = bias("b", [shape[3]])
+        result = tf.nn.bias_add(result, b)
 
     # apply nonlinearity
     out = activation(result)
@@ -217,20 +231,24 @@ def conv_layer(input_x, shape, stride, padding, activation=tf.identity, wd=0.0):
     return out
 
 
-def fc_layer(input_x, shape, activation=tf.identity, wd=0.0):
+def fc_layer(input_x, shape, bias_term=True, activation=tf.identity, wd=0.0):
     """ Define a fully connected layer.
     Args:
         input_x: a 4d tensor
         shape: weight shape
+        bias_term: a boolean to add (if True) the bias term. Usually disable when
+             the layer is wrapped in a batch norm layer
         activation: activation function. Default linear
         wd: weight decay
     Returns the fc layer"""
-    W = weight("W", shape)
-    b = bias("b", [shape[1]])
-    # Add weight decay to W
-    weight_decay = tf.multiply(tf.nn.l2_loss(W), wd, name='weight_loss')
-    tf.add_to_collection(LOSSES_COLLECTION, weight_decay)
-    return activation(tf.nn.bias_add(tf.matmul(input_x, W), b))
+
+    W = weight("W", shape, wd=wd)
+    result = tf.matmul(input_x, W)
+    if bias_term:
+        b = bias("b", [shape[1]])
+        result = tf.nn.bias_add(result, b)
+
+    return activation(result)
 
 
 def batch_norm(layer_output, is_training_, decay=0.9):

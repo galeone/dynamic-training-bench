@@ -39,8 +39,12 @@ class LeNetBN(Classifier):
                 conv1 = tf.nn.relu(
                     utils.batch_norm(
                         utils.conv_layer(
-                            images, [5, 5, 1, 32], 1, 'SAME', wd=l2_penalty),
-                        is_training_ if train_phase else False))
+                            images, [5, 5, 1, 32],
+                            1,
+                            'SAME',
+                            bias_term=False,
+                            wd=l2_penalty), is_training_
+                        if train_phase else False))
 
             with tf.variable_scope("pool1"):
                 pool1 = tf.nn.max_pool(
@@ -53,8 +57,12 @@ class LeNetBN(Classifier):
                 conv2 = tf.nn.relu(
                     utils.batch_norm(
                         utils.conv_layer(
-                            pool1, [5, 5, 32, 64], 1, 'SAME', wd=l2_penalty),
-                        is_training_ if train_phase else False))
+                            pool1, [5, 5, 32, 64],
+                            1,
+                            'SAME',
+                            bias_term=False,
+                            wd=l2_penalty), is_training_
+                        if train_phase else False))
 
             with tf.variable_scope("pool2"):
                 pool2 = tf.nn.max_pool(
@@ -68,8 +76,10 @@ class LeNetBN(Classifier):
                 fc1 = tf.nn.relu(
                     utils.batch_norm(
                         utils.fc_layer(
-                            pool2, [7 * 7 * 64, 1024], wd=l2_penalty),
-                        is_training_ if train_phase else False))
+                            pool2, [7 * 7 * 64, 1024],
+                            bias_term=False,
+                            wd=l2_penalty), is_training_
+                        if train_phase else False))
 
             with tf.variable_scope("softmax_linear"):
                 logits = utils.fc_layer(fc1, [1024, num_classes])
