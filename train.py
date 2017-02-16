@@ -724,9 +724,11 @@ def eval_model(checkpoint_dir, input_type):
     InputType.check(input_type)
 
     if isinstance(MODEL, Classifier):
-        return evaluate.accuracy(checkpoint_dir, MODEL, DATASET, input_type)
+        return evaluate.accuracy(checkpoint_dir, MODEL, DATASET, input_type,
+                                 ARGS.batch_size)
     if isinstance(MODEL, Autoencoder) or isinstance(MODEL, Regressor):
-        return evaluate.error(checkpoint_dir, MODEL, DATASET, input_type)
+        return evaluate.error(checkpoint_dir, MODEL, DATASET, input_type,
+                              ARGS.batch_size)
     raise ValueError("Evaluate method not defined for this model type")
 
 
