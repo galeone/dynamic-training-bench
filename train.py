@@ -78,6 +78,7 @@ def classifier():
         with tf.device('/cpu:0'):
             images, labels = DATASET.distorted_inputs(ARGS.batch_size)
         log_io(images)
+
         # Build a Graph that computes the logits predictions from the
         # inference model.
         is_training_, logits = MODEL.get(
@@ -144,7 +145,7 @@ def classifier():
                     break
 
                 # update logs every 10 iterations
-                if step % 10 == 0:
+                if step % STEPS_PER_LOG == 0:
                     examples_per_sec = ARGS.batch_size / duration
                     sec_per_batch = float(duration)
 
@@ -276,7 +277,7 @@ def autoencoder():
                     break
 
                 # update logs every 10 iterations
-                if step % 10 == 0:
+                if step % STEPS_PER_LOG == 0:
                     num_examples_per_step = ARGS.batch_size
                     examples_per_sec = num_examples_per_step / duration
                     sec_per_batch = float(duration)
@@ -407,7 +408,7 @@ def regressor():
                     break
 
                 # update logs every 10 iterations
-                if step % 10 == 0:
+                if step % STEPS_PER_LOG == 0:
                     num_examples_per_step = ARGS.batch_size
                     examples_per_sec = num_examples_per_step / duration
                     sec_per_batch = float(duration)
@@ -565,7 +566,7 @@ def detector():
                     break
 
                 # update logs every 10 iterations
-                if step % 10 == 0:
+                if step % STEPS_PER_LOG == 0:
                     examples_per_sec = ARGS.batch_size / duration
                     sec_per_batch = float(duration)
 
@@ -751,6 +752,7 @@ if __name__ == '__main__':
     #### Training constants ####
     STEPS_PER_EPOCH = math.ceil(
         DATASET.num_examples(InputType.train) / ARGS.batch_size)
+    STEPS_PER_LOG = math.ceil(STEPS_PER_EPOCH / 10)
     MAX_STEPS = STEPS_PER_EPOCH * ARGS.epochs
 
     #### Model logs and checkpoint constants ####
