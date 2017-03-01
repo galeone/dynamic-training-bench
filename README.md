@@ -63,11 +63,11 @@ This method is executed as first operation when the dataset object is created, t
 2. Implement the `num_classes` method: this method must return the number of classes of the dataset. If your dataset has no labels, just return 0.
 3. Implement the `num_examples(input_type)` method: this method accepts an `InputType` enumeration, defined in `inputs/utils.py`.
 This enumeration has 3 possible values: `InputType.train`, `InputType.validation`, `InputType.test`. As obvious, the method must return the number of examples for every possible value of this enumeration.
-4. Implement the `inputs` and `distorted_inputs` methods.
-The `distorted_inputs` method is the method invoked while training: thus here you can distort the input using data augmentation techniques if required.
+4. Implement the `inputs` and `train_inputs` methods.
+The `train_inputs` method is the method invoked while training: thus here you can distort the input using data augmentation techniques if required.
 The `inputs` method is a general method that should return the real values of the dataset, related to the `InputType` passed, without any augmentation.
 
-*Hint*: both `inputs` and `distorted_inputs` must return a Tensorflow queue of `value, label` pairs.
+*Hint*: both `inputs` and `train_inputs` must return a Tensorflow queue of `value, label` pairs.
 
 The better way to understand how to build the input source is to look at the examples in the [inputs/](inputs/) folder.
 
