@@ -7,11 +7,13 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Class that defines and parse CLI arguments"""
 
+import os
 import glob
 import argparse
 import json
 import importlib
 import pprint
+import sys
 import tensorflow as tf
 
 
@@ -25,36 +27,53 @@ class CLIArgs(object):
         self._description = description
         self._args = None
 
-    def _build_name(self):
-        """Build method name parsing args"""
-        optimizer = getattr(tf.train, self._args.optimizer)(
-            **self._args.optimizer_args)
-        learning_rate = self._args.optimizer_args["learning_rate"]
-        name = '{}_{}_lr={}_'.format(self._args.dataset,
-                                     optimizer.get_name(), learning_rate)
-
-        if self._args.lr_decay:
-            name += 'exp_lr_'
-        if self._args.l2_penalty != 0.0:
-            name += 'l2={}_'.format(self._args.l2_penalty)
-        if self._args.comment != '':
-            name += '{}_'.format(self._args.comment)
-
-        return name.rstrip('_')
+    @staticmethod
+    def get_dtb_models():
+        """Returns the avaiable dtb modules filename, without the .py ext"""
+        dtbmodels_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dtb',
+            'models')
+        dtbmodels = [
+            model[len(dtbmodels_dir) + 1:-3]
+            for model in glob.glob('{}/*.py'.format(dtbmodels_dir))
+            if "__init__.py" not in model and "utils" not in model and
+            "interfaces" not in model
+        ]
+        return dtbmodels
 
     @staticmethod
-    def get_models():
+    def get_dtb_datasets():
+        """Returns the avaiable dtb datasets filename, without the .py ext"""
+        dtbdatasets_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dtb',
+            'inputs')
+        dtbdatasets = [
+            dataset[len(dtbdatasets_dir) + 1:-3]
+            for dataset in glob.glob('{}/*.py'.format(dtbdatasets_dir))
+            if "__init__.py" not in dataset and "utils" not in dataset and
+            "interfaces" not in dataset
+        ]
+        return dtbdatasets
+
+    @staticmethod
+    def get_local_models():
         """Returns the avaiable modules filename, without the .py ext"""
+        models_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'models')
         return [
-            model[len('models/'):-3] for model in glob.glob('models/*.py')
+            model[len(models_dir) + 1:-3]
+            for model in glob.glob('{}/*.py'.format(models_dir))
             if "__init__.py" not in model and "utils" not in model
         ]
 
     @staticmethod
-    def get_datasets():
+    def get_local_datasets():
         """Returns the avaiable datasets filename, without the .py ext"""
+        datasets_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'inputs')
         return [
-            dataset[len('inputs/'):-3] for dataset in glob.glob('inputs/*.py')
+            dataset[len(datasets_dir) + 1:-3]
+            for dataset in glob.glob('{}/*.py'.format(datasets_dir))
             if "__init__.py" not in dataset and "utils" not in dataset
         ]
 
@@ -75,10 +94,14 @@ class CLIArgs(object):
         parser = argparse.ArgumentParser(description=self._description)
 
         # Required arguments
-        parser.add_argument('--model', required=True, choices=self.get_models())
         parser.add_argument(
-            '--dataset', required=True, choices=self.get_datasets())
-
+            '--model',
+            required=True,
+            choices=self.get_dtb_models() + self.get_local_models())
+        parser.add_argument(
+            '--dataset',
+            required=True,
+            choices=self.get_dtb_datasets() + self.get_local_datasets())
         parser.add_argument('--batch_size', type=int, default=128)
 
         return parser
@@ -90,14 +113,27 @@ class CLIArgs(object):
             dataset: input object instantiated"""
 
         # Instantiate the model object
-        model = getattr(
-            importlib.import_module('models.' + self._args.model),
-            self._args.model)()
+        # Give the precedence to local models
+        if self._args.model in self.get_local_models():
+            model = getattr(
+                importlib.import_module('models.' + self._args.model),
+                self._args.model)()
+        else:
+            model = getattr(
+                importlib.import_module('dtb.models.' + self._args.model),
+                self._args.model)()
 
         # Instantiate the input object
-        dataset = getattr(
-            importlib.import_module('inputs.' + self._args.dataset),
-            self._args.dataset)()
+        # Give the precedente to local datasets
+        if self._args.dataset in self.get_local_datasets():
+            dataset = getattr(
+                importlib.import_module('inputs.' + self._args.dataset),
+                self._args.dataset)()
+        else:
+            dataset = getattr(
+                importlib.import_module('dtb.inputs.' + self._args.dataset),
+                self._args.dataset)()
+
         return model, dataset
 
     def parse_eval(self):
@@ -127,7 +163,6 @@ class CLIArgs(object):
         and return
         Returns:
             args: args object
-            model name: string representing the model name
             model: model object instantiated
             dataset: input object instantiated
         """
@@ -221,13 +256,9 @@ class CLIArgs(object):
         # Build the object
         self._args = parser.parse_args()
 
-        # Build name
-        name = self._build_name()
-
         # Get model and dataset objects
         model, dataset = self._get_model_dataset()
 
-        print('Model name {}\nArgs: {}'.format(
-            name, pprint.pformat(vars(self._args), indent=4)))
+        print('Args: {}'.format(pprint.pformat(vars(self._args), indent=4)))
 
-        return self._args, name, model, dataset
+        return self._args, model, dataset
