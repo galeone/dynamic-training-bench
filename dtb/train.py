@@ -52,7 +52,7 @@ def _parse_hyperparameters(hyperparams={}):
         "epochs":
         hyperparams.get("epochs", 150),
         "gd":
-        hyperparams.get("optimizer", {
+        hyperparams.get("gd", {
             "optimizer": tf.train.MomentumOptimizer,
             "args": {
                 "learning_rate": 1e-3,
