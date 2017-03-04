@@ -27,7 +27,7 @@ def _build_name(args):
     dataset_name = args["dataset"].name
     name = "{}_{}_lr={}_".format(dataset_name, optimizer_name, learning_rate)
 
-    if args["lr_decay"]:
+    if args["lr_decay"]["enabled"]:
         name += "exp_lr_"
     if args["regularizations"]["l2"]:
         name += "l2={}".format(args["regularizations"]["l2"])
@@ -61,8 +61,10 @@ def _parse_hyperparameters(hyperparams={}):
             }
         }),
         "lr_decay":
-        hyperparams.get("lr_decay", {"epochs": 25,
-                                     "factor": .1}),
+        hyperparams.get("lr_decay",
+                        {"enabled": False,
+                         "epochs": 25,
+                         "factor": .1}),
         "regularizations":
         hyperparams.get("regularizations",
                         {"l2": 0.0,

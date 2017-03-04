@@ -14,25 +14,6 @@ import tensorflow as tf
 from ..models.utils import put_kernels_on_grid, tf_log, variables_to_save, variables_to_restore
 
 
-def build_name(args):
-    # TODO: use every args, other subatpaths?
-    """Build method name parsing args"""
-    optimizer = args["gd"]["optimizer"](**args["gd"]["args"])
-    learning_rate = args["gd"]["args"]["learning_rate"]
-    optimizer_name = optimizer.get_name()
-    dataset_name = args["dataset"].name
-    name = '{}_{}_lr={}_'.format(dataset_name, optimizer_name, learning_rate)
-
-    if args["lr_decay"]:
-        name += 'exp_lr_'
-    if args["regularizations"]["l2"]:
-        name += 'l2={}'.format(args["regularizations"]["l2"])
-    if args["comment"] != '':
-        name += '{}'.format(args["comment"])
-
-    return name.rstrip('_')
-
-
 def build_optimizer(args, steps, global_step):
     """Build the specified optimizer, log the learning rate and enalble
     learning rate decay is specified.
@@ -45,7 +26,7 @@ def build_optimizer(args, steps, global_step):
     # Extract the initial learning rate
     initial_lr = float(args["gd"]["args"]['learning_rate'])
 
-    if args["lr_decay"]:
+    if args["lr_decay"]["enabled"]:
         # Decay the learning rate exponentially based on the number of steps.
         learning_rate = tf.train.exponential_decay(
             initial_lr,
@@ -167,25 +148,3 @@ def build_loggers(graph, paths):
     validation_log = tf.summary.FileWriter(
         os.path.join(paths["log"], 'validation'), graph=graph)
     return train_log, validation_log
-
-
-def eval_model(args, checkpoint_dir, input_type):
-    """Execute the proper evalutation of the args["model"], using the model
-    found in checkpoint_dir, using the specified input_tyoe
-    Args:
-        args: the training arguments
-        checkpoint_dir: the path of the checkpoint to use
-        input_type: the Type.inputType enum that defines the input
-    Returns:
-        val: the evaluation results
-    """
-    InputType.check(input_type)
-
-    if isinstance(args["model"], Classifier):
-        return evaluate.accuracy(checkpoint_dir, args["model"], args["dataset"],
-                                 input_type, args["batch_size"])
-    if isinstance(args["model"], Autoencoder) or isinstance(args["model"],
-                                                            Regressor):
-        return evaluate.error(checkpoint_dir, args["model"], args["dataset"],
-                              input_type, args["batch_size"])
-    raise ValueError("Evaluate method not defined for this model type")
