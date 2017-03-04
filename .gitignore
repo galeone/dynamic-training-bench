@@ -65,7 +65,4 @@ dtb/inputs/data/
 
 # Logs
 log/
-results.txt
-validation_results.txt
-test_results.txt
-exec.sh
+results.csv
