@@ -9,6 +9,7 @@
 
 import numbers
 import math
+import re
 import tensorflow as tf
 
 # name of the collection that holds non trainable
@@ -21,6 +22,16 @@ MODEL_SUMMARIES = 'model_summaries'
 
 # losses collection
 LOSSES_COLLECTION = 'losses'
+
+
+def legalize_name(name):
+    """Made name a legal name to be used in tensorflow summaries
+    Args:
+        name: string
+    Returns:
+        name_legal
+    """
+    return re.sub(r"[^\w|/]", "_", name)
 
 
 def tf_log(summary, collection=MODEL_SUMMARIES):
@@ -107,16 +118,16 @@ def weight(name,
         # check if is a perfect square
         grid_side = math.floor(math.sqrt(num_kernels))
         tf_log(
-            tf.summary.image(name,
-                             put_kernels_on_grid(weights[:, :, :, 0:grid_side**
-                                                         2], grid_side,
-                                                 grid_side)))
+            tf.summary.image(
+                legalize_name(name),
+                put_kernels_on_grid(weights[:, :, :, 0:grid_side**2], grid_side,
+                                    grid_side)))
 
     if train_phase:
         # Add weight decay to W
         tf.add_to_collection(LOSSES_COLLECTION,
                              tf.multiply(tf.nn.l2_loss(weights), wd))
-        tf_log(tf.summary.histogram(name, weights))
+        tf_log(tf.summary.histogram(legalize_name(name), weights))
     return weights
 
 
@@ -184,7 +195,7 @@ def atrous_conv_layer(input_x,
 
         tf_log(
             tf.summary.image(
-                result.name + '/pre_post_activation',
+                legalize_name(result.name + '/pre_post_activation'),
                 tf.concat([pre_activation, post_activation], axis=2),
                 max_outputs=1))
     return out
@@ -240,7 +251,7 @@ def conv_layer(input_x,
 
         tf_log(
             tf.summary.image(
-                result.name + '/pre_post_activation',
+                legalize_name(result.name + '/pre_post_activation'),
                 tf.concat([pre_activation, post_activation], axis=2),
                 max_outputs=1))
     return out
