@@ -103,7 +103,7 @@ class RegressorTrainer(Trainer):
                 old_gs = sess.run(global_step)
 
                 # Restart from where we were
-                for step in range(old_gs, steps["max"]):
+                for step in range(old_gs, steps["max"] + 1):
                     start_time = time.time()
                     _, loss_value = sess.run(
                         [train_op, loss], feed_dict={is_training_: True})
@@ -136,8 +136,8 @@ class RegressorTrainer(Trainer):
 
                     # Save the model checkpoint at the end of every epoch
                     # evaluate train and validation performance
-                    if (step > 0 and step %
-                            steps["epoch"] == 0) or (step + 1) == steps["max"]:
+                    if (step > 0 and
+                            step % steps["epoch"] == 0) or step == steps["max"]:
                         checkpoint_path = os.path.join(paths["log"],
                                                        'model.ckpt')
                         train_saver.save(
