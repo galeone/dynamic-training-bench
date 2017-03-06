@@ -7,23 +7,35 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Trainer for the Autoencoder model"""
 
+import time
+import os
+import numpy as np
 import tensorflow as tf
+from datetime import datetime
 
 from . import utils
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
-from ..models.interfaces import Autoencoder
-from ..evaluators.AutoencoderEvaluator import AutoencoderEvaluator
-from ..models.utils import tf_log, MODEL_SUMMARIES
+from ..models.utils import tf_log, MODEL_SUMMARIES, variables_to_train
 
 
 class AutoencoderTrainer(Trainer):
     """Trainer for the Autoencoder model"""
 
-    def train(self, model, dataset, args, steps, paths):
-        """Train the model, using the dataset, utilizing the passed args
+    def __init__(self):
+        """Initialize the evaluator"""
+        self._model = None
+
+    def set_model(self, model):
+        """Set the model to evaluate.
         Args:
             model: implementation of the Model interface
+        """
+        self._model = model
+
+    def train(self, dataset, args, steps, paths):
+        """Train the model, using the dataset, utilizing the passed args
+        Args:
             dataset: implementation of the Input interface
             args: dictionary of hyperparameters a train parameters
         Returns:
@@ -31,15 +43,12 @@ class AutoencoderTrainer(Trainer):
         Side effect:
             saves the latest checkpoints and the best model in its own folder
         """
-        if not isinstance(model, Autoencoder):
-            raise ValueError("model is not an Autoencoder")
-        evaluator = AutoencoderEvaluator()
         best_ve = float('inf')
 
         with tf.Graph().as_default():
             global_step = tf.Variable(0, trainable=False, name='global_step')
 
-            # Get images and labels
+            # Get images and discard labels
             with tf.device('/cpu:0'):
                 images, _ = dataset.inputs(
                     input_type=InputType.train,
@@ -48,7 +57,7 @@ class AutoencoderTrainer(Trainer):
 
             # Build a Graph that computes the reconstructions predictions from the
             # inference model.
-            is_training_, reconstructions = model.get(
+            is_training_, reconstructions = self._model.get(
                 images,
                 train_phase=True,
                 l2_penalty=args["regularizations"]["l2"])
@@ -56,7 +65,7 @@ class AutoencoderTrainer(Trainer):
             utils.log_io(images, reconstructions)
 
             # Calculate loss.
-            loss = model.loss(reconstructions, labels)
+            loss = self._model.loss(reconstructions, images)
             tf_log(tf.summary.scalar('loss', loss))
 
             # reconstruction error
@@ -64,7 +73,7 @@ class AutoencoderTrainer(Trainer):
             error = tf.summary.scalar('error', error_)
 
             # Create optimizer and log learning rate
-            optimizer = build_optimizer(args, steps, global_step)
+            optimizer = utils.build_optimizer(args, steps, global_step)
             train_op = optimizer.minimize(
                 loss,
                 global_step=global_step,
@@ -143,9 +152,8 @@ class AutoencoderTrainer(Trainer):
                             sess, checkpoint_path, global_step=step)
 
                         # validation error
-                        ve_value = evaluator.eval(
+                        ve_value = self._model.evaluator.eval(
                             paths["log"],
-                            model,
                             dataset,
                             input_type=InputType.validation,
                             batch_size=args["batch_size"])
@@ -177,12 +185,12 @@ class AutoencoderTrainer(Trainer):
                 # Wait for threads to finish.
                 coord.join(threads)
 
-            stats = evaluator.stats(
-                paths["best"], model, dataset, batch_size=args["batch_size"])
-            model.save({
+            stats = self._model.evaluator.stats(
+                paths["best"], dataset, batch_size=args["batch_size"])
+            self._model.info = {
                 "args": args,
                 "paths": paths,
                 "steps": steps,
                 "stats": stats
-            })
-            return model.info
+            }
+            return self._model.info

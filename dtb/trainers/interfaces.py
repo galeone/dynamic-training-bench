@@ -14,14 +14,19 @@ class Trainer(object, metaclass=ABCMeta):
     """Trainer is the interface that a trainer must implement"""
 
     @abstractmethod
-    def train(self, model, dataset, args):
+    def train(self, dataset, args):
         """Train the model, using the dataset, utilizing the passed args
         Args:
-            model: implementation of the Model interface
             dataset: implementation of the Input interface
             args: dictionary of hyperparameters a train parameters
 
         Returns:
             info: dict containing the information of the trained model
         """
-        pass
+
+    @abstractmethod
+    def set_model(self, model):
+        """Set the model to evaluate.
+        Args:
+            model: implementation of the Model interface
+        """

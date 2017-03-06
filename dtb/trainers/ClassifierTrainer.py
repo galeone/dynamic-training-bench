@@ -16,8 +16,6 @@ from . import utils
 
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
-from ..models.interfaces import Classifier
-from ..evaluators.ClassifierEvaluator import ClassifierEvaluator
 from ..evaluators.metrics import accuracy_op
 from ..models.utils import tf_log, MODEL_SUMMARIES, variables_to_train
 
@@ -25,10 +23,20 @@ from ..models.utils import tf_log, MODEL_SUMMARIES, variables_to_train
 class ClassifierTrainer(Trainer):
     """Trainer for the Classifier model"""
 
-    def train(self, model, dataset, args, steps, paths):
-        """Train the model, using the dataset, utilizing the passed args
+    def __init__(self):
+        """Initialize the evaluator"""
+        self._model = None
+
+    def set_model(self, model):
+        """Set the model to evaluate.
         Args:
             model: implementation of the Model interface
+        """
+        self._model = model
+
+    def train(self, dataset, args, steps, paths):
+        """Train the model, using the dataset, utilizing the passed args
+        Args:
             dataset: implementation of the Input interface
             args: dictionary of hyperparameters a train parameters
 
@@ -37,9 +45,6 @@ class ClassifierTrainer(Trainer):
         Side effect:
             saves the latest checkpoints and the best model in its own folder
         """
-        if not isinstance(model, Classifier):
-            raise ValueError("model is not a Classifier")
-        evaluator = ClassifierEvaluator()
         best_va = 0.0
 
         with tf.Graph().as_default():
@@ -55,14 +60,14 @@ class ClassifierTrainer(Trainer):
 
             # Build a Graph that computes the logits predictions from the
             # inference model.
-            is_training_, logits = model.get(
+            is_training_, logits = self._model.get(
                 images,
                 dataset.num_classes,
                 train_phase=True,
                 l2_penalty=args["regularizations"]["l2"])
 
             # Calculate loss.
-            loss = model.loss(logits, labels)
+            loss = self._model.loss(logits, labels)
             tf_log(tf.summary.scalar('loss', loss))
 
             # Create optimizer and log learning rate
@@ -145,9 +150,8 @@ class ClassifierTrainer(Trainer):
                             sess, checkpoint_path, global_step=step)
 
                         # validation accuracy
-                        va_value = evaluator.eval(
+                        va_value = self._model.evaluator.eval(
                             paths["log"],
-                            model,
                             dataset,
                             input_type=InputType.validation,
                             batch_size=args["batch_size"])
@@ -187,12 +191,12 @@ class ClassifierTrainer(Trainer):
                 # Wait for threads to finish.
                 coord.join(threads)
 
-            stats = evaluator.stats(
-                paths["best"], model, dataset, batch_size=args["batch_size"])
-            model.save({
+            stats = self._model.evaluator.stats(
+                paths["best"], dataset, batch_size=args["batch_size"])
+            self._model.info = {
                 "args": args,
                 "paths": paths,
                 "steps": steps,
                 "stats": stats
-            })
-            return model.info
+            }
+            return self._model.info

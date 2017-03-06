@@ -7,23 +7,15 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Trainer for the Detector model"""
 
-import tensorflow as tf
-from . import utils
-
 from .interfaces import Trainer
-from ..inputs.interfaces import InputType
-from ..models.interfaces import Detector
-from ..evaluators.DetectorEvaluator import DetectorEvaluator
-from ..models.utils import tf_log, MODEL_SUMMARIES
 
 
 class DetectorTrainer(Trainer):
     """Trainer for the Detector model"""
 
-    def train(self, model, dataset, args, steps, paths):
+    def train(self, dataset, args, steps, paths):
         """Train the model, using the dataset, utilizing the passed args
         Args:
-            model: implementation of the Model interface
             dataset: implementation of the Input interface
             args: dictionary of hyperparameters a train parameters
         Returns:

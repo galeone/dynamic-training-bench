@@ -12,18 +12,26 @@ from . import utils
 
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
-from ..models.interfaces import Regressor
-from ..evaluators.RegressorEvaluator import RegressorEvaluator
 from ..models.utils import tf_log, MODEL_SUMMARIES
 
 
 class RegressorTrainer(Trainer):
     """Trainer for the Regressor model"""
 
-    def train(self, model, dataset, args, steps, paths):
-        """Train the model, using the dataset, utilizing the passed args
+    def __init__(self):
+        """Initialize the evaluator"""
+        self._model = None
+
+    def set_model(self, model):
+        """Set the model to evaluate.
         Args:
             model: implementation of the Model interface
+        """
+        self._model = model
+
+    def train(self, dataset, args, steps, paths):
+        """Train the model, using the dataset, utilizing the passed args
+        Args:
             dataset: implementation of the Input interface
             args: dictionary of hyperparameters a train parameters
         Returns:
@@ -31,9 +39,6 @@ class RegressorTrainer(Trainer):
         Side effect:
             saves the latest checkpoints and the best model in its own folder
         """
-        if not isinstance(model, Regressor):
-            raise ValueError("model is not an Regressor")
-        evaluator = RegressorEvaluator()
         best_ve = float('inf')
 
         with tf.Graph().as_default():
@@ -48,7 +53,7 @@ class RegressorTrainer(Trainer):
 
             # Build a Graph that computes the predictions predictions from the
             # inference model.
-            is_training_, predictions = model.get(
+            is_training_, predictions = self._model.get(
                 images,
                 dataset.num_classes,
                 train_phase=True,
@@ -57,7 +62,7 @@ class RegressorTrainer(Trainer):
             utils.log_io(images)
 
             # Calculate loss.
-            loss = model.loss(predictions, labels)
+            loss = self._model.loss(predictions, labels)
             tf_log(tf.summary.scalar('loss', loss))
 
             # validation error
@@ -144,9 +149,8 @@ class RegressorTrainer(Trainer):
                             sess, checkpoint_path, global_step=step)
 
                         # validation error
-                        ve_value = evaluator.eval(
+                        ve_value = self._model.evaluator.eval(
                             paths["log"],
-                            model,
                             dataset,
                             input_type=InputType.validation,
                             batch_size=args["batch_size"])
@@ -178,12 +182,12 @@ class RegressorTrainer(Trainer):
                 # Wait for threads to finish.
                 coord.join(threads)
 
-            stats = evaluator.stats(
-                paths["best"], model, dataset, batch_size=args["batch_size"])
-            model.save({
+            stats = self._model.evaluator.stats(
+                paths["best"], dataset, batch_size=args["batch_size"])
+            self._model.info = {
                 "args": args,
                 "paths": paths,
                 "steps": steps,
                 "stats": stats
-            })
-            return model.info
+            }
+            return self._model.info
