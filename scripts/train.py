@@ -48,17 +48,19 @@ def main():
             },
             comment=ARGS.comment)
 
-    stats = info["stats"]
+    # Add full path of the best model, used to test the performance
+    # to the results.csv file
+    row = {**info["stats"], "path": info["paths"]["best"]}
 
     resultsfile = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'results.csv')
     writeheader = not os.path.exists(resultsfile)
 
     with open(resultsfile, 'a') as csvfile:
-        writer = csv.DictWriter(csvfile, stats.keys())
+        writer = csv.DictWriter(csvfile, row.keys())
         if writeheader:
             writer.writeheader()
-        writer.writerow(stats)
+        writer.writerow(row)
     return 0
 
 
