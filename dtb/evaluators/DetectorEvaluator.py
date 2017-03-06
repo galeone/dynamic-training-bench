@@ -7,21 +7,16 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Evaluate Detection models """
 
-import tensorflow as tf
-from . import metrics
-from ..models.interfaces import Detector
 from .interfaces import Evaluator
-from ..inputs.interfaces import InputType, Input
 
 
 class DetectorEvaluator(Evaluator):
     """DetectorEvaluator is the evaluation object for a Detector model"""
 
-    def eval(self, checkpoint_path, model, dataset, input_type, batch_size):
+    def eval(self, checkpoint_path, dataset, input_type, batch_size):
         """Eval the model, restoring weight found in checkpoint_path, using the dataset.
         Args:
             checkpoint_path: path of the trained model checkpoint directory
-            model: implementation of the Model interface
             dataset: implementation of the Input interface
             input_type: InputType enum
             batch_size: evaluate in batch of size batch_size
@@ -32,7 +27,7 @@ class DetectorEvaluator(Evaluator):
         """
         raise ValueError("method not implemented")
 
-    def stats(self, checkpoint_path, model, dataset, batch_size):
+    def stats(self, checkpoint_path, dataset, batch_size):
         """Run the eval method on the model, see eval for arguments
         and return value description.
         Moreover, adds informations about the model and returns the whole information

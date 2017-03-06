@@ -7,21 +7,32 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Evaluate Regression models """
 
+import math
 import tensorflow as tf
 from . import metrics
-from ..models.interfaces import Regressor
 from .interfaces import Evaluator
 from ..inputs.interfaces import InputType, Input
+from ..models.utils import variables_to_restore
 
 
 class RegressorEvaluator(Evaluator):
     """RegressorEvaluator is the evaluation object for a Regressor model"""
 
-    def eval(self, checkpoint_path, model, dataset, input_type, batch_size):
+    def __init__(self):
+        """Initialize the evaluator"""
+        self._model = None
+
+    def set_model(self, model):
+        """Set the model to evaluate.
+        Args:
+            model: implementation of the Model interface
+        """
+        self._model = model
+
+    def eval(self, checkpoint_path, dataset, input_type, batch_size):
         """Eval the model, restoring weight found in checkpoint_path, using the dataset.
         Args:
             checkpoint_path: path of the trained model checkpoint directory
-            model: implementation of the Model interface
             dataset: implementation of the Input interface
             input_type: InputType enum
             batch_size: evaluate in batch of size batch_size
@@ -30,10 +41,9 @@ class RegressorEvaluator(Evaluator):
             value: scalar value representing the evaluation of the model,
                    on the dataset, fetching values of the specified input_type
         """
-        return self._error(checkpoint_path, model, dataset, input_type,
-                           batch_size)
+        return self._error(checkpoint_path, dataset, input_type, batch_size)
 
-    def stats(self, checkpoint_path, model, dataset, batch_size):
+    def stats(self, checkpoint_path, dataset, batch_size):
         """Run the eval method on the model, see eval for arguments
         and return value description.
         Moreover, adds informations about the model and returns the whole information
@@ -42,11 +52,11 @@ class RegressorEvaluator(Evaluator):
             dict
         """
 
-        train_error = self.eval(checkpoint_path, model, dataset,
-                                InputType.train, batch_size)
-        validation_error = self.eval(checkpoint_path, model, dataset,
+        train_error = self.eval(checkpoint_path, dataset, InputType.train,
+                                batch_size)
+        validation_error = self.eval(checkpoint_path, dataset,
                                      InputType.validation, batch_size)
-        test_error = self.eval(checkpoint_path, model, dataset, InputType.test,
+        test_error = self.eval(checkpoint_path, dataset, InputType.test,
                                batch_size)
 
         return {
@@ -54,20 +64,14 @@ class RegressorEvaluator(Evaluator):
             "validation": validation_error,
             "test": validation_error,
             "dataset": dataset.name,
-            "model": model.name
+            "model": self._model.name
         }
 
-    def _error(self,
-               checkpoint_path,
-               model,
-               dataset,
-               input_type,
-               batch_size=200):
+    def _error(self, checkpoint_path, dataset, input_type, batch_size=200):
         """
         Reads the checkpoint and use it to evaluate the model
         Args:
             checkpoint_path: checkpoint folder
-            model: python package containing the model saved
             dataset: python package containing the dataset to use
             input_type: InputType enum, the input type of the input examples
             batch_size: batch size for the evaluation in batches
@@ -83,9 +87,9 @@ class RegressorEvaluator(Evaluator):
                     input_type=input_type, batch_size=batch_size)
 
             # Build a Graph that computes the predictions from the inference model.
-            _, predictions = model.get(
+            _, predictions = self._model.get(
                 images, dataset.num_classes, train_phase=False, l2_penalty=0.0)
-            loss = model.loss(predictions, labels)
+            loss = self._model.loss(predictions, labels)
 
             saver = tf.train.Saver(variables_to_restore())
             with tf.Session(config=tf.ConfigProto(

@@ -10,7 +10,6 @@
 import math
 import tensorflow as tf
 from . import metrics
-from ..models.interfaces import Classifier
 from .interfaces import Evaluator
 from .metrics import accuracy_op
 from ..inputs.interfaces import InputType, Input
@@ -20,11 +19,21 @@ from ..models.utils import variables_to_restore
 class ClassifierEvaluator(Evaluator):
     """ClassifierEvaluator is the evaluation object for a Classifier model"""
 
-    def eval(self, checkpoint_path, model, dataset, input_type, batch_size):
+    def __init__(self):
+        """Initialize the evaluator"""
+        self._model = None
+
+    def set_model(self, model):
+        """Set the model to evaluate.
+        Args:
+            model: implementation of the Model interface
+        """
+        self._model = model
+
+    def eval(self, checkpoint_path, dataset, input_type, batch_size):
         """Eval the model, restoring weight found in checkpoint_path, using the dataset.
         Args:
             checkpoint_path: path of the trained model checkpoint directory
-            model: implementation of the Model interface
             dataset: implementation of the Input interface
             input_type: InputType enum
             batch_size: evaluate in batch of size batch_size
@@ -33,10 +42,9 @@ class ClassifierEvaluator(Evaluator):
             value: scalar value representing the evaluation of the model,
                    on the dataset, fetching values of the specified input_type
         """
-        return self._accuracy(checkpoint_path, model, dataset, input_type,
-                              batch_size)
+        return self._accuracy(checkpoint_path, dataset, input_type, batch_size)
 
-    def stats(self, checkpoint_path, model, dataset, batch_size):
+    def stats(self, checkpoint_path, dataset, batch_size):
         """Run the eval method on the model, see eval for arguments
         and return value description.
         Moreover, adds informations about the model and returns the whole information
@@ -45,27 +53,22 @@ class ClassifierEvaluator(Evaluator):
             dict
         """
 
-        train_accuracy = self.eval(checkpoint_path, model, dataset,
-                                   InputType.train, batch_size)
-        validation_accuracy = self.eval(checkpoint_path, model, dataset,
+        train_accuracy = self.eval(checkpoint_path, dataset, InputType.train,
+                                   batch_size)
+        validation_accuracy = self.eval(checkpoint_path, dataset,
                                         InputType.validation, batch_size)
-        test_accuracy = self.eval(checkpoint_path, model, dataset,
-                                  InputType.test, batch_size)
+        test_accuracy = self.eval(checkpoint_path, dataset, InputType.test,
+                                  batch_size)
 
         return {
             "train": train_accuracy,
             "validation": validation_accuracy,
             "test": validation_accuracy,
             "dataset": dataset.name,
-            "model": model.name
+            "model": self._model.name
         }
 
-    def _accuracy(self,
-                  checkpoint_path,
-                  model,
-                  dataset,
-                  input_type,
-                  batch_size=200):
+    def _accuracy(self, checkpoint_path, dataset, input_type, batch_size=200):
         InputType.check(input_type)
 
         with tf.Graph().as_default():
@@ -75,7 +78,7 @@ class ClassifierEvaluator(Evaluator):
                     input_type=input_type, batch_size=batch_size)
 
             # Build a Graph that computes the predictions from the inference model.
-            _, predictions = model.get(
+            _, predictions = self._model.get(
                 images, dataset.num_classes, train_phase=False)
 
             # Accuracy op
