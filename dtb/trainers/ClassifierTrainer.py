@@ -187,5 +187,12 @@ class ClassifierTrainer(Trainer):
                 # Wait for threads to finish.
                 coord.join(threads)
 
-            return evaluator.stats(
+            stats = evaluator.stats(
                 paths["best"], model, dataset, batch_size=args["batch_size"])
+            model.save({
+                "args": args,
+                "paths": paths,
+                "steps": steps,
+                "stats": stats
+            })
+            return model.info
