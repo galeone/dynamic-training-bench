@@ -48,15 +48,17 @@ def main():
             },
             comment=ARGS.comment)
 
+    stats = info["stats"]
+
     resultsfile = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'results.csv')
     writeheader = not os.path.exists(resultsfile)
 
     with open(resultsfile, 'a') as csvfile:
-        writer = csv.DictWriter(csvfile, info.keys())
+        writer = csv.DictWriter(csvfile, stats.keys())
         if writeheader:
             writer.writeheader()
-        writer.writerow(info)
+        writer.writerow(stats)
     return 0
 
 
