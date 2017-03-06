@@ -53,7 +53,6 @@ class AutoencoderEvaluator(Evaluator):
             "train": train_error,
             "validation": validation_error,
             "test": validation_error,
-            "checkpoint_path": checkpoint_path,
             "dataset": dataset.name,
             "model": model.name
         }

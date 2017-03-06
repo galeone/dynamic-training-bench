@@ -56,7 +56,6 @@ class ClassifierEvaluator(Evaluator):
             "train": train_accuracy,
             "validation": validation_accuracy,
             "test": validation_accuracy,
-            "checkpoint_path": checkpoint_path,
             "dataset": dataset.name,
             "model": model.name
         }
