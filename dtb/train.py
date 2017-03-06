@@ -10,12 +10,7 @@
 import math
 import os
 import tensorflow as tf
-from .models.interfaces import Autoencoder, Classifier, Detector, Regressor
 from .inputs.interfaces import InputType
-from .trainers.AutoencoderTrainer import AutoencoderTrainer
-from .trainers.ClassifierTrainer import ClassifierTrainer
-from .trainers.DetectorTrainer import DetectorTrainer
-from .trainers.RegressorTrainer import RegressorTrainer
 
 
 def _build_name(args):
@@ -153,15 +148,4 @@ def train(model,
     if not tf.gfile.Exists(best_dir):
         tf.gfile.MakeDirs(best_dir)
 
-    if isinstance(model, Classifier):
-        trainer = ClassifierTrainer()
-    elif isinstance(model, Autoencoder):
-        trainer = AutoencoderTrainer()
-    elif isinstance(model, Regressor):
-        trainer = RegressorTrainer()
-    elif isinstance(model, Detector):
-        trainer = DetectorTrainer()
-    else:
-        raise ValueError("train method not defined for this model type")
-
-    return trainer.train(model, dataset, args, steps, paths)
+    return model.trainer.train(dataset, args, steps, paths)
