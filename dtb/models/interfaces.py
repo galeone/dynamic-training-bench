@@ -8,6 +8,16 @@
 """Define the model interfaces"""
 
 from abc import ABCMeta, abstractmethod
+# Evaluators
+from ..evaluators.AutoencoderEvaluator import AutoencoderEvaluator
+from ..evaluators.ClassifierEvaluator import ClassifierEvaluator
+from ..evaluators.DetectorEvaluator import DetectorEvaluator
+from ..evaluators.RegressorEvaluator import RegressorEvaluator
+# Trainers
+from ..trainers.AutoencoderTrainer import AutoencoderTrainer
+from ..trainers.ClassifierTrainer import ClassifierTrainer
+from ..trainers.DetectorTrainer import DetectorTrainer
+from ..trainers.RegressorTrainer import RegressorTrainer
 
 
 class Autoencoder(object, metaclass=ABCMeta):
@@ -45,7 +55,13 @@ class Autoencoder(object, metaclass=ABCMeta):
         """Returns the name of the model"""
         return self.__class__.__name__
 
-    def save(self, info):
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
+
+    @info.setter
+    def info(self, info):
         """Save the training info
         Args:
             info: dict of training info
@@ -53,9 +69,18 @@ class Autoencoder(object, metaclass=ABCMeta):
         self._info = info
 
     @property
-    def info(self):
-        """Returns the inforation about the trained model"""
-        return self._info
+    def trainer(self):
+        """Returns the trainer associated to the model"""
+        obj = AutoencoderTrainer()
+        obj.set_model(self)
+        return obj
+
+    @property
+    def evaluator(self):
+        """Returns the evaluator associated to the model"""
+        obj = AutoencoderEvaluator()
+        obj.set_model(self)
+        return obj
 
 
 class Classifier(object, metaclass=ABCMeta):
@@ -95,7 +120,13 @@ class Classifier(object, metaclass=ABCMeta):
         """Returns the name of the model"""
         return self.__class__.__name__
 
-    def save(self, info):
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
+
+    @info.setter
+    def info(self, info):
         """Save the training info
         Args:
             info: dict of training info
@@ -103,9 +134,18 @@ class Classifier(object, metaclass=ABCMeta):
         self._info = info
 
     @property
-    def info(self):
-        """Returns the inforation about the trained model"""
-        return self._info
+    def trainer(self):
+        """Returns the trainer associated to the model"""
+        obj = ClassifierTrainer()
+        obj.set_model(self)
+        return obj
+
+    @property
+    def evaluator(self):
+        """Returns the evaluator associated to the model"""
+        obj = ClassifierEvaluator()
+        obj.set_model(self)
+        return obj
 
 
 class Detector(object, metaclass=ABCMeta):
@@ -148,7 +188,13 @@ class Detector(object, metaclass=ABCMeta):
         """Returns the name of the model"""
         return self.__class__.__name__
 
-    def save(self, info):
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
+
+    @info.setter
+    def info(self, info):
         """Save the training info
         Args:
             info: dict of training info
@@ -156,9 +202,18 @@ class Detector(object, metaclass=ABCMeta):
         self._info = info
 
     @property
-    def info(self):
-        """Returns the inforation about the trained model"""
-        return self._info
+    def trainer(self):
+        """Returns the trainer associated to the model"""
+        obj = DetectorTrainer()
+        obj.set_model(self)
+        return obj
+
+    @property
+    def evaluator(self):
+        """Returns the evaluator associated to the model"""
+        obj = DetectorEvaluator()
+        obj.set_model(self)
+        return obj
 
 
 class Regressor(object, metaclass=ABCMeta):
@@ -198,7 +253,13 @@ class Regressor(object, metaclass=ABCMeta):
         """Returns the name of the model"""
         return self.__class__.__name__
 
-    def save(self, info):
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
+
+    @info.setter
+    def info(self, info):
         """Save the training info
         Args:
             info: dict of training info
@@ -206,6 +267,15 @@ class Regressor(object, metaclass=ABCMeta):
         self._info = info
 
     @property
-    def info(self):
-        """Returns the inforation about the trained model"""
-        return self._info
+    def trainer(self):
+        """Returns the trainer associated to the model"""
+        obj = RegressorTrainer()
+        obj.set_model(self)
+        return obj
+
+    @property
+    def evaluator(self):
+        """Returns the evaluator associated to the model"""
+        obj = RegressorEvaluator()
+        obj.set_model(self)
+        return obj
