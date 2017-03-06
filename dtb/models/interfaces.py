@@ -33,17 +33,29 @@ class Autoencoder(object, metaclass=ABCMeta):
     def loss(self, predictions, real_values):
         """Return the loss operation between predictions and real_values
         Args:
-          predictions: predicted values
-          labels: real_values
+            predictions: predicted values
+            labels: real_values
 
         Returns:
-          Loss tensor of type float.
+            Loss tensor of type float.
         """
 
     @property
     def name(self):
-        """Returns the name of the input source"""
+        """Returns the name of the model"""
         return self.__class__.__name__
+
+    def save(self, info):
+        """Save the training info
+        Args:
+            info: dict of training info
+        """
+        self._info = info
+
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
 
 
 class Classifier(object, metaclass=ABCMeta):
@@ -70,18 +82,30 @@ class Classifier(object, metaclass=ABCMeta):
     def loss(self, logits, labels):
         """Return the loss operation between logits and labels
         Args:
-          logits: Logits from get().
-          labels: Labels from train_inputs or inputs(). 1-D tensor
+            logits: Logits from get().
+            labels: Labels from train_inputs or inputs(). 1-D tensor
                   of shape [batch_size]
 
         Returns:
-          Loss tensor of type float.
+            Loss tensor of type float.
         """
 
     @property
     def name(self):
-        """Returns the name of the input source"""
+        """Returns the name of the model"""
         return self.__class__.__name__
+
+    def save(self, info):
+        """Save the training info
+        Args:
+            info: dict of training info
+        """
+        self._info = info
+
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
 
 
 class Detector(object, metaclass=ABCMeta):
@@ -121,8 +145,20 @@ class Detector(object, metaclass=ABCMeta):
 
     @property
     def name(self):
-        """Returns the name of the input source"""
+        """Returns the name of the model"""
         return self.__class__.__name__
+
+    def save(self, info):
+        """Save the training info
+        Args:
+            info: dict of training info
+        """
+        self._info = info
+
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
 
 
 class Regressor(object, metaclass=ABCMeta):
@@ -149,15 +185,27 @@ class Regressor(object, metaclass=ABCMeta):
     def loss(self, predictions, labels):
         """Return the loss operation between predictions and labels
         Args:
-          predictions: Predictions from get().
-          labels: Labels from train_inputs or inputs(). 1-D tensor
+            predictions: Predictions from get().
+            labels: Labels from train_inputs or inputs(). 1-D tensor
                   of shape [batch_size]
 
         Returns:
-          Loss tensor of type float.
+            Loss tensor of type float.
         """
 
     @property
     def name(self):
-        """Returns the name of the input source"""
+        """Returns the name of the model"""
         return self.__class__.__name__
+
+    def save(self, info):
+        """Save the training info
+        Args:
+            info: dict of training info
+        """
+        self._info = info
+
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
