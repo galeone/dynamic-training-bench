@@ -10,6 +10,7 @@
 import csv
 import os
 import sys
+import time
 import tensorflow as tf
 
 from CLIArgs import CLIArgs
@@ -50,14 +51,14 @@ def main():
 
     # Add full path of the best model, used to test the performance
     # to the results.csv file
-    row = {**info["stats"], "path": info["paths"]["best"]}
+    row = {**info["stats"], "path": info["paths"]["best"], "time": time.strftime("%Y-%m-%d %H:%M")}
 
     resultsfile = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'results.csv')
     writeheader = not os.path.exists(resultsfile)
 
     with open(resultsfile, 'a') as csvfile:
-        writer = csv.DictWriter(csvfile, row.keys())
+        writer = csv.DictWriter(csvfile, row.keys(), delimiter=",")
         if writeheader:
             writer.writeheader()
         writer.writerow(row)
