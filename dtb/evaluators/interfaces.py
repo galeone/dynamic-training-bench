@@ -7,7 +7,7 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to define an evaluator"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 
 class Evaluator(object, metaclass=ABCMeta):
@@ -37,8 +37,13 @@ class Evaluator(object, metaclass=ABCMeta):
             dict
         """
 
-    @abstractmethod
-    def set_model(self, model):
+    @abstractproperty
+    def model(self):
+        """Returns the model to evaluate"""
+
+    @model.setter
+    @abstractproperty
+    def model(self, model):
         """Set the model to evaluate.
         Args:
             model: implementation of the Model interface

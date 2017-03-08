@@ -26,7 +26,13 @@ class AutoencoderTrainer(Trainer):
         """Initialize the evaluator"""
         self._model = None
 
-    def set_model(self, model):
+    @property
+    def model(self):
+        """Returns the model to evaluate"""
+        return self._model
+
+    @model.setter
+    def model(self, model):
         """Set the model to evaluate.
         Args:
             model: implementation of the Model interface

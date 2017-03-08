@@ -7,7 +7,7 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the interface to implement to define a trainer"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 
 class Trainer(object, metaclass=ABCMeta):
@@ -24,8 +24,13 @@ class Trainer(object, metaclass=ABCMeta):
             info: dict containing the information of the trained model
         """
 
-    @abstractmethod
-    def set_model(self, model):
+    @abstractproperty
+    def model(self):
+        """Returns the model to train"""
+
+    @model.setter
+    @abstractproperty
+    def model(self, model):
         """Set the model to evaluate.
         Args:
             model: implementation of the Model interface

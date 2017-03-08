@@ -72,14 +72,14 @@ class Autoencoder(object, metaclass=ABCMeta):
     def trainer(self):
         """Returns the trainer associated to the model"""
         obj = AutoencoderTrainer()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = AutoencoderEvaluator()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
 
@@ -137,14 +137,14 @@ class Classifier(object, metaclass=ABCMeta):
     def trainer(self):
         """Returns the trainer associated to the model"""
         obj = ClassifierTrainer()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = ClassifierEvaluator()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
 
@@ -205,14 +205,14 @@ class Detector(object, metaclass=ABCMeta):
     def trainer(self):
         """Returns the trainer associated to the model"""
         obj = DetectorTrainer()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = DetectorEvaluator()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
 
@@ -270,12 +270,12 @@ class Regressor(object, metaclass=ABCMeta):
     def trainer(self):
         """Returns the trainer associated to the model"""
         obj = RegressorTrainer()
-        obj.set_model(self)
+        obj.model = self
         return obj
 
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = RegressorEvaluator()
-        obj.set_model(self)
+        obj.model = self
         return obj
