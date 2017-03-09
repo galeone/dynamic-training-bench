@@ -1,5 +1,5 @@
 numpy==1.12.0
-setuptools==20.7.0
-six==1.10.0
-tensorflow_gpu==1.0.0
+setuptools==34.3.1
+tensorflow_gpu==1.0.1
 Pillow==4.0.0
+six==1.10.0
