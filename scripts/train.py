@@ -29,7 +29,10 @@ def main():
                 "batch_size": ARGS.batch_size,
                 "regularizations": {
                     "l2": ARGS.l2_penalty,
-                    "augmentation": lambda image: image,
+                    "augmentation": {
+                        "name": "identity",
+                        "fn": lambda x: x
+                    }
                 },
                 "gd": {
                     "optimizer": getattr(tf.train, ARGS.optimizer),

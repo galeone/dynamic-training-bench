@@ -13,21 +13,25 @@ import tensorflow as tf
 from .inputs.interfaces import InputType
 
 
-def _build_name(args):
-    # TODO: use every args, other subatpaths?
-    """Build method name parsing args"""
+def _build_name(args, dataset):
+    """Build method name parsing args.
+    Args:
+        args: the training parameter
+        dataset: the dataset object
+    Returns:
+        name: the ID for the current training process"""
     optimizer = args["gd"]["optimizer"](**args["gd"]["args"])
-    learning_rate = args["gd"]["args"]["learning_rate"]
-    optimizer_name = optimizer.get_name()
-    dataset_name = args["dataset"].name
-    name = "{}_{}_lr={}_".format(dataset_name, optimizer_name, learning_rate)
+    name = "{}_{}_".format(dataset.name, optimizer.get_name())
 
     if args["lr_decay"]["enabled"]:
-        name += "exp_lr_"
+        name += "lr_decay_"
     if args["regularizations"]["l2"]:
-        name += "l2={}".format(args["regularizations"]["l2"])
+        name += "l2={}_".format(args["regularizations"]["l2"])
+    if args["regularizations"]["augmentation"]["name"].lower() != "identity":
+        name += "{}_".format(
+            args["regularizations"]["augmentation"]["name"].lower())
     if args["comment"] != "":
-        name += "{}".format(args["comment"])
+        name += "{}_".format(args["comment"])
 
     return name.rstrip("_")
 
@@ -61,9 +65,13 @@ def _parse_hyperparameters(hyperparams={}):
                          "epochs": 25,
                          "factor": .1}),
         "regularizations":
-        hyperparams.get("regularizations",
-                        {"l2": 0.0,
-                         "augmentation": lambda image: image})
+        hyperparams.get("regularizations", {
+            "l2": 0.0,
+            "augmentation": {
+                "name": "identity",
+                "fn": lambda x: x
+            }
+        })
     }
 
     # Check numeric fields
@@ -122,11 +130,24 @@ def train(model,
     """
     hyperparameters = _parse_hyperparameters(hyperparameters)
     surgery = _parse_surgery(surgery)
-    args = {**hyperparameters, **surgery, "force_restart": force_restart, "model": model, "dataset": dataset, "comment": comment}
+    args = {
+        **hyperparameters,
+        **surgery,
+        "force_restart": force_restart,
+        "model": model,
+        "dataset": dataset,
+        "comment": comment}
+
+    name = _build_name(args, dataset)
+
+    # remove useless (for the training purpose) augmentation fn name
+    # it was useful only for building the name
+    args["regularizations"]["augmentation"] = args["regularizations"][
+        "augmentation"]["fn"]
 
     #### Training constants ####
-    steps_per_epoch = math.ceil(args["dataset"].num_examples(InputType.train) /
-                                args["batch_size"])
+    steps_per_epoch = math.ceil(
+        dataset.num_examples(InputType.train) / args["batch_size"])
 
     steps = {
         "epoch": steps_per_epoch,
@@ -137,7 +158,6 @@ def train(model,
 
     #### Model logs and checkpoint constants ####
     current_dir = os.getcwd()
-    name = _build_name(args)
     log_dir = os.path.join(current_dir, "log", args["model"].name, name)
     best_dir = os.path.join(log_dir, "best")
     paths = {"current": current_dir, "log": log_dir, "best": best_dir}
