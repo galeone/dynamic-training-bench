@@ -17,6 +17,6 @@ setup(
     author='Paolo Galeone',
     author_email='nessuno@nerdz.eu',
     url='https://github.com/galeone/dynamic-training-bench',
-    download_url='https://github.com/galeone/dynamic-training-bench/tarball/1.0',
+        download_url='https://github.com/galeone/dynamic-training-bench/tarball/1.0.0',
     license='MPL',
     packages=find_packages())
