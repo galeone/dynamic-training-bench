@@ -1,45 +1,52 @@
-Dynamic Training Bench
-======================
+Dynamic Training Bench: DTB
+===========================
 
-Dynamic Training Bench (DTB) helps the developers to train and manage ML models built in Tensorflow.
+Stop wasting your time rewriting the training, evaluation & visualization procedures for your ML model: let DTB do the work for you!
 
-Developers should focus on the model and inputs definitions only: they shouldn't waste their time rewriting training procedures, visualizations, metrics and so on.
+DTB is compatible with: **Tensorflow 1.x & Python 3.x**
 
-DTB uses python 3.6 and the latest Tensorflow release (r1.0)
+# Features
 
-# Standard workflow
+1. Dramatically easy to use
+2. Object Oriented: models and inputs are interfaces to implement
+3. End-to-end training of ML models
+4. Fine tuning
+5. Transfer learning
+6. Easy model comparison
+7. Metrics visualization
+8. Easy statistics
+9. Hyperparameters oriented: change hyperparameters to see how they affect the performance
+10. Automatic checkpoint save of the best model with respect to a metric
+11. Usable as a library or a CLI tool
 
-1. Define the dataset: implement the `input/Input.py` interface
-2. Define the model: implement a model interface
+---
 
-# Define a model
+# Getting started: python library
 
-The model definition must be an implementation of one of the available interfaces:
+**TL;DR**: [python-notebook with a complete example](examples/VGG-Cifar10-100-TransferLearning-FineTuning.ipynb).
 
-1. [models/interfaces/Classifier.py](models/interfaces/Classifier.py)
-2. [models/interfaces/Autoencoder.py](models/interfaces/Autoencoder.py)
-3. [models/interfaces/Regressor.py](models/interfaces/Regressor.py)
-4. [models/interfaces/Detector.py](models/interfaces/Detector.py)
+The standard workflow is extremely simple:
 
-The interface implementation must follow these rules:
+1. Define or pick a predefined model
+2. Define or pick a predefined dataset
+3. Train!
 
-1. Model must be placed into the `models/` folder
-2. The class name must be equal to the file name.
+## Define or pick a predefined Model
 
-E.g.: `class LeNet` into [`models/LeNet.py`](models/LeNet.py).
+DTB comes with some common ML model, like LeNet & VGG, if you want to test how these models perform when trained on different datasets and/or with different hyperparameters, just use it.
 
-Once created the model file, the methods defined in the interface file must be implemented.
+Instead, if you want to define your own model just implement one of the [available interfaces](dtb/models/interfaces.py), depending on ML model you want to implement. The available interfaces are:
+
+1. Classifier
+2. Autoencoder
+3. Regressor
+4. Detector
 
 It's recommended, but not strictly required, to use the wrappers built around the Tensorflow methods to define the model: these wrappers creates log and visualizations for you.
-
-## Wrappers
-
-Wrappers are documented and intuitive: you can find it in the [models/utils.py](models/utils.py) file.
-
-## Examples
+Wrappers are documented and intuitive: you can find it in the [dtb/models/utils.py](dtb/models/utils.py) file.
 
 DTB provides different models that can be used alone or can be used as examples of correct implementations.
-Every model in the [models/](models/) folder is a valid example.
+Every model in the [dtb/models/](dtb/models/) folder is a valid example.
 
 In general, the model definition is just the implementation of 2 methods:
 
@@ -50,34 +57,136 @@ It's strictly required to return the parameters that the method documentation re
 
 E.g.: even if you never use a `is_training_` boolean placeholder in your model definition, define it and return it anyway.
 
-# Define an input source
+## Define or pick a predefined Input
 
-DTB provides a single interface to implement to define an input source:
+DTB comes with some common ML benchmark, like Cifar10, Cifar100 & MNIST, you can use it to train and measure the performances of your model or you can define your own input source implementing the Input interface that you can find here:
 
-1. [inputs/Input.py](inputs/Input.py)
+1. [dtb/inputs/interfaces.py](dtb/inputs/interfaces.py)
 
-The recommended steps to follow to implement this interface are:
+The interface implementation should follow these points:
 
 1. Implement the `__init__` method: this method must download the dataset and apply the desired transformations to its elements. There are some utility functions defined in the [`inputs/utils.py`](inputs/utils.py) file that can be used.
 This method is executed as first operation when the dataset object is created, therefore is recommended to cache the results.
 2. Implement the `num_classes` method: this method must return the number of classes of the dataset. If your dataset has no labels, just return 0.
 3. Implement the `num_examples(input_type)` method: this method accepts an `InputType` enumeration, defined in `inputs/utils.py`.
 This enumeration has 3 possible values: `InputType.train`, `InputType.validation`, `InputType.test`. As obvious, the method must return the number of examples for every possible value of this enumeration.
-4. Implement the `inputs` and `distorted_inputs` methods.
-The `distorted_inputs` method is the method invoked while training: thus here you can distort the input using data augmentation techniques if required.
-The `inputs` method is a general method that should return the real values of the dataset, related to the `InputType` passed, without any augmentation.
+4. Implement the `inputs` method. The `inputs` method is a general method that should return the real values of the dataset, related to the `InputType` passed, without any augmentation. The augmentations are defined at training time.
 
-*Hint*: both `inputs` and `distorted_inputs` must return a Tensorflow queue of `value, label` pairs.
+**Note**: `inputs` must return a Tensorflow queue of `value, label` pairs.
 
-The better way to understand how to build the input source is to look at the examples in the [inputs/](inputs/) folder.
+The better way to understand how to build the input source is to look at the examples in the [dtb/inputs/](dtb/inputs/) folder.
+A small and working example that can be worth looking is Cifar10: [dtb/inputs/Cifar10.py](dtb/inputs/Cifar10.py).
 
-A small and working example that can be worth looking is the: [inputs/ORLFaces.py](inputs/ORLFaces.py).
+## Train
 
-# Train
+Train measuring predefined metrics it's extremely easy, let's see a complete example:
+
+```python
+import pprint
+import tensorflow as tf
+from dtb.inputs import Cifar10
+from dtb.train import train
+from dtb.models.VGG import VGG
+
+# Instantiate the model
+vgg = VGG()
+
+# Instantiate the CIFAR-10 input source
+cifar10 = Cifar10.Cifar10()
+
+# 1: Train VGG on Cifar10 for 50 epochs
+# Place the train process on GPU:0
+device = '/gpu:0'
+with tf.device(device):
+    info = train(
+        model=vgg,
+        dataset=cifar10,
+        hyperparameters={
+            "epochs": 50,
+            "batch_size": 50,
+            "regularizations": {
+                "l2": 1e-5,
+                "augmentation": {
+                    "name": "FlipLR",
+                    "fn": tf.image.random_flip_left_right
+                }
+            },
+            "gd": {
+                "optimizer": tf.train.AdamOptimizer,
+                "args": {
+                    "learning_rate": 1e-3,
+                    "beta1": 0.9,
+                    "beta2": 0.99,
+                    "epsilon": 1e-8
+                }
+            }
+        })
+```
+
+Finish!
+
+At the end of the training process `info` will contain some useful information, let's (pretty) print them:
+
+```python
+pprint.pprint(info, indent=4)
+```
+
+```
+{   'args': {   'batch_size': 50,
+                'checkpoint_path': '',
+                'comment': '',
+                'dataset': <dtb.inputs.Cifar10.Cifar10 object at 0x7f896c19a1d0>,
+                'epochs': 2,
+                'exclude_scopes': '',
+                'force_restart': False,
+                'gd': {   'args': {   'beta1': 0.9,
+                                      'beta2': 0.99,
+                                      'epsilon': 1e-08,
+                                      'learning_rate': 0.001},
+                          'optimizer': <class 'tensorflow.python.training.adam.AdamOptimizer'>},
+                'lr_decay': {'enabled': False, 'epochs': 25, 'factor': 0.1},
+                'model': <dtb.models.VGG.VGG object at 0x7f896c19a128>,
+                'regularizations': {   'augmentation': <function random_flip_left_right at 0x7f89109cb0d0>,
+                                       'l2': 1e-05},
+                'trainable_scopes': ''},
+    'paths': {   'best': '/mnt/data/pgaleone/dtb_work/examples/log/VGG/CIFAR-10_Adam_l2=1e-05_fliplr/best',
+                 'current': '/mnt/data/pgaleone/dtb_work/examples',
+                 'log': '/mnt/data/pgaleone/dtb_work/examples/log/VGG/CIFAR-10_Adam_l2=1e-05_fliplr'},
+    'stats': {   'dataset': 'CIFAR-10',
+                 'model': 'VGG',
+                 'test': 0.55899998381733895,
+                 'train': 0.5740799830555916,
+                 'validation': 0.55899998381733895},
+    'steps': {'decay': 25000, 'epoch': 1000, 'log': 100, 'max': 2000}}
+```
+
+---
+
+Here you can see a complete example of training, continue an interrupted training, fine tuning & transfer learning: [python-notebook with a complete example](examples/VGG-Cifar10-100-TransferLearning-FineTuning.ipynb).
+
+# Getting started: CLI
+
+The CLI workflow is the same as the library one, with 2 differences:
+
+## 1. Interface implementations
+
+If you define your own input source / model, it must be placed into the appropriate folder:
+
+- For models: [scripts/models/](scripts/models)
+- For inputs: [scripts/inputs/](scripts/inputs)
+
+**Rule**: the class name must be equal to the file name. E.g.: `class LeNet` into `LeNet.py` file.
+
+If you want to use a predefined input/model you don't need to do anything.
+
+## 2. Train via CLI
+
+Every single hyperparameter (except for the augmentations) definable in the Python version, can be passed as CLI argument to the `scripts/train.py` script.
+
 
 A single model can be trained using various hyper-parameters, such as the learning rate, the weight decay penalty applied, the exponential learning rate decay, the optimizer and its parameters, ...
 
-DTB allows to train a model with different hyper-parameter and automatically it logs every training process allowing the developer to visually compare them.
+DTB allows training a model with different hyper-parameter and automatically it logs every training process allowing the developer to visually compare them.
 
 Moreover, if a training process is interrupted, it automatically resumes it from the last saved training step.
 
@@ -85,24 +194,24 @@ Moreover, if a training process is interrupted, it automatically resumes it from
 
 ```
 # LeNet: no regularization
-python train.py --model LeNet --dataset MNIST
+python scripts/train.py --model LeNet --dataset MNIST
 
 # LeNet: L2 regularization with value 1e-5
-python train.py --model LeNet --dataset MNIST --l2_penalty 1e-5
+python scripts/train.py --model LeNet --dataset MNIST --l2_penalty 1e-5
 
 # LeNet: L2 regularization with value 1e-2
-python train.py --model LeNet --dataset MNIST --l2_penalty 1e-2
+python scripts/train.py --model LeNet --dataset MNIST --l2_penalty 1e-2
 
 # LeNet: L2 regularization with value 1e-2, initial learning rate of 1e-4
 # The default optimization algorithm is MomentumOptimizer, so we can change the momentum value
 # The optimizer parameters are passed as a json string
-python train.py --model LeNet --dataset MNIST --l2_penalty 1e-2 \
+python scripts/train.py --model LeNet --dataset MNIST --l2_penalty 1e-2 \
     --optimizer_args '{"learning_rate": 1e-4, "momentum": 0.5}'
 
 # If, for some reason, we interrupt this training process, rerunning the same command
 # will restart the training process from the last saved training step.
 # If we want to delete every saved model and log, we can pass the --restart flag
-python train.py --model LeNet --dataset MNIST --l2_penalty \
+python scripts/train.py --model LeNet --dataset MNIST --l2_penalty \
     --optimizer_args '{"learning_rate": 1e-4, "momentum": 0.5}' --restart
 ```
 
@@ -113,9 +222,9 @@ This allows visualizing in the same graphs, using Tensorboard, the 4 models and 
 
 No matter what interface has been implemented, the script to run is **always** `train.py`: it's capable of identifying the type of the model and use the right training procedure.
 
-A complete list of the available tunable parameters can be obtained running `python train.py --help` (`python train.py --help`).
+A complete list of the available tunable parameters can be obtained running `python scripts/train.py --help` (`python scripts/train.py --help`).
 
-For reference, a part of the output of `python train.py --help`:
+For reference, a part of the output of `python scripts/train.py --help`:
 
 ```
 usage: train.py [-h] --model --dataset
@@ -151,13 +260,13 @@ usage: train.py [-h] --model --dataset
 
 # Best models & results
 
-DTB saves for you, in the log folder of every model, the "best" model with respect to the metric defined in the train file.
+No matter if the CLI or the library version is used: DTB saves for you in the log folder of every model the "best" model with respect to the default metric used for the trained model.
 
 For example, for the `LeNet` model created with the first command in the previous script, the following directory structure is created:
 
 ```
 log/LeNet/
-|---MNIST_Momentum_lr=0.01
+|---MNIST_Momentum
 |-----best
 |-----train
 |-----validation
@@ -177,17 +286,17 @@ For example:
 
 ```
 # Evaluate the validation accuracy
-python evaluate.py  \
+python scripts/evaluate.py  \
            --model LeNet \
            --dataset MNIST \
-           --checkpoint_path log/LeNet/MNIST_Momentum_lr\=0.01/
+           --checkpoint_path log/LeNet/MNIST_Momentum/
 # outputs something like: validation accuracy = 0.993
 
 # Evaluate the test accuracy
-python evaluate.py  \
+python scripts/evaluate.py  \
            --model LeNet \
            --dataset MNIST \
-           --checkpoint_path log/LeNet/MNIST_Momentum_lr\=0.01/ \
+           --checkpoint_path log/LeNet/MNIST_Momentum/ \
            --test
 # outputs something like: test accuracy = 0.993
 ```
@@ -200,11 +309,13 @@ DTB allows to restore a model from its checkpoint file, remove some layer that's
 
 For example, a VGG model trained on the Cifar10 dataset, can be used to train a VGG model but on the Cifar100 dataset.
 
+The examples are for the CLI version, **but the same parameters can be used in the Python library**.
+
 ```
-python train.py
+python scripts/train.py
     --model VGG \
     --dataset Cifar100 \
-    --checkpoint_path log/VGG/Cifar10_Momentum_lr\=0.01/best/ \
+    --checkpoint_path log/VGG/Cifar10_Momentum/best/ \
     --exclude_scopes softmax_linear
 ```
 
@@ -217,10 +328,10 @@ So the above command starts a new training from the pre-trained model and trains
 If you don't want to train the imported weights, you have to point out which scopes to train, using `trainable_scopes`:
 
 ```
-python train.py \
+python scripts/train.py \
     --model VGG \
     --dataset Cifar100 \
-    --checkpoint_path log/VGG/Cifar10_Momentum_lr\=0.01/best/ \
+    --checkpoint_path log/VGG/Cifar10_Momentum/best/ \
     --exclude_scopes softmax_linear \
     --trainable_scopes softmax_linear
 ```
@@ -236,3 +347,4 @@ tensorboard --logdir log/<MODEL>
 
 It's possible to visualize the trend of the loss, the validation measures, the input values and so on.
 To see some of the produced output, have a look at the implementation of the Convolutional Autoencoder, described here: https://pgaleone.eu/neural-networks/deep-learning/2016/12/13/convolutional-autoencoders-in-tensorflow/#visualization
+
