@@ -131,7 +131,7 @@ At the end of the training process `info` will contain some useful information, 
 pprint.pprint(info, indent=4)
 ```
 
-```json
+```
 {   'args': {   'batch_size': 50,
                 'checkpoint_path': '',
                 'comment': '',
