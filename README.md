@@ -23,7 +23,7 @@ DyTB is compatible with: **Tensorflow 1.x & Python 3.x**
 
 # Getting started: python library
 
-**TL;DR**: [python-notebook with a complete example](examples/VGG-Cifar10-100-TransferLearning-FineTuning.ipynb).
+**TL;DR**: `pip install dytb` + [python-notebook with a complete example](examples/VGG-Cifar10-100-TransferLearning-FineTuning.ipynb).
 
 The standard workflow is extremely simple:
 
@@ -165,6 +165,16 @@ pprint.pprint(info, indent=4)
 Here you can see a complete example of training, continue an interrupted training, fine tuning & transfer learning: [python-notebook with a complete example](examples/VGG-Cifar10-100-TransferLearning-FineTuning.ipynb).
 
 # Getting started: CLI
+
+The only prerequisite is to clone the repo and install the python lib locally.
+
+```
+git clone https://github.com/galeone/dynamic-training-bench.git dytb
+cd dytb
+python setup.py develop
+```
+
+**You can use the same commands to setup you local environment for contributing to DyTB.**
 
 The CLI workflow is the same as the library one, with 2 differences:
 
