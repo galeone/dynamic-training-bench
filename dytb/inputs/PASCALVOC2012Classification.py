@@ -28,6 +28,7 @@ class PASCALVOC2012Classification(Input):
         # Global constants describing the PASCAL VOC 2012 data set.
         # resize image to a fixed size
         # the resize dimension is an hyperparameter
+        self._name = 'PASCAL-VOC-2012-Classification'
         self._image_height = 150
         self._image_width = 150
         self._image_depth = 3
@@ -52,6 +53,11 @@ class PASCALVOC2012Classification(Input):
             os.path.dirname(os.path.abspath(__file__)), 'data', 'PASCALVOC2012')
         self._data_url = 'http://pjreddie.com/media/files/VOCtrainval_11-May-2012.tar'
         self._maybe_download_and_extract()
+
+    @property
+    def name(self):
+        """Returns the name of the input source"""
+        return self._name
 
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
