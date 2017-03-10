@@ -35,7 +35,7 @@ The standard workflow is extremely simple:
 
 DTB comes with some common ML model, like LeNet & VGG, if you want to test how these models perform when trained on different datasets and/or with different hyperparameters, just use it.
 
-Instead, if you want to define your own model just implement one of the [available interfaces](dtb/models/interfaces.py), depending on ML model you want to implement. The available interfaces are:
+Instead, if you want to define your own model just implement one of the [available interfaces](dytb/models/interfaces.py), depending on ML model you want to implement. The available interfaces are:
 
 1. Classifier
 2. Autoencoder
@@ -43,10 +43,10 @@ Instead, if you want to define your own model just implement one of the [availab
 4. Detector
 
 It's recommended, but not strictly required, to use the wrappers built around the Tensorflow methods to define the model: these wrappers creates log and visualizations for you.
-Wrappers are documented and intuitive: you can find it in the [dtb/models/utils.py](dtb/models/utils.py) file.
+Wrappers are documented and intuitive: you can find it in the [dytb/models/utils.py](dytb/models/utils.py) file.
 
 DTB provides different models that can be used alone or can be used as examples of correct implementations.
-Every model in the [dtb/models/](dtb/models/) folder is a valid example.
+Every model in the [dytb/models/](dytb/models/) folder is a valid example.
 
 In general, the model definition is just the implementation of 2 methods:
 
@@ -61,7 +61,7 @@ E.g.: even if you never use a `is_training_` boolean placeholder in your model d
 
 DTB comes with some common ML benchmark, like Cifar10, Cifar100 & MNIST, you can use it to train and measure the performances of your model or you can define your own input source implementing the Input interface that you can find here:
 
-1. [dtb/inputs/interfaces.py](dtb/inputs/interfaces.py)
+1. [dytb/inputs/interfaces.py](dytb/inputs/interfaces.py)
 
 The interface implementation should follow these points:
 
@@ -74,8 +74,8 @@ This enumeration has 3 possible values: `InputType.train`, `InputType.validation
 
 **Note**: `inputs` must return a Tensorflow queue of `value, label` pairs.
 
-The better way to understand how to build the input source is to look at the examples in the [dtb/inputs/](dtb/inputs/) folder.
-A small and working example that can be worth looking is Cifar10: [dtb/inputs/Cifar10.py](dtb/inputs/Cifar10.py).
+The better way to understand how to build the input source is to look at the examples in the [dytb/inputs/](dytb/inputs/) folder.
+A small and working example that can be worth looking is Cifar10: [dytb/inputs/Cifar10.py](dytb/inputs/Cifar10.py).
 
 ## Train
 
@@ -84,9 +84,9 @@ Train measuring predefined metrics it's extremely easy, let's see a complete exa
 ```python
 import pprint
 import tensorflow as tf
-from dtb.inputs import Cifar10
-from dtb.train import train
-from dtb.models.VGG import VGG
+from dytb.inputs import Cifar10
+from dytb.train import train
+from dytb.models.VGG import VGG
 
 # Instantiate the model
 vgg = VGG()
@@ -135,7 +135,7 @@ pprint.pprint(info, indent=4)
 {   'args': {   'batch_size': 50,
                 'checkpoint_path': '',
                 'comment': '',
-                'dataset': <dtb.inputs.Cifar10.Cifar10 object at 0x7f896c19a1d0>,
+                'dataset': <dytb.inputs.Cifar10.Cifar10 object at 0x7f896c19a1d0>,
                 'epochs': 2,
                 'exclude_scopes': '',
                 'force_restart': False,
@@ -145,13 +145,13 @@ pprint.pprint(info, indent=4)
                                       'learning_rate': 0.001},
                           'optimizer': <class 'tensorflow.python.training.adam.AdamOptimizer'>},
                 'lr_decay': {'enabled': False, 'epochs': 25, 'factor': 0.1},
-                'model': <dtb.models.VGG.VGG object at 0x7f896c19a128>,
+                'model': <dytb.models.VGG.VGG object at 0x7f896c19a128>,
                 'regularizations': {   'augmentation': <function random_flip_left_right at 0x7f89109cb0d0>,
                                        'l2': 1e-05},
                 'trainable_scopes': ''},
-    'paths': {   'best': '/mnt/data/pgaleone/dtb_work/examples/log/VGG/CIFAR-10_Adam_l2=1e-05_fliplr/best',
-                 'current': '/mnt/data/pgaleone/dtb_work/examples',
-                 'log': '/mnt/data/pgaleone/dtb_work/examples/log/VGG/CIFAR-10_Adam_l2=1e-05_fliplr'},
+    'paths': {   'best': '/mnt/data/pgaleone/dytb_work/examples/log/VGG/CIFAR-10_Adam_l2=1e-05_fliplr/best',
+                 'current': '/mnt/data/pgaleone/dytb_work/examples',
+                 'log': '/mnt/data/pgaleone/dytb_work/examples/log/VGG/CIFAR-10_Adam_l2=1e-05_fliplr'},
     'stats': {   'dataset': 'CIFAR-10',
                  'model': 'VGG',
                  'test': 0.55899998381733895,

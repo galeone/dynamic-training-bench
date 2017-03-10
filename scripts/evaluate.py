@@ -10,8 +10,8 @@
 import tensorflow as tf
 
 from sys import exit
-from dtb.evaluate import evaluate
-from dtb.inputs.interfaces import InputType
+from dytb.evaluate import evaluate
+from dytb.inputs.interfaces import InputType
 
 from CLIArgs import CLIArgs
 

@@ -14,7 +14,7 @@ import time
 import tensorflow as tf
 
 from CLIArgs import CLIArgs
-from dtb.train import train
+from dytb.train import train
 
 
 def main():

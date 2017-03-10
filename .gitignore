@@ -61,7 +61,7 @@ target/
 .ipynb_checkpoints
 
 # Datasets
-dtb/inputs/data/
+dytb/inputs/data/
 
 # Logs
 log/

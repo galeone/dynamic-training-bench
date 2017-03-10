@@ -28,32 +28,32 @@ class CLIArgs(object):
         self._args = None
 
     @staticmethod
-    def get_dtb_models():
-        """Returns the avaiable dtb modules filename, without the .py ext"""
-        dtbmodels_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dtb',
+    def get_dytb_models():
+        """Returns the avaiable dytb modules filename, without the .py ext"""
+        dytbmodels_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dytb',
             'models')
-        dtbmodels = [
-            model[len(dtbmodels_dir) + 1:-3]
-            for model in glob.glob('{}/*.py'.format(dtbmodels_dir))
+        dytbmodels = [
+            model[len(dytbmodels_dir) + 1:-3]
+            for model in glob.glob('{}/*.py'.format(dytbmodels_dir))
             if "__init__.py" not in model and "utils" not in model and
             "interfaces" not in model
         ]
-        return dtbmodels
+        return dytbmodels
 
     @staticmethod
-    def get_dtb_datasets():
-        """Returns the avaiable dtb datasets filename, without the .py ext"""
-        dtbdatasets_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dtb',
+    def get_dytb_datasets():
+        """Returns the avaiable dytb datasets filename, without the .py ext"""
+        dytbdatasets_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dytb',
             'inputs')
-        dtbdatasets = [
-            dataset[len(dtbdatasets_dir) + 1:-3]
-            for dataset in glob.glob('{}/*.py'.format(dtbdatasets_dir))
+        dytbdatasets = [
+            dataset[len(dytbdatasets_dir) + 1:-3]
+            for dataset in glob.glob('{}/*.py'.format(dytbdatasets_dir))
             if "__init__.py" not in dataset and "utils" not in dataset and
             "interfaces" not in dataset
         ]
-        return dtbdatasets
+        return dytbdatasets
 
     @staticmethod
     def get_local_models():
@@ -97,11 +97,11 @@ class CLIArgs(object):
         parser.add_argument(
             '--model',
             required=True,
-            choices=self.get_dtb_models() + self.get_local_models())
+            choices=self.get_dytb_models() + self.get_local_models())
         parser.add_argument(
             '--dataset',
             required=True,
-            choices=self.get_dtb_datasets() + self.get_local_datasets())
+            choices=self.get_dytb_datasets() + self.get_local_datasets())
         parser.add_argument('--batch_size', type=int, default=128)
 
         return parser
@@ -120,7 +120,7 @@ class CLIArgs(object):
                 self._args.model)()
         else:
             model = getattr(
-                importlib.import_module('dtb.models.' + self._args.model),
+                importlib.import_module('dytb.models.' + self._args.model),
                 self._args.model)()
 
         # Instantiate the input object
@@ -131,7 +131,7 @@ class CLIArgs(object):
                 self._args.dataset)()
         else:
             dataset = getattr(
-                importlib.import_module('dtb.inputs.' + self._args.dataset),
+                importlib.import_module('dytb.inputs.' + self._args.dataset),
                 self._args.dataset)()
 
         return model, dataset
