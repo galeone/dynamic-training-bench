@@ -1,9 +1,9 @@
-Dynamic Training Bench: DTB
+Dynamic Training Bench: DyTB
 ===========================
 
-Stop wasting your time rewriting the training, evaluation & visualization procedures for your ML model: let DTB do the work for you!
+Stop wasting your time rewriting the training, evaluation & visualization procedures for your ML model: let DyTB do the work for you!
 
-DTB is compatible with: **Tensorflow 1.x & Python 3.x**
+DyTB is compatible with: **Tensorflow 1.x & Python 3.x**
 
 # Features
 
@@ -33,7 +33,7 @@ The standard workflow is extremely simple:
 
 ## Define or pick a predefined Model
 
-DTB comes with some common ML model, like LeNet & VGG, if you want to test how these models perform when trained on different datasets and/or with different hyperparameters, just use it.
+DyTB comes with some common ML model, like LeNet & VGG, if you want to test how these models perform when trained on different datasets and/or with different hyperparameters, just use it.
 
 Instead, if you want to define your own model just implement one of the [available interfaces](dytb/models/interfaces.py), depending on ML model you want to implement. The available interfaces are:
 
@@ -45,7 +45,7 @@ Instead, if you want to define your own model just implement one of the [availab
 It's recommended, but not strictly required, to use the wrappers built around the Tensorflow methods to define the model: these wrappers creates log and visualizations for you.
 Wrappers are documented and intuitive: you can find it in the [dytb/models/utils.py](dytb/models/utils.py) file.
 
-DTB provides different models that can be used alone or can be used as examples of correct implementations.
+DyTB provides different models that can be used alone or can be used as examples of correct implementations.
 Every model in the [dytb/models/](dytb/models/) folder is a valid example.
 
 In general, the model definition is just the implementation of 2 methods:
@@ -59,7 +59,7 @@ E.g.: even if you never use a `is_training_` boolean placeholder in your model d
 
 ## Define or pick a predefined Input
 
-DTB comes with some common ML benchmark, like Cifar10, Cifar100 & MNIST, you can use it to train and measure the performances of your model or you can define your own input source implementing the Input interface that you can find here:
+DyTB comes with some common ML benchmark, like Cifar10, Cifar100 & MNIST, you can use it to train and measure the performances of your model or you can define your own input source implementing the Input interface that you can find here:
 
 1. [dytb/inputs/interfaces.py](dytb/inputs/interfaces.py)
 
@@ -186,7 +186,7 @@ Every single hyperparameter (except for the augmentations) definable in the Pyth
 
 A single model can be trained using various hyper-parameters, such as the learning rate, the weight decay penalty applied, the exponential learning rate decay, the optimizer and its parameters, ...
 
-DTB allows training a model with different hyper-parameter and automatically it logs every training process allowing the developer to visually compare them.
+DyTB allows training a model with different hyper-parameter and automatically it logs every training process allowing the developer to visually compare them.
 
 Moreover, if a training process is interrupted, it automatically resumes it from the last saved training step.
 
@@ -260,7 +260,7 @@ usage: train.py [-h] --model --dataset
 
 # Best models & results
 
-No matter if the CLI or the library version is used: DTB saves for you in the log folder of every model the "best" model with respect to the default metric used for the trained model.
+No matter if the CLI or the library version is used: DyTB saves for you in the log folder of every model the "best" model with respect to the default metric used for the trained model.
 
 For example, for the `LeNet` model created with the first command in the previous script, the following directory structure is created:
 
@@ -305,7 +305,7 @@ python scripts/evaluate.py  \
 
 A trained model can be used to build a new model exploiting the learned parameters: this helps to speed up the learning process of new models.
 
-DTB allows to restore a model from its checkpoint file, remove some layer that's not necessary for the new model, and add new layers to train.
+DyTB allows to restore a model from its checkpoint file, remove some layer that's not necessary for the new model, and add new layers to train.
 
 For example, a VGG model trained on the Cifar10 dataset, can be used to train a VGG model but on the Cifar100 dataset.
 
@@ -335,7 +335,7 @@ python scripts/train.py \
     --exclude_scopes softmax_linear \
     --trainable_scopes softmax_linear
 ```
-With the above command your instructing DTB to exclude the `softmax_linear` scope from the checkpoint_file and to train only the scope named `softmax_linear` in the new defined model.
+With the above command your instructing DyTB to exclude the `softmax_linear` scope from the checkpoint_file and to train only the scope named `softmax_linear` in the new defined model.
 
 # Data visualization
 
