@@ -16,9 +16,10 @@ from collections import defaultdict
 
 from six.moves import urllib
 import tensorflow as tf
-from . import utils
-from .interfaces.Input import Input
-from .interfaces.InputType import InputType
+from ..processing import build_batch
+from ..images import read_image_jpg
+from ..interfaces.Input import Input
+from ..interfaces.InputType import InputType
 
 
 class PASCALVOC2012Classification(Input):
@@ -97,7 +98,7 @@ class PASCALVOC2012Classification(Input):
                                   'JPEGImages') + "/" + filename + ".jpg"
 
         # image is normalized in [-1,1], convert to #_image_depth depth
-        image = utils.read_image_jpg(image_path, depth=self._image_depth)
+        image = read_image_jpg(image_path, depth=self._image_depth)
         return image, tf.stack([y_min, x_min, y_max, x_max, label])
 
     def _read(self, filename_queue):
@@ -152,7 +153,7 @@ class PASCALVOC2012Classification(Input):
             if augmentation_fn:
                 image = augmentation_fn(image)
 
-            return utils.generate_image_and_label_batch(
+            return build_batch(
                 image,
                 label,
                 min_queue_examples,

@@ -5,34 +5,40 @@
 #file, you can obtain one at http://mozilla.org/MPL/2.0/.
 #Exhibit B is not attached; this software is compatible with the
 #licenses expressed under Section 1.12 of the MPL v2.
-"""Routine for decoding the MNIST binary file format."""
+"""ORL Faces database input"""
 
 import os
+import sys
+import zipfile
+import glob
+from PIL import Image
 
+from six.moves import urllib
 import tensorflow as tf
-from tensorflow.contrib.learn.python.learn.datasets import mnist
-from . import utils
-from .interfaces import Input, InputType
+import numpy as np
+from ..processing import convert_to_tfrecords, build_batch
+from ..images import scale_image
+from ..interfaces import Input, InputType
 
 
-class MNIST(Input):
-    """Routine for decoding the MNIST binary file format."""
+class ORLFaces(Input):
+    """ORL Faces database input"""
 
     def __init__(self):
-        # Global constants describing the MNIST data set.
-        self._name = 'MNIST'
-        self._image_width = 28
-        self._image_height = 28
+        # Global constants describing the ORL Faces data set.
+        self._name = 'ORL-Faces'
+        self._image_width = 92
+        self._image_height = 112
         self._image_depth = 1
-        mnist.IMAGE_PIXELS = self._image_width * self._image_height * self._image_depth
 
-        self._num_classes = 10
-        self._num_examples_per_epoch_for_train = 55000
-        self._num_examples_per_epoch_for_eval = 5000
-        self._num_examples_per_epoch_for_test = 10000
+        self._num_classes = 40
+        self._num_examples_per_epoch_for_train = 400
+        self._num_examples_per_epoch_for_eval = 0
+        self._num_examples_per_epoch_for_test = 0
 
         self._data_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'data', 'MNIST')
+            os.path.dirname(os.path.abspath(__file__)), 'data', 'ORLFaces')
+        self._data_url = 'http://www.cl.cam.ac.uk/Research/DTG/attarchive/pub/data/att_faces.zip'
         self._maybe_download_and_extract()
 
     def num_examples(self, input_type):
@@ -90,26 +96,28 @@ class MNIST(Input):
             })
 
         # Convert from a scalar string tensor (whose single string has
-        # length mnist.IMAGE_PIXELS) to a uint8 tensor with shape
-        # [mnist.IMAGE_PIXELS].
+        # length IMAGE_WIDHT * self._image_height) to a uint8 tensor with
+        # the same shape
         image = tf.decode_raw(features['image_raw'], tf.uint8)
-        image.set_shape([mnist.IMAGE_PIXELS])
+        image.set_shape([self._image_width * self._image_height])
 
-        # Reshape to a valid image
+        #`Reshape to a valid image
         image = tf.reshape(image, (self._image_height, self._image_width,
                                    self._image_depth))
 
-        # Convert from [0, 255] -> [0, 1]
+        # Convert from [0, 255] -> [0, 1] floats.
         image = tf.divide(tf.cast(image, tf.float32), 255.0)
+
         # Convert from [0, 1] -> [-1, 1]
-        result["image"] = utils.scale_image(image)
+        result["image"] = scale_image(image)
 
         # Convert label from a scalar uint8 tensor to an int32 scalar.
         result["label"] = tf.cast(features['label'], tf.int32)
+
         return result
 
     def inputs(self, input_type, batch_size, augmentation_fn=None):
-        """Construct input for MNIST evaluation using the Reader ops.
+        """Construct input for ORL Faces evaluation using the Reader ops.
 
         Args:
             input_type: InputType enum.
@@ -121,17 +129,10 @@ class MNIST(Input):
         """
         InputType.check(input_type)
 
-        if input_type == InputType.train:
-            filename = os.path.join(self._data_dir, 'train.tfrecords')
-            num_examples_per_epoch = self._num_examples_per_epoch_for_train
-        elif input_type == InputType.validation:
-            filename = os.path.join(self._data_dir, 'validation.tfrecords')
-            num_examples_per_epoch = self._num_examples_per_epoch_for_eval
-        elif input_type == InputType.test:
-            filename = os.path.join(self._data_dir, 'test.tfrecords')
-            num_examples_per_epoch = self._num_examples_per_epoch_for_test
-
         with tf.variable_scope("{}_input".format(input_type)):
+            filename = os.path.join(self._data_dir, 'faces.tfrecords')
+            num_examples_per_epoch = self._num_examples_per_epoch_for_train
+
             # Create a queue that produces the filenames to read.
             filename_queue = tf.train.string_input_producer([filename])
 
@@ -146,7 +147,7 @@ class MNIST(Input):
                                      min_fraction_of_examples_in_queue)
 
             # Generate a batch of images and labels by building up a queue of examples.
-            return utils.generate_image_and_label_batch(
+            return build_batch(
                 read_input["image"],
                 read_input["label"],
                 min_queue_examples,
@@ -154,21 +155,45 @@ class MNIST(Input):
                 shuffle=input_type == InputType.train)
 
     def _maybe_download_and_extract(self):
-        """Download and extract the MNIST dataset"""
-        data_sets = mnist.read_data_sets(
-            self._data_dir,
-            dtype=tf.uint8,
-            reshape=False,
-            validation_size=self._num_examples_per_epoch_for_eval)
+        """Download and extract the ORL Faces dataset"""
+
+        dest_directory = self._data_dir
+        if not os.path.exists(dest_directory):
+            os.makedirs(dest_directory)
+        filename = self._data_url.split('/')[-1]
+        filepath = os.path.join(dest_directory, filename)
+        if not os.path.exists(filepath):
+
+            def _progress(count, block_size, total_size):
+                sys.stdout.write('\r>> Downloading %s %.1f%%' %
+                                 (filename, float(count * block_size) /
+                                  float(total_size) * 100.0))
+                sys.stdout.flush()
+
+            filepath, _ = urllib.request.urlretrieve(self._data_url, filepath,
+                                                     _progress)
+            print()
+            statinfo = os.stat(filepath)
+            print('Successfully downloaded', filename, statinfo.st_size,
+                  'bytes.')
+            with zipfile.ZipFile(filepath) as zip_f:
+                zip_f.extractall(
+                    os.path.join(dest_directory, filename.split('.')[-2]))
 
         # Convert to Examples and write the result to TFRecords.
-        if not tf.gfile.Exists(os.path.join(self._data_dir, 'train.tfrecords')):
-            utils.convert_to_tfrecords(data_sets.train, 'train', self._data_dir)
+        if not tf.gfile.Exists(os.path.join(self._data_dir, 'faces.tfrecords')):
+            images = []
+            labels = []
 
-        if not tf.gfile.Exists(
-                os.path.join(self._data_dir, 'validation.tfrecords')):
-            utils.convert_to_tfrecords(data_sets.validation, 'validation',
-                                       self._data_dir)
+            for pgm in glob.glob("{}/*/*.pgm".format(
+                    os.path.join(dest_directory, filename.split('.')[-2]))):
+                images.append(
+                    np.expand_dims(np.asarray(Image.open(pgm)), axis=2))
+                labels.append(int(pgm.split("/")[-2].strip("s")))
 
-        if not tf.gfile.Exists(os.path.join(self._data_dir, 'test.tfrecords')):
-            utils.convert_to_tfrecords(data_sets.test, 'test', self._data_dir)
+            # Create dataset object
+            dataset = lambda: None
+            dataset.num_examples = self._num_examples_per_epoch_for_train
+            dataset.images = np.array(images)
+            dataset.labels = np.array(labels)
+            convert_to_tfrecords(dataset, 'faces', self._data_dir)

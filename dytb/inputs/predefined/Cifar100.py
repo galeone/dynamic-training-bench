@@ -17,8 +17,9 @@ import tarfile
 
 from six.moves import urllib
 import tensorflow as tf
-from . import utils
-from .interfaces import Input, InputType
+from ..processing import build_batch
+from ..images import scale_image
+from ..interfaces import Input, InputType
 
 
 class Cifar100(Input):
@@ -131,7 +132,7 @@ class Cifar100(Input):
         image = tf.divide(image, 255.0)
 
         # Convert from [0, 1] -> [-1, 1]
-        result["image"] = utils.scale_image(image)
+        result["image"] = scale_image(image)
 
         return result
 
@@ -174,7 +175,7 @@ class Cifar100(Input):
                                      min_fraction_of_examples_in_queue)
 
             # Generate a batch of images and labels by building up a queue of examples.
-            return utils.generate_image_and_label_batch(
+            return build_batch(
                 read_input["image"],
                 read_input["label"],
                 min_queue_examples,
