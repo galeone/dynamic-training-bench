@@ -46,7 +46,7 @@ It's recommended, but not strictly required, to use the wrappers built around th
 Wrappers are documented and intuitive: you can find it in the [dytb/models/utils.py](dytb/models/utils.py) file.
 
 DyTB provides different models that can be used alone or can be used as examples of correct implementations.
-Every model in the [dytb/models/](dytb/models/) folder is a valid example.
+Every model in the [dytb/models/predefined/](dytb/models/predefined/) folder is a valid example.
 
 In general, the model definition is just the implementation of 2 methods:
 
@@ -74,8 +74,8 @@ This enumeration has 3 possible values: `InputType.train`, `InputType.validation
 
 **Note**: `inputs` must return a Tensorflow queue of `value, label` pairs.
 
-The better way to understand how to build the input source is to look at the examples in the [dytb/inputs/](dytb/inputs/) folder.
-A small and working example that can be worth looking is Cifar10: [dytb/inputs/Cifar10.py](dytb/inputs/Cifar10.py).
+The better way to understand how to build the input source is to look at the examples in the [dytb/inputs/predefined/](dytb/inputs/predefined/) folder.
+A small and working example that can be worth looking is Cifar10: [dytb/inputs/predefined/Cifar10.py](dytb/inputs/predefined/Cifar10.py).
 
 ## Train
 
