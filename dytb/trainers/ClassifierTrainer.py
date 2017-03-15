@@ -12,12 +12,13 @@ import os
 import numpy as np
 import tensorflow as tf
 from datetime import datetime
-from . import utils
+from .utils import builders, flow
 
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
 from ..evaluators.metrics import accuracy_op
 from ..models.utils import tf_log, MODEL_SUMMARIES, variables_to_train
+from ..models.visualization import log_io
 
 
 class ClassifierTrainer(Trainer):
@@ -62,7 +63,7 @@ class ClassifierTrainer(Trainer):
                     input_type=InputType.train,
                     batch_size=args["batch_size"],
                     augmentation_fn=args["regularizations"]["augmentation"])
-            utils.log_io(images)
+            log_io(images)
 
             # Build a Graph that computes the logits predictions from the
             # inference model.
@@ -77,7 +78,7 @@ class ClassifierTrainer(Trainer):
             tf_log(tf.summary.scalar('loss', loss))
 
             # Create optimizer and log learning rate
-            optimizer = utils.build_optimizer(args, steps, global_step)
+            optimizer = builders.build_optimizer(args, steps, global_step)
             train_op = optimizer.minimize(
                 loss,
                 global_step=global_step,
@@ -110,11 +111,11 @@ class ClassifierTrainer(Trainer):
                 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
                 # Create the savers.
-                train_saver, best_saver = utils.build_train_savers(
+                train_saver, best_saver = builders.build_train_savers(
                     [global_step])
-                utils.restore_or_restart(args, paths, sess, global_step)
-                train_log, validation_log = utils.build_loggers(sess.graph,
-                                                                paths)
+                flow.restore_or_restart(args, paths, sess, global_step)
+                train_log, validation_log = builders.build_loggers(sess.graph,
+                                                                   paths)
 
                 # Extract previous global step value
                 old_gs = sess.run(global_step)

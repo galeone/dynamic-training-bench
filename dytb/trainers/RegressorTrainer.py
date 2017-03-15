@@ -8,11 +8,12 @@
 """Trainer for the Regressor model"""
 
 import tensorflow as tf
-from . import utils
+from .utils import builders, flow
 
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
 from ..models.utils import tf_log, MODEL_SUMMARIES
+from ..models.visualization import log_io
 
 
 class RegressorTrainer(Trainer):
@@ -65,7 +66,7 @@ class RegressorTrainer(Trainer):
                 train_phase=True,
                 l2_penalty=args["regularizations"]["l2"])
 
-            utils.log_io(images)
+            log_io(images)
 
             # Calculate loss.
             loss = self._model.loss(predictions, labels)
@@ -104,11 +105,11 @@ class RegressorTrainer(Trainer):
                 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
                 # Create the savers.
-                train_saver, best_saver = utils.build_train_savers(
+                train_saver, best_saver = builders.build_train_savers(
                     [global_step])
-                utils.restore_or_restart(args, paths, sess, global_step)
-                train_log, validation_log = utils.build_loggers(sess.graph,
-                                                                paths)
+                flow.restore_or_restart(args, paths, sess, global_step)
+                train_log, validation_log = builders.build_loggers(sess.graph,
+                                                                   paths)
 
                 # Extract previous global step value
                 old_gs = sess.run(global_step)
