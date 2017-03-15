@@ -32,12 +32,11 @@ class CLIArgs(object):
         """Returns the avaiable dytb modules filename, without the .py ext"""
         dytbmodels_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dytb',
-            'models')
+            'models', 'predefined')
         dytbmodels = [
             model[len(dytbmodels_dir) + 1:-3]
             for model in glob.glob('{}/*.py'.format(dytbmodels_dir))
-            if "__init__.py" not in model and "utils" not in model and
-            "interfaces" not in model
+            if "__init__.py" not in model
         ]
         return dytbmodels
 
@@ -46,12 +45,11 @@ class CLIArgs(object):
         """Returns the avaiable dytb datasets filename, without the .py ext"""
         dytbdatasets_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dytb',
-            'inputs')
+            'inputs', 'predefined')
         dytbdatasets = [
             dataset[len(dytbdatasets_dir) + 1:-3]
             for dataset in glob.glob('{}/*.py'.format(dytbdatasets_dir))
-            if "__init__.py" not in dataset and "utils" not in dataset and
-            "interfaces" not in dataset
+            if "__init__.py" not in dataset
         ]
         return dytbdatasets
 
@@ -63,7 +61,7 @@ class CLIArgs(object):
         return [
             model[len(models_dir) + 1:-3]
             for model in glob.glob('{}/*.py'.format(models_dir))
-            if "__init__.py" not in model and "utils" not in model
+            if "__init__.py" not in model
         ]
 
     @staticmethod
@@ -74,7 +72,7 @@ class CLIArgs(object):
         return [
             dataset[len(datasets_dir) + 1:-3]
             for dataset in glob.glob('{}/*.py'.format(datasets_dir))
-            if "__init__.py" not in dataset and "utils" not in dataset
+            if "__init__.py" not in dataset
         ]
 
     @staticmethod
@@ -120,8 +118,8 @@ class CLIArgs(object):
                 self._args.model)()
         else:
             model = getattr(
-                importlib.import_module('dytb.models.' + self._args.model),
-                self._args.model)()
+                importlib.import_module('dytb.models.predefined.' +
+                                        self._args.model), self._args.model)()
 
         # Instantiate the input object
         # Give the precedente to local datasets
@@ -131,7 +129,8 @@ class CLIArgs(object):
                 self._args.dataset)()
         else:
             dataset = getattr(
-                importlib.import_module('dytb.inputs.' + self._args.dataset),
+                importlib.import_module('dytb.inputs.predefined.' +
+                                        self._args.dataset),
                 self._args.dataset)()
 
         return model, dataset
