@@ -7,16 +7,23 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Setup file to make dytb installable via pip"""
 
+import io
+import re
 from setuptools import setup
 from setuptools import find_packages
 
+INIT_PY = io.open('dytb/__init__.py').read()
+METADATA = dict(re.findall("__([a-z]+)__ = '([^']+)'", INIT_PY))
+METADATA['doc'] = re.findall('"""(.+)"""', INIT_PY)[0]
+
 setup(
     name='dytb',
-    version='1.0.0',
-    description='Simplify the trainining and tuning of Tensorflow models',
-    author='Paolo Galeone',
-    author_email='nessuno@nerdz.eu',
-    url='https://github.com/galeone/dynamic-training-bench',
-    download_url='https://github.com/galeone/dynamic-training-bench/tarball/1.0.0',
+    version=METADATA['version'],
+    description=METADATA['doc'],
+    author=METADATA['author'],
+    author_email=METADATA['email'],
+    url=METADATA['url'],
+    download_url='/'.join((METADATA['url'].rstrip('/'), 'tarball',
+                           METADATA['version'])),
     license='MPL',
     packages=find_packages())
