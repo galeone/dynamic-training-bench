@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #Copyright (C) 2017 Paolo Galeone <nessuno@nerdz.eu>
 #
 #This Source Code Form is subject to the terms of the Mozilla Public
@@ -8,8 +10,8 @@
 """ Evaluate the model """
 
 import tensorflow as tf
+import sys
 
-from sys import exit
 from dytb.evaluate import evaluate
 from dytb.inputs.interfaces import InputType
 
@@ -30,4 +32,4 @@ if __name__ == '__main__':
         description="Evaluate the model").parse_eval()
 
     INPUT_TYPE = InputType.test if ARGS.test else InputType.validation
-    exit(main())
+    sys.exit(main())
