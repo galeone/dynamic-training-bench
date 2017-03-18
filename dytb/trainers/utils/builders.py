@@ -11,7 +11,7 @@ import math
 import os
 import tensorflow as tf
 
-from ...models.utils import variables_to_save, variables_to_restore
+from ...models.utils import variables_to_save, variables_to_restore, tf_log
 from ...models.visualization import on_grid
 
 
