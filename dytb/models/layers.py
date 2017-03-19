@@ -17,14 +17,23 @@ from .collections import LOSSES, REQUIRED_NON_TRAINABLES
 
 def weight(name,
            shape,
+           train_phase,
            initializer=tf.contrib.layers.variance_scaling_initializer(
                factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32),
-           train_phase=False,
            wd=0.0):
     """Returns a tensor with the requested shape, initialized
       using the provided intitializer (default: He init).
       Applies L2 weight decay penalyt using wd term.
-      Enables visualizations when in train_phase"""
+      Enables visualizations when in train_phase=True.
+      Args:
+          name: the name of the weight
+          shape: the shape of the tensor, a python list or tuple
+          train_phase: boolean, to enable/disable visualization and L2 decay
+          initializer: the initializer to use
+          wd: when train_phase=True uses `wd` as decay penalty
+      Returns:
+        weights: the weight tensor initialized.
+    """
     weights = tf.get_variable(
         name, shape=shape, initializer=initializer, dtype=tf.float32)
 
@@ -49,11 +58,19 @@ def weight(name,
 
 def bias(name,
          shape,
-         initializer=tf.constant_initializer(value=0.0),
-         train_phase=False):
+         train_phase,
+         initializer=tf.constant_initializer(value=0.0)):
     """Returns a bias variabile initializeted wuth the provided initializer.
     No weight decay applied to the bias terms.
-    Enables visualization when in train_phase"""
+    Enables visualization when in train_phase.
+    Args:
+        name: name for the bias variable
+        shape: shape of the variabile
+        train_phase: boolean, to enable/disable visualization
+        initializer: the initializer to use
+    Returns:
+        bias: the vias variable correctly initialized
+    """
     return weight(name, shape, initializer, wd=0.0, train_phase=train_phase)
 
 
@@ -61,9 +78,9 @@ def atrous_conv(input_x,
                 shape,
                 rate,
                 padding,
+                train_phase,
                 bias_term=True,
                 activation=tf.identity,
-                train_phase=False,
                 wd=0.0):
     """ Define an atrous conv layer.
     Args:
@@ -75,12 +92,13 @@ def atrous_conv(input_x,
             across the height and width dimensions. In the literature, the same
             parameter is sometimes called input stride or dilation
          padding: 'VALID' or 'SAME'
+         train_phase: boolean that enables/diables visualizations and train-only specific ops
          bias_term: a boolean to add (if True) the bias term. Usually disable when
              the layer is wrapped in a batch norm layer
          activation: activation function. Default linear
-         train_phase: boolean that enables/diables visualizations and train-only specific ops
          wd: weight decay
-    Rerturns the conv2d op"""
+    Rerturns:
+        op: the conv2d op"""
 
     W = weight("W", shape, wd=wd, train_phase=train_phase)
     result = tf.nn.atrous_conv2d(input_x, W, rate, padding)
@@ -121,22 +139,25 @@ def conv(input_x,
          shape,
          stride,
          padding,
+         train_phase,
          bias_term=True,
          activation=tf.identity,
-         train_phase=False,
          wd=0.0):
     """ Define a conv layer.
     Args:
-         input_x: a 4D tensor
-         shape: weight shape
-         stride: a single value supposing equal stride along X and Y
-         padding: 'VALID' or 'SAME'
-         bias_term: a boolean to add (if True) the bias term. Usually disable when
-             the layer is wrapped in a batch norm layer
-         activation: activation function. Default linear
-         train_phase: boolean that enables/diables visualizations and train-only specific ops
-         wd: weight decay
-    Rerturns the conv2d op"""
+        input_x: a 4D tensor
+        shape: weight shape
+        stride: a single value supposing equal stride along X and Y
+        padding: 'VALID' or 'SAME'
+        train_phase: boolean that enables/diables visualizations and train-only specific ops
+        bias_term: a boolean to add (if True) the bias term. Usually disable when
+                   the layer is wrapped in a batch norm layer
+        activation: activation function. Default linear
+        train_phase: boolean that enables/diables visualizations and train-only specific ops
+        wd: weight decay
+    Rerturns:
+        op: the conv2d op
+    """
 
     W = weight("W", shape, wd=wd, train_phase=train_phase)
     result = tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding)
@@ -175,20 +196,22 @@ def conv(input_x,
 
 def fc(input_x,
        shape,
+       train_phase,
        bias_term=True,
        activation=tf.identity,
-       train_phase=False,
        wd=0.0):
     """ Define a fully connected layer.
     Args:
         input_x: a 4d tensor
         shape: weight shape
+        train_phase: boolean that enables/diables visualizations and train-only specific ops
         bias_term: a boolean to add (if True) the bias term. Usually disable when
              the layer is wrapped in a batch norm layer
         activation: activation function. Default linear
-        train_phase: boolean that enables/diables visualizations and train-only specific ops
         wd: weight decay
-    Returns the fc layer"""
+    Returns:
+        fc: the fc layer
+    """
 
     W = weight("W", shape, wd=wd, train_phase=train_phase)
     result = tf.matmul(input_x, W)
@@ -205,6 +228,8 @@ def batch_norm(layer_output, is_training_, decay=0.9):
         layer_output: 4-d tensor, output of a FC/convolutional layer
         is_training_: placeholder or boolean variable to set to True when training
         decay:        decay for the moving average.
+    Returns:
+        bn: the batch normalization layer
     """
     return tf.contrib.layers.batch_norm(
         inputs=layer_output,
