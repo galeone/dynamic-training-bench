@@ -17,7 +17,8 @@ from .utils import builders, flow
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
 from ..evaluators.metrics import accuracy_op
-from ..models.utils import tf_log, MODEL_SUMMARIES, variables_to_train
+from ..models.utils import tf_log, variables_to_train
+from ..models.collections import MODEL_SUMMARIES
 from ..models.visualization import log_io
 
 
