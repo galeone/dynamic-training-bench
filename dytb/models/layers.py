@@ -103,7 +103,7 @@ def atrous_conv(input_x,
     W = weight("W", shape, wd=wd, train_phase=train_phase)
     result = tf.nn.atrous_conv2d(input_x, W, rate, padding)
     if bias_term:
-        b = bias("b", [shape[3]])
+        b = bias("b", [shape[3]], train_phase=train_phase)
         result = tf.nn.bias_add(result, b)
 
     # apply nonlinearity
@@ -162,7 +162,7 @@ def conv(input_x,
     W = weight("W", shape, wd=wd, train_phase=train_phase)
     result = tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding)
     if bias_term:
-        b = bias("b", [shape[3]])
+        b = bias("b", [shape[3]], train_phase=train_phase)
         result = tf.nn.bias_add(result, b)
 
     # apply nonlinearity
@@ -216,7 +216,7 @@ def fc(input_x,
     W = weight("W", shape, wd=wd, train_phase=train_phase)
     result = tf.matmul(input_x, W)
     if bias_term:
-        b = bias("b", [shape[1]])
+        b = bias("b", [shape[1]], train_phase=train_phase)
         result = tf.nn.bias_add(result, b)
 
     return activation(result)
