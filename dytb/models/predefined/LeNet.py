@@ -41,8 +41,8 @@ class LeNet(Classifier):
                     images, [5, 5, 1, 32],
                     1,
                     'SAME',
+                    train_phase,
                     activation=tf.nn.relu,
-                    train_phase=train_phase,
                     wd=l2_penalty)
 
             with tf.variable_scope("pool1"):
@@ -57,8 +57,8 @@ class LeNet(Classifier):
                     pool1, [5, 5, 32, 64],
                     1,
                     'SAME',
+                    train_phase,
                     activation=tf.nn.relu,
-                    train_phase=train_phase,
                     wd=l2_penalty)
 
             with tf.variable_scope("pool2"):
@@ -71,12 +71,12 @@ class LeNet(Classifier):
 
             with tf.variable_scope("fc1"):
                 fc1 = fc(pool2, [7 * 7 * 64, 1024],
+                         train_phase,
                          activation=tf.nn.relu,
-                         train_phase=train_phase,
                          wd=l2_penalty)
 
             with tf.variable_scope("softmax_linear"):
-                logits = fc(fc1, [1024, num_classes], train_phase=train_phase)
+                logits = fc(fc1, [1024, num_classes], train_phase)
             return logits
 
     def loss(self, logits, labels):

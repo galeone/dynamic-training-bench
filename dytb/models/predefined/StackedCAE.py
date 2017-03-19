@@ -60,8 +60,8 @@ class StackedCAE(Autoencoder):
                             ],
                             1,
                             'VALID',
+                            train_phase,
                             activation=tf.nn.tanh,
-                            train_phase=train_phase,
                             wd=l2_penalty)
                         if train_phase:
                             encoding = tf.nn.dropout(encoding, 0.5)
@@ -74,8 +74,8 @@ class StackedCAE(Autoencoder):
                             ],
                             1,
                             'VALID',
-                            activation=tf.nn.tanh,
-                            train_phase=train_phase)
+                            train_phase,
+                            activation=tf.nn.tanh)
 
                         tf.add_to_collection(LOSSES,
                                              self._mse(input_x, output_x))

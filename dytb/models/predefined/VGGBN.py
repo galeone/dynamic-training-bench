@@ -44,8 +44,8 @@ class VGGBN(Classifier):
                                 images, [3, 3, 3, 64],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -56,8 +56,8 @@ class VGGBN(Classifier):
                                 conv1, [3, 3, 64, 64],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -76,8 +76,8 @@ class VGGBN(Classifier):
                                 pool1, [3, 3, 64, 128],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -88,8 +88,8 @@ class VGGBN(Classifier):
                                 conv3, [3, 3, 128, 128],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -108,8 +108,8 @@ class VGGBN(Classifier):
                                 pool2, [3, 3, 128, 256],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -120,8 +120,8 @@ class VGGBN(Classifier):
                                 conv5, [3, 3, 256, 256],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -132,8 +132,8 @@ class VGGBN(Classifier):
                                 conv6, [3, 3, 256, 256],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -152,8 +152,8 @@ class VGGBN(Classifier):
                                 pool3, [3, 3, 256, 512],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -164,8 +164,8 @@ class VGGBN(Classifier):
                                 conv8, [3, 3, 512, 512],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -176,8 +176,8 @@ class VGGBN(Classifier):
                                 conv9, [3, 3, 512, 512],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -196,8 +196,8 @@ class VGGBN(Classifier):
                                 pool4, [3, 3, 512, 512],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -208,8 +208,8 @@ class VGGBN(Classifier):
                                 conv11, [3, 3, 512, 512],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -220,8 +220,8 @@ class VGGBN(Classifier):
                                 conv12, [3, 3, 512, 512],
                                 1,
                                 'SAME',
+                                train_phase,
                                 bias_term=False,
-                                train_phase=train_phase,
                                 wd=l2_penalty), is_training_
                             if train_phase else False))
 
@@ -237,14 +237,14 @@ class VGGBN(Classifier):
                 fc1 = tf.nn.relu(
                     batch_norm(
                         fc(pool5, [512, 512],
+                           train_phase,
                            bias_term=False,
-                           train_phase=train_phase,
                            wd=l2_penalty), is_training_
                         if train_phase else False))
 
             with tf.variable_scope('softmax_linear'):
                 # no batch norm in the classification head
-                logits = fc(fc1, [512, num_classes], train_phase=train_phase)
+                logits = fc(fc1, [512, num_classes], train_phase)
         return logits
 
     def loss(self, logits, labels):

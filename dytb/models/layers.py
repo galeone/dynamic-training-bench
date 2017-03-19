@@ -71,7 +71,7 @@ def bias(name,
     Returns:
         bias: the vias variable correctly initialized
     """
-    return weight(name, shape, initializer, wd=0.0, train_phase=train_phase)
+    return weight(name, shape, train_phase, initializer=initializer, wd=0.0)
 
 
 def atrous_conv(input_x,
@@ -100,10 +100,10 @@ def atrous_conv(input_x,
     Rerturns:
         op: the conv2d op"""
 
-    W = weight("W", shape, wd=wd, train_phase=train_phase)
+    W = weight("W", shape, train_phase, wd=wd)
     result = tf.nn.atrous_conv2d(input_x, W, rate, padding)
     if bias_term:
-        b = bias("b", [shape[3]], train_phase=train_phase)
+        b = bias("b", [shape[3]], train_phase)
         result = tf.nn.bias_add(result, b)
 
     # apply nonlinearity
@@ -159,10 +159,10 @@ def conv(input_x,
         op: the conv2d op
     """
 
-    W = weight("W", shape, wd=wd, train_phase=train_phase)
+    W = weight("W", shape, train_phase, wd=wd)
     result = tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding)
     if bias_term:
-        b = bias("b", [shape[3]], train_phase=train_phase)
+        b = bias("b", [shape[3]], train_phase)
         result = tf.nn.bias_add(result, b)
 
     # apply nonlinearity
@@ -213,10 +213,10 @@ def fc(input_x,
         fc: the fc layer
     """
 
-    W = weight("W", shape, wd=wd, train_phase=train_phase)
+    W = weight("W", shape, train_phase, wd=wd)
     result = tf.matmul(input_x, W)
     if bias_term:
-        b = bias("b", [shape[1]], train_phase=train_phase)
+        b = bias("b", [shape[1]], train_phase)
         result = tf.nn.bias_add(result, b)
 
     return activation(result)

@@ -69,8 +69,8 @@ class StackedDenoisingCAE(Autoencoder):
                             ],
                             1,
                             'VALID',
+                            train_phase,
                             activation=tf.nn.relu,
-                            train_phase=train_phase,
                             wd=l2_penalty)
 
                         if train_phase:
@@ -84,8 +84,8 @@ class StackedDenoisingCAE(Autoencoder):
                             ],
                             1,
                             'VALID',
-                            activation=tf.nn.tanh,
-                            train_phase=train_phase)
+                            train_phase,
+                            activation=tf.nn.tanh)
 
                         last = layer == num_layers - 1
                         if train_phase and not last:

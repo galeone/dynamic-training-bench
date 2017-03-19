@@ -43,8 +43,8 @@ class LeNetBN(Classifier):
                             images, [5, 5, 1, 32],
                             1,
                             'SAME',
+                            train_phase,
                             bias_term=False,
-                            train_phase=train_phase,
                             wd=l2_penalty), is_training_
                         if train_phase else False))
 
@@ -62,8 +62,8 @@ class LeNetBN(Classifier):
                             pool1, [5, 5, 32, 64],
                             1,
                             'SAME',
+                            train_phase,
                             bias_term=False,
-                            train_phase=train_phase,
                             wd=l2_penalty), is_training_
                         if train_phase else False))
 
@@ -79,13 +79,13 @@ class LeNetBN(Classifier):
                 fc1 = tf.nn.relu(
                     batch_norm(
                         fc(pool2, [7 * 7 * 64, 1024],
+                           train_phase,
                            bias_term=False,
-                           train_phase=train_phase,
                            wd=l2_penalty), is_training_
                         if train_phase else False))
 
             with tf.variable_scope("softmax_linear"):
-                logits = fc(fc1, [1024, num_classes], train_phase=train_phase)
+                logits = fc(fc1, [1024, num_classes], train_phase)
             return logits
 
     def loss(self, logits, labels):

@@ -45,8 +45,8 @@ class VGGDropout(Classifier):
                         images, [3, 3, 3, 64],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
                     if train_phase:
                         conv1 = tf.nn.dropout(conv1, 0.7)
@@ -56,8 +56,8 @@ class VGGDropout(Classifier):
                         conv1, [3, 3, 64, 64],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -76,8 +76,8 @@ class VGGDropout(Classifier):
                         pool1, [3, 3, 64, 128],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -88,8 +88,8 @@ class VGGDropout(Classifier):
                         conv3, [3, 3, 128, 128],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -108,8 +108,8 @@ class VGGDropout(Classifier):
                         pool2, [3, 3, 128, 256],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -120,8 +120,8 @@ class VGGDropout(Classifier):
                         conv5, [3, 3, 256, 256],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -132,8 +132,8 @@ class VGGDropout(Classifier):
                         conv6, [3, 3, 256, 256],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -152,8 +152,8 @@ class VGGDropout(Classifier):
                         pool3, [3, 3, 256, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -164,8 +164,8 @@ class VGGDropout(Classifier):
                         conv8, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -176,8 +176,8 @@ class VGGDropout(Classifier):
                         conv9, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -196,8 +196,8 @@ class VGGDropout(Classifier):
                         pool4, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -208,8 +208,8 @@ class VGGDropout(Classifier):
                         conv11, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -220,8 +220,8 @@ class VGGDropout(Classifier):
                         conv12, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     if train_phase:
@@ -238,15 +238,15 @@ class VGGDropout(Classifier):
 
             with tf.variable_scope('fc'):
                 fc1 = fc(pool5, [512, 512],
+                         train_phase,
                          activation=tf.nn.relu,
-                         train_phase=train_phase,
                          wd=l2_penalty)
 
                 if train_phase:
                     fc1 = tf.nn.dropout(fc1, 0.5)
 
             with tf.variable_scope('softmax_linear'):
-                logits = fc(fc1, [512, num_classes], train_phase=train_phase)
+                logits = fc(fc1, [512, num_classes], train_phase)
         return logits
 
     def loss(self, logits, labels):

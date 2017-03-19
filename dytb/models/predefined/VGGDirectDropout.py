@@ -59,8 +59,8 @@ class VGGDirectDropout(Classifier):
                         images, [3, 3, 3, 64],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
                     direct_drop(conv1, 0.7)
 
@@ -69,8 +69,8 @@ class VGGDirectDropout(Classifier):
                         conv1, [3, 3, 64, 64],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
                     direct_drop(conv2, 0.6)
 
@@ -87,8 +87,8 @@ class VGGDirectDropout(Classifier):
                         pool1, [3, 3, 64, 128],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv3 = direct_drop(conv3, 0.6)
@@ -98,8 +98,8 @@ class VGGDirectDropout(Classifier):
                         conv3, [3, 3, 128, 128],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv4 = direct_drop(conv4, 0.6)
@@ -117,8 +117,8 @@ class VGGDirectDropout(Classifier):
                         pool2, [3, 3, 128, 256],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv5 = direct_drop(conv5, 0.6)
@@ -128,8 +128,8 @@ class VGGDirectDropout(Classifier):
                         conv5, [3, 3, 256, 256],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv6 = direct_drop(conv6, 0.6)
@@ -139,8 +139,8 @@ class VGGDirectDropout(Classifier):
                         conv6, [3, 3, 256, 256],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv7 = direct_drop(conv7, 0.6)
@@ -158,8 +158,8 @@ class VGGDirectDropout(Classifier):
                         pool3, [3, 3, 256, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv8 = direct_drop(conv8, 0.6)
@@ -169,8 +169,8 @@ class VGGDirectDropout(Classifier):
                         conv8, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv9 = direct_drop(conv9, 0.6)
@@ -180,8 +180,8 @@ class VGGDirectDropout(Classifier):
                         conv9, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv10 = direct_drop(conv10, 0.6)
@@ -199,8 +199,8 @@ class VGGDirectDropout(Classifier):
                         pool4, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv11 = direct_drop(conv11, 0.6)
@@ -210,8 +210,8 @@ class VGGDirectDropout(Classifier):
                         conv11, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv12 = direct_drop(conv12, 0.6)
@@ -221,8 +221,8 @@ class VGGDirectDropout(Classifier):
                         conv12, [3, 3, 512, 512],
                         1,
                         'SAME',
+                        train_phase,
                         activation=tf.nn.relu,
-                        train_phase=train_phase,
                         wd=l2_penalty)
 
                     conv13 = direct_drop(conv13, 0.6)
@@ -238,13 +238,13 @@ class VGGDirectDropout(Classifier):
 
             with tf.variable_scope('fc'):
                 fc1 = fc(pool5, [512, 512],
+                         train_phase,
                          activation=tf.nn.relu,
-                         train_phase=train_phase,
                          wd=l2_penalty)
                 fc1 = direct_drop(fc1, 0.5)
 
             with tf.variable_scope('softmax_linear'):
-                logits = fc(fc1, [512, num_classes], train_phase=train_phase)
+                logits = fc(fc1, [512, num_classes], train_phase)
         return logits
 
     def loss(self, logits, labels):

@@ -60,8 +60,8 @@ class SingleLayerCAE(Autoencoder):
                     ],
                     1,
                     'VALID',
+                    train_phase,
                     activation=tf.nn.tanh,
-                    train_phase=train_phase,
                     wd=l2_penalty)
 
             with tf.variable_scope("decode"):
@@ -82,8 +82,8 @@ class SingleLayerCAE(Autoencoder):
                     ],
                     1,
                     'VALID',
-                    activation=tf.nn.tanh,
-                    train_phase=train_phase)
+                    train_phase,
+                    activation=tf.nn.tanh)
 
         # The is_training_ placeholder is not used, but we define and return it
         # in order to respect the expected output cardinality of the get method
