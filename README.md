@@ -283,9 +283,7 @@ log/LeNet/
 
 The `best` folder contains one single checkpoint file that is the model with the highest quality obtained during the training phase.
 
-This model is used at the end of the training process to add a line to the `test_results.txt` and `validation_results.txt` files.
-
-The `test_results.txt` file contains the results of the evaluation of the best model on the test set, whilst the `validation_results.txt` contains the same result but for the validation set.
+This model is used at the end of the training process to evaluate the model performance.
 
 Moreover, is possible to run the evaluation of any checkpoint file (in the `log/<MODEL>` folder or in the `log/<MODEL>/best` folder) using the `dytb_evaluate` script.
 
