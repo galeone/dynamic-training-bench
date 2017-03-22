@@ -9,11 +9,12 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Evaluate the model """
 
+import pprint
 import tensorflow as tf
 import sys
 
 from dytb.utils.CLIArgs import CLIArgs
-from dytb.evaluate import evaluate
+from dytb.evaluate import stats
 from dytb.inputs.interfaces import InputType
 
 
@@ -21,14 +22,11 @@ def main():
     """Evaluates the model, on the specified dataset,
     fetching the requested input type"""
     with tf.device(ARGS.eval_device):
-        print(
-            evaluate(ARGS.checkpoint_path, MODEL, DATASET, INPUT_TYPE,
-                     ARGS.batch_size))
+        pprint.pprint(
+            stats(ARGS.checkpoint_path, MODEL, DATASET, ARGS.batch_size), indent=4)
 
 
 if __name__ == '__main__':
     ARGS, MODEL, DATASET = CLIArgs(
         description="Evaluate the model").parse_eval()
-
-    INPUT_TYPE = InputType.test if ARGS.test else InputType.validation
     sys.exit(main())

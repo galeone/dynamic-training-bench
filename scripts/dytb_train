@@ -9,8 +9,8 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Dynamically define the train bench via CLI"""
 
-import csv
 import os
+import pprint
 import sys
 import time
 import tensorflow as tf
@@ -54,19 +54,9 @@ def main():
             },
             comment=ARGS.comment)
 
-    # Add full path of the best model, used to test the performance
-    # to the results.csv file
+    # Add full path of the best model, used to test the performance.
     row = {**info["stats"], "path": info["paths"]["best"], "time": time.strftime("%Y-%m-%d %H:%M")}
-
-    resultsfile = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'results.csv')
-    writeheader = not os.path.exists(resultsfile)
-
-    with open(resultsfile, 'a') as csvfile:
-        writer = csv.DictWriter(csvfile, row.keys(), delimiter=",")
-        if writeheader:
-            writer.writeheader()
-        writer.writerow(row)
+    pprint.pprint(row, indent=4)
     return 0
 
 
