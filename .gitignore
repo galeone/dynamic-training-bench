@@ -65,3 +65,6 @@ data/
 
 # Logs
 log/
+
+# Build
+build/*
