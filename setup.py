@@ -26,4 +26,5 @@ setup(
     download_url='/'.join((METADATA['url'].rstrip('/'), 'tarball',
                            METADATA['version'])),
     license='MPL',
+    scripts=['scripts/dytb_evaluate', 'scripts/dytb_train'],
     packages=find_packages())
