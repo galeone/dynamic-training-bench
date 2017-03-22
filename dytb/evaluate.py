@@ -26,3 +26,17 @@ def evaluate(checkpoint_path, model, dataset, input_type, batch_size):
     InputType.check(input_type)
     return model.evaluator.eval(checkpoint_path, dataset, input_type,
                                 batch_size)
+
+
+def stats(checkpoint_path, model, dataset, batch_size):
+    """Eval the model, restoring weight found in checkpoint_path, using the dataset.
+    Args:
+        checkpoint_path: path of the trained model checkpoint directory
+        model: implementation of the Model interface
+        dataset: implementation of the Input interface
+        batch_size: evaluate in batch of size batch_size
+
+    Returns:
+        dict: a dictionary with the statistics measured
+    """
+    return model.evaluator.stats(checkpoint_path, dataset, batch_size)
