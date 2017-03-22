@@ -166,15 +166,13 @@ Here you can see a complete example of training, continue an interrupted trainin
 
 # Getting started: CLI
 
-The only prerequisite is to clone the repo and install the python lib locally.
+The only prerequisite is to install DyTB via pip.
 
 ```
-git clone https://github.com/galeone/dynamic-training-bench.git dytb
-cd dytb
-python setup.py develop
+pip install --upgrade dytb
 ```
 
-**You can use the same commands to setup you local environment for contributing to DyTB.**
+DyTB adds to your $PATH two executables: `dytb_train` and `dytb_evaluate`.
 
 The CLI workflow is the same as the library one, with 2 differences:
 
@@ -191,8 +189,7 @@ If you want to use a predefined input/model you don't need to do anything.
 
 ## 2. Train via CLI
 
-Every single hyperparameter (except for the augmentations) definable in the Python version, can be passed as CLI argument to the `scripts/train.py` script.
-
+Every single hyperparameter (except for the augmentations) definable in the Python version, can be passed as CLI argument to the `dytb_train` script.
 
 A single model can be trained using various hyper-parameters, such as the learning rate, the weight decay penalty applied, the exponential learning rate decay, the optimizer and its parameters, ...
 
@@ -204,24 +201,24 @@ Moreover, if a training process is interrupted, it automatically resumes it from
 
 ```
 # LeNet: no regularization
-python scripts/train.py --model LeNet --dataset MNIST
+dytb_train --model LeNet --dataset MNIST
 
 # LeNet: L2 regularization with value 1e-5
-python scripts/train.py --model LeNet --dataset MNIST --l2_penalty 1e-5
+dytb_train --model LeNet --dataset MNIST --l2_penalty 1e-5
 
 # LeNet: L2 regularization with value 1e-2
-python scripts/train.py --model LeNet --dataset MNIST --l2_penalty 1e-2
+dytb_train --model LeNet --dataset MNIST --l2_penalty 1e-2
 
 # LeNet: L2 regularization with value 1e-2, initial learning rate of 1e-4
 # The default optimization algorithm is MomentumOptimizer, so we can change the momentum value
 # The optimizer parameters are passed as a json string
-python scripts/train.py --model LeNet --dataset MNIST --l2_penalty 1e-2 \
+dytb_train --model LeNet --dataset MNIST --l2_penalty 1e-2 \
     --optimizer_args '{"learning_rate": 1e-4, "momentum": 0.5}'
 
 # If, for some reason, we interrupt this training process, rerunning the same command
 # will restart the training process from the last saved training step.
 # If we want to delete every saved model and log, we can pass the --restart flag
-python scripts/train.py --model LeNet --dataset MNIST --l2_penalty \
+dytb_train --model LeNet --dataset MNIST --l2_penalty \
     --optimizer_args '{"learning_rate": 1e-4, "momentum": 0.5}' --restart
 ```
 
@@ -232,9 +229,9 @@ This allows visualizing in the same graphs, using Tensorboard, the 4 models and 
 
 No matter what interface has been implemented, the script to run is **always** `train.py`: it's capable of identifying the type of the model and use the right training procedure.
 
-A complete list of the available tunable parameters can be obtained running `python scripts/train.py --help` (`python scripts/train.py --help`).
+A complete list of the available tunable parameters can be obtained running `dytb_train --help` (`dytb_train --help`).
 
-For reference, a part of the output of `python scripts/train.py --help`:
+For reference, a part of the output of `dytb_train --help`:
 
 ```
 usage: train.py [-h] --model --dataset
@@ -290,24 +287,22 @@ This model is used at the end of the training process to add a line to the `test
 
 The `test_results.txt` file contains the results of the evaluation of the best model on the test set, whilst the `validation_results.txt` contains the same result but for the validation set.
 
-Moreover, is possible to run the evaluation of any checkpoint file (in the `log/<MODEL>` folder or in the `log/<MODEL>/best` folder) using the `evaluate.py` (`evaluate.py`) script.
+Moreover, is possible to run the evaluation of any checkpoint file (in the `log/<MODEL>` folder or in the `log/<MODEL>/best` folder) using the `dytb_evaluate` script.
 
 For example:
 
 ```
 # Evaluate the validation accuracy
-python scripts/evaluate.py  \
-           --model LeNet \
-           --dataset MNIST \
-           --checkpoint_path log/LeNet/MNIST_Momentum/
+dytb_evaluate --model LeNet \
+              --dataset MNIST \
+              --checkpoint_path log/LeNet/MNIST_Momentum/
 # outputs something like: validation accuracy = 0.993
 
 # Evaluate the test accuracy
-python scripts/evaluate.py  \
-           --model LeNet \
-           --dataset MNIST \
-           --checkpoint_path log/LeNet/MNIST_Momentum/ \
-           --test
+dytb_evaluate --model LeNet \
+              --dataset MNIST \
+              --checkpoint_path log/LeNet/MNIST_Momentum/ \
+              --test
 # outputs something like: test accuracy = 0.993
 ```
 
@@ -322,7 +317,7 @@ For example, a VGG model trained on the Cifar10 dataset, can be used to train a 
 The examples are for the CLI version, **but the same parameters can be used in the Python library**.
 
 ```
-python scripts/train.py
+dytb_train
     --model VGG \
     --dataset Cifar100 \
     --checkpoint_path log/VGG/Cifar10_Momentum/best/ \
@@ -338,7 +333,7 @@ So the above command starts a new training from the pre-trained model and trains
 If you don't want to train the imported weights, you have to point out which scopes to train, using `trainable_scopes`:
 
 ```
-python scripts/train.py \
+dytb_train \
     --model VGG \
     --dataset Cifar100 \
     --checkpoint_path log/VGG/Cifar10_Momentum/best/ \
