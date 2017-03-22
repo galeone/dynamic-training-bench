@@ -8,6 +8,7 @@
 """ Evaluate Classification models """
 
 import math
+import numpy as np
 import tensorflow as tf
 from . import metrics
 from .interfaces import Evaluator
@@ -61,17 +62,30 @@ class ClassifierEvaluator(Evaluator):
 
         train_accuracy = self.eval(checkpoint_path, dataset, InputType.train,
                                    batch_size)
+        train_cm = self._confusion_matrix(checkpoint_path, dataset,
+                                          InputType.train, batch_size)
         validation_accuracy = self.eval(checkpoint_path, dataset,
                                         InputType.validation, batch_size)
+        validation_cm = self._confusion_matrix(checkpoint_path, dataset,
+                                               InputType.validation, batch_size)
         test_accuracy = self.eval(checkpoint_path, dataset, InputType.test,
                                   batch_size)
+        test_cm = validation_cm = self._confusion_matrix(
+            checkpoint_path, dataset, InputType.test, batch_size)
 
         return {
-            "train": train_accuracy,
-            "validation": validation_accuracy,
-            "test": validation_accuracy,
-            "dataset": dataset.name,
-            "model": self._model.name
+            "train": {
+                "accuracy": train_accuracy,
+                "confusion_matrix": train_cm
+            },
+            "validation": {
+                "accuracy": validation_accuracy,
+                "confusion_matrix": validation_cm
+            },
+            "test": {
+                "accuracy": test_accuracy,
+                "confusion_matrix": test_cm
+            }
         }
 
     def _accuracy(self, checkpoint_path, dataset, input_type, batch_size=200):
@@ -131,3 +145,75 @@ class ClassifierEvaluator(Evaluator):
 
                 coord.join(threads)
             return accuracy_value
+
+    def _confusion_matrix(self,
+                          checkpoint_path,
+                          dataset,
+                          input_type,
+                          batch_size=200):
+        InputType.check(input_type)
+
+        with tf.Graph().as_default():
+            # Get images and labels from the dataset
+            with tf.device('/cpu:0'):
+                images, labels = dataset.inputs(
+                    input_type=input_type, batch_size=batch_size)
+
+            # Build a Graph that computes the predictions from the inference model.
+            _, predictions = self._model.get(
+                images, dataset.num_classes, train_phase=False)
+
+            # Extract the predicted label (top-1)
+            _, top_predicted_label = tf.nn.top_k(predictions, k=1, sorted=False)
+            # (batch_size, k) -> k = 1 -> (batch_size)
+            top_predicted_label = tf.squeeze(top_predicted_label, axis=1)
+
+            confusion_matrix_op = tf.confusion_matrix(
+                labels, top_predicted_label, num_classes=dataset.num_classes)
+
+            saver = tf.train.Saver(variables_to_restore())
+            accuracy_value = 0.0
+            with tf.Session(config=tf.ConfigProto(
+                    allow_soft_placement=True)) as sess:
+                ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+                if ckpt and ckpt.model_checkpoint_path:
+                    # Restores from checkpoint
+                    saver.restore(sess, ckpt.model_checkpoint_path)
+                else:
+                    print('[!] No checkpoint file found')
+                    return
+
+                # Start the queue runners.
+                coord = tf.train.Coordinator()
+                try:
+                    threads = []
+                    for queue_runner in tf.get_collection(
+                            tf.GraphKeys.QUEUE_RUNNERS):
+                        threads.extend(
+                            queue_runner.create_threads(
+                                sess, coord=coord, daemon=True, start=True))
+
+                    num_iter = int(
+                        math.ceil(
+                            dataset.num_examples(input_type) / batch_size))
+
+                    # Accumulate the confusion matrices for batch
+                    total_sample_count = num_iter * batch_size
+                    confusion_matrix = np.zeros(
+                        (dataset.num_classes, dataset.num_classes),
+                        dtype=np.int64)
+                    step = 0
+                    while step < num_iter and not coord.should_stop():
+                        confusion_matrix += sess.run(confusion_matrix_op)
+                        #confusion_matrix, a, b = sess.run(
+                        #    [confusion_matrix_op, top_predicted_label, labels])
+                        #print('top: ', a, 'lab: ', b)
+                        step += 1
+
+                except Exception as exc:
+                    coord.request_stop(exc)
+                finally:
+                    coord.request_stop()
+
+                coord.join(threads)
+            return confusion_matrix

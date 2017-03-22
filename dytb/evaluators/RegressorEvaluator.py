@@ -66,11 +66,15 @@ class RegressorEvaluator(Evaluator):
                                batch_size)
 
         return {
-            "train": train_error,
-            "validation": validation_error,
-            "test": validation_error,
-            "dataset": dataset.name,
-            "model": self._model.name
+            "train": {
+                "error": train_error
+            },
+            "validation": {
+                "error": validation_error
+            },
+            "test": {
+                "error": test_error
+            }
         }
 
     def _error(self, checkpoint_path, dataset, input_type, batch_size=200):
