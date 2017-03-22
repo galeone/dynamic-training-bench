@@ -12,10 +12,9 @@
 import tensorflow as tf
 import sys
 
+from dytb.utils.CLIArgs import CLIArgs
 from dytb.evaluate import evaluate
 from dytb.inputs.interfaces import InputType
-
-from CLIArgs import CLIArgs
 
 
 def main():

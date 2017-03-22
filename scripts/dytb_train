@@ -15,7 +15,7 @@ import sys
 import time
 import tensorflow as tf
 
-from CLIArgs import CLIArgs
+from dytb.utils.CLIArgs import CLIArgs
 from dytb.train import train
 
 

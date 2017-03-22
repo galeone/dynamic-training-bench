@@ -31,7 +31,7 @@ class CLIArgs(object):
     def get_dytb_models():
         """Returns the avaiable dytb modules filename, without the .py ext"""
         dytbmodels_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dytb',
+            os.path.dirname(os.path.abspath(__file__)), os.path.pardir,
             'models', 'predefined')
         dytbmodels = [
             model[len(dytbmodels_dir) + 1:-3]
@@ -44,7 +44,7 @@ class CLIArgs(object):
     def get_dytb_datasets():
         """Returns the avaiable dytb datasets filename, without the .py ext"""
         dytbdatasets_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), os.path.pardir, 'dytb',
+            os.path.dirname(os.path.abspath(__file__)), os.path.pardir,
             'inputs', 'predefined')
         dytbdatasets = [
             dataset[len(dytbdatasets_dir) + 1:-3]
