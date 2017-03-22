@@ -163,8 +163,16 @@ class ClassifierEvaluator(Evaluator):
             _, predictions = self._model.get(
                 images, dataset.num_classes, train_phase=False)
 
+            # handle fully convolutional classifiers
+            predictions_shape = predictions.shape
+            if len(predictions_shape) == 4 and predictions_shape[1:3] == [1, 1]:
+                top_k_predictions = tf.squeeze(predictions, [1, 2])
+            else:
+                top_k_predictions = predictions
+
             # Extract the predicted label (top-1)
-            _, top_predicted_label = tf.nn.top_k(predictions, k=1, sorted=False)
+            _, top_predicted_label = tf.nn.top_k(
+                top_k_predictions, k=1, sorted=False)
             # (batch_size, k) -> k = 1 -> (batch_size)
             top_predicted_label = tf.squeeze(top_predicted_label, axis=1)
 
