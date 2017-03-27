@@ -56,8 +56,7 @@ class CLIArgs(object):
     @staticmethod
     def get_local_models():
         """Returns the avaiable modules filename, without the .py ext"""
-        models_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'models')
+        models_dir = os.path.join(os.getcwd(), 'models')
         return [
             model[len(models_dir) + 1:-3]
             for model in glob.glob('{}/*.py'.format(models_dir))
@@ -67,8 +66,7 @@ class CLIArgs(object):
     @staticmethod
     def get_local_datasets():
         """Returns the avaiable datasets filename, without the .py ext"""
-        datasets_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'inputs')
+        datasets_dir = os.path.join(os.getcwd(), 'inputs')
         return [
             dataset[len(datasets_dir) + 1:-3]
             for dataset in glob.glob('{}/*.py'.format(datasets_dir))
@@ -109,6 +107,8 @@ class CLIArgs(object):
         Returns:
             model: model object instantiated
             dataset: input object instantiated"""
+
+        sys.path.append(os.getcwd())
 
         # Instantiate the model object
         # Give the precedence to local models
@@ -172,8 +172,8 @@ class CLIArgs(object):
         parser.add_argument(
             '--restart',
             action='store_true',
-            help='restart the training process DELETING the old checkpoint files'
-        )
+            help=
+            'restart the training process DELETING the old checkpoint files')
 
         # Learning rate decay arguments
         parser.add_argument(
@@ -189,7 +189,8 @@ class CLIArgs(object):
             '--lr_decay_factor',
             type=float,
             default=0.1,
-            help='decay of lr_decay_factor the initial learning rate after lr_decay_epochs epochs'
+            help=
+            'decay of lr_decay_factor the initial learning rate after lr_decay_epochs epochs'
         )
 
         # L2 regularization arguments
@@ -224,8 +225,8 @@ class CLIArgs(object):
         parser.add_argument(
             '--train_device',
             default='/gpu:0',
-            help='the device on which place the the model during the trining phase'
-        )
+            help=
+            'the device on which place the the model during the trining phase')
 
         # Optional comment
         parser.add_argument(
