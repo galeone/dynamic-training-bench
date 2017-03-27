@@ -107,8 +107,8 @@ class PASCALVOC2012Localization(Input):
 
         # Ensure that the random shuffling has good mixing properties.
         min_fraction_of_examples_in_queue = 0.4
-        min_queue_examples = int(num_examples_per_epoch *
-                                 min_fraction_of_examples_in_queue)
+        min_queue_examples = int(
+            num_examples_per_epoch * min_fraction_of_examples_in_queue)
 
         with tf.variable_scope("{}_input".format(input_type)):
             # Create a queue that produces the filenames to read.

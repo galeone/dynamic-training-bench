@@ -171,8 +171,8 @@ class Cifar100(Input):
 
             # Ensure that the random shuffling has good mixing properties.
             min_fraction_of_examples_in_queue = 0.4
-            min_queue_examples = int(num_examples_per_epoch *
-                                     min_fraction_of_examples_in_queue)
+            min_queue_examples = int(
+                num_examples_per_epoch * min_fraction_of_examples_in_queue)
 
             # Generate a batch of images and labels by building up a queue of examples.
             return build_batch(
@@ -192,9 +192,10 @@ class Cifar100(Input):
         if not os.path.exists(filepath):
 
             def _progress(count, block_size, total_size):
-                sys.stdout.write('\r>> Downloading %s %.1f%%' %
-                                 (filename, float(count * block_size) /
-                                  float(total_size) * 100.0))
+                sys.stdout.write(
+                    '\r>> Downloading %s %.1f%%' %
+                    (filename,
+                     float(count * block_size) / float(total_size) * 100.0))
                 sys.stdout.flush()
 
             filepath, _ = urllib.request.urlretrieve(self._data_url, filepath,

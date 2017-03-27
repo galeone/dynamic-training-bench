@@ -18,8 +18,8 @@ def rgb2yuv(rgb):
     """
     Convert RGB image into YUV https://en.wikipedia.org/wiki/YUV
     """
-    rgb2yuv_filter = tf.constant([[[[0.299, -0.169, 0.499],
-                                    [0.587, -0.331, -0.418],
+    rgb2yuv_filter = tf.constant([[[[0.299, -0.169,
+                                     0.499], [0.587, -0.331, -0.418],
                                     [0.114, 0.499, -0.0813]]]])
     rgb2yuv_bias = tf.constant([0., 0.5, 0.5])
 
