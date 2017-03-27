@@ -237,10 +237,11 @@ class VGGDropout(Classifier):
                 pool5 = tf.reshape(pool5, [-1, 512])
 
             with tf.variable_scope('fc'):
-                fc1 = fc(pool5, [512, 512],
-                         train_phase,
-                         activation=tf.nn.relu,
-                         wd=l2_penalty)
+                fc1 = fc(
+                    pool5, [512, 512],
+                    train_phase,
+                    activation=tf.nn.relu,
+                    wd=l2_penalty)
 
                 if train_phase:
                     fc1 = tf.nn.dropout(fc1, 0.5)

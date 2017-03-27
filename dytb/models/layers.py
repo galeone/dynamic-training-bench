@@ -19,7 +19,11 @@ def weight(name,
            shape,
            train_phase,
            initializer=tf.contrib.layers.variance_scaling_initializer(
-               factor=2.0, mode='FAN_IN', uniform=False, dtype=tf.float32),
+               factor=2.0,
+               mode='FAN_IN',
+               uniform=False,
+               seed=69,
+               dtype=tf.float32),
            wd=0.0):
     """Returns a tensor with the requested shape, initialized
       using the provided intitializer (default: He init).

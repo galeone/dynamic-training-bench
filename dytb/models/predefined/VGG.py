@@ -195,10 +195,11 @@ class VGG(Classifier):
                 pool5 = tf.reshape(pool5, [-1, 512])
 
             with tf.variable_scope('fc'):
-                fc1 = fc(pool5, [512, 512],
-                         train_phase,
-                         activation=tf.nn.relu,
-                         wd=l2_penalty)
+                fc1 = fc(
+                    pool5, [512, 512],
+                    train_phase,
+                    activation=tf.nn.relu,
+                    wd=l2_penalty)
 
             with tf.variable_scope('softmax_linear'):
                 logits = fc(fc1, [512, num_classes], train_phase)

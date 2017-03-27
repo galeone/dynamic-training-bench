@@ -78,10 +78,11 @@ class LeNetDropout(Classifier):
                 pool2 = tf.reshape(pool2, [-1, 7 * 7 * 64])
 
             with tf.variable_scope("fc1"):
-                fc1 = fc(pool2, [7 * 7 * 64, 1024],
-                         train_phase,
-                         activation=tf.nn.relu,
-                         wd=l2_penalty)
+                fc1 = fc(
+                    pool2, [7 * 7 * 64, 1024],
+                    train_phase,
+                    activation=tf.nn.relu,
+                    wd=l2_penalty)
 
                 if train_phase:
                     fc1 = tf.cond(

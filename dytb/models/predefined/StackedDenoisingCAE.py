@@ -28,8 +28,8 @@ class StackedDenoisingCAE(Autoencoder):
         # calculate the padding amount for each side
         amount = filter_side - 1
         # pad the input on top, bottom, left, right, with amount zeros
-        return tf.pad(input_x,
-                      [[0, 0], [amount, amount], [amount, amount], [0, 0]])
+        return tf.pad(input_x, [[0, 0], [amount, amount], [amount, amount],
+                                [0, 0]])
 
     def get(self, images, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
@@ -53,7 +53,8 @@ class StackedDenoisingCAE(Autoencoder):
                     input_x.get_shape(),
                     minval=-0.5,
                     maxval=0.5,
-                    dtype=input_x.dtype), -1.0, 1.0)
+                    dtype=input_x.dtype,
+                    seed=69), -1.0, 1.0)
             else:
                 input_x_noise = input_x
             input_padded_noise = self._pad(input_x_noise, filter_side)
