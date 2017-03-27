@@ -91,6 +91,7 @@ class AutoencoderEvaluator(Evaluator):
         InputType.check(input_type)
 
         with tf.Graph().as_default():
+            tf.set_random_seed(69)
             # Get images and labels from the dataset
             with tf.device('/cpu:0'):
                 images, labels = dataset.inputs(

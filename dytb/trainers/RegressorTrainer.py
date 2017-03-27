@@ -50,6 +50,7 @@ class RegressorTrainer(Trainer):
         best_ve = float('inf')
 
         with tf.Graph().as_default():
+            tf.set_random_seed(69)
             global_step = tf.Variable(0, trainable=False, name='global_step')
 
             # Get images and labels
@@ -109,8 +110,8 @@ class RegressorTrainer(Trainer):
                 train_saver, best_saver = builders.build_train_savers(
                     [global_step])
                 flow.restore_or_restart(args, paths, sess, global_step)
-                train_log, validation_log = builders.build_loggers(sess.graph,
-                                                                   paths)
+                train_log, validation_log = builders.build_loggers(
+                    sess.graph, paths)
 
                 # Extract previous global step value
                 old_gs = sess.run(global_step)
