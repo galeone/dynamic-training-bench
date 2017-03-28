@@ -101,8 +101,9 @@ class RegressorEvaluator(Evaluator):
             _, predictions = self._model.get(
                 images, dataset.num_classes, train_phase=False, l2_penalty=0.0)
             loss = self._model.loss(predictions, labels)
-
             saver = tf.train.Saver(variables_to_restore())
+
+            average_error = float('inf')
             with tf.Session(config=tf.ConfigProto(
                     allow_soft_placement=True)) as sess:
                 ckpt = tf.train.get_checkpoint_state(checkpoint_path)
@@ -111,7 +112,7 @@ class RegressorEvaluator(Evaluator):
                     saver.restore(sess, ckpt.model_checkpoint_path)
                 else:
                     print('[!] No checkpoint file found')
-                    return
+                    return average_error
 
                 # Start the queue runners.
                 coord = tf.train.Coordinator()
@@ -127,13 +128,13 @@ class RegressorEvaluator(Evaluator):
                         math.ceil(
                             dataset.num_examples(input_type) / batch_size))
                     step = 0
-                    average_error = 0.0
+                    error_sum = 0.
                     while step < num_iter and not coord.should_stop():
                         error_value = sess.run(loss)
                         step += 1
-                        average_error += error_value
+                        error_sum += error_value
 
-                    average_error /= step
+                    average_error = error_sum / step
                 except Exception as exc:
                     coord.request_stop(exc)
                 finally:

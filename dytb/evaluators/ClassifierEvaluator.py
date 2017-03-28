@@ -115,7 +115,7 @@ class ClassifierEvaluator(Evaluator):
                     saver.restore(sess, ckpt.model_checkpoint_path)
                 else:
                     print('[!] No checkpoint file found')
-                    return
+                    return accuracy_value
 
                 # Start the queue runners.
                 coord = tf.train.Coordinator()
@@ -181,7 +181,8 @@ class ClassifierEvaluator(Evaluator):
                 labels, top_predicted_label, num_classes=dataset.num_classes)
 
             saver = tf.train.Saver(variables_to_restore())
-            accuracy_value = 0.0
+            confusion_matrix = np.zeros(
+                (dataset.num_classes, dataset.num_classes), dtype=np.int64)
             with tf.Session(config=tf.ConfigProto(
                     allow_soft_placement=True)) as sess:
                 ckpt = tf.train.get_checkpoint_state(checkpoint_path)
@@ -190,7 +191,7 @@ class ClassifierEvaluator(Evaluator):
                     saver.restore(sess, ckpt.model_checkpoint_path)
                 else:
                     print('[!] No checkpoint file found')
-                    return
+                    return confusion_matrix
 
                 # Start the queue runners.
                 coord = tf.train.Coordinator()
@@ -208,15 +209,9 @@ class ClassifierEvaluator(Evaluator):
 
                     # Accumulate the confusion matrices for batch
                     total_sample_count = num_iter * batch_size
-                    confusion_matrix = np.zeros(
-                        (dataset.num_classes, dataset.num_classes),
-                        dtype=np.int64)
                     step = 0
                     while step < num_iter and not coord.should_stop():
                         confusion_matrix += sess.run(confusion_matrix_op)
-                        #confusion_matrix, a, b = sess.run(
-                        #    [confusion_matrix_op, top_predicted_label, labels])
-                        #print('top: ', a, 'lab: ', b)
                         step += 1
 
                 except Exception as exc:

@@ -53,7 +53,6 @@ class ClassifierTrainer(Trainer):
         Side effect:
             saves the latest checkpoints and the best model in its own folder
         """
-        best_va = 0.0
 
         with tf.Graph().as_default():
             tf.set_random_seed(69)
@@ -118,6 +117,15 @@ class ClassifierTrainer(Trainer):
                 flow.restore_or_restart(args, paths, sess, global_step)
                 train_log, validation_log = builders.build_loggers(
                     sess.graph, paths)
+
+                # If a best model already exists (thus we're continuing a train
+                # process) then restore the best validation accuracy reached
+                # and place it into best_va
+                best_va = self._model.evaluator.eval(
+                    paths["best"],
+                    dataset,
+                    input_type=InputType.validation,
+                    batch_size=args["batch_size"])
 
                 # Extract previous global step value
                 old_gs = sess.run(global_step)

@@ -51,7 +51,6 @@ class AutoencoderTrainer(Trainer):
         Side effect:
             saves the latest checkpoints and the best model in its own folder
         """
-        best_ve = float('inf')
 
         with tf.Graph().as_default():
             tf.set_random_seed(69)
@@ -115,6 +114,13 @@ class AutoencoderTrainer(Trainer):
                 flow.restore_or_restart(args, paths, sess, global_step)
                 train_log, validation_log = builders.build_loggers(
                     sess.graph, paths)
+
+                # Compute the best validatione error reached in previous trainin step
+                best_ve = self._model.evaluator.eval(
+                    paths["best"],
+                    dataset,
+                    input_type=InputType.validation,
+                    batch_size=args["batch_size"])
 
                 # Extract previous global step value
                 old_gs = sess.run(global_step)
