@@ -49,4 +49,4 @@ def restore_or_restart(args, paths, sess, global_step):
                 [], scopes_to_remove=args["exclude_scopes"])
             restore_saver.restore(sess, pretrained_checkpoint)
         else:
-            print('[I] Unable to restore from checkpoint')
+            print('[!] No checkpoint file found')

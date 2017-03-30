@@ -47,45 +47,6 @@ def build_optimizer(args, steps, global_step):
     return optimizer
 
 
-def restore_or_restart(args, paths, sess, global_step):
-    """Restore actual session or restart the training.
-    If SESS.checkpoint_path is setted, start a new train
-    loading the weight from the lastest checkpoint in that path
-    Args:
-        sess: session
-        paths: dict of paths
-        global_step: global_step tensor
-    """
-
-    # first check if exists and checkpoint_path passed
-    # from where to load the weights.
-    # Return error if there's not
-    pretrained_checkpoint = None
-    if args["checkpoint_path"] != '':
-        pretrained_checkpoint = tf.train.latest_checkpoint(
-            args["checkpoint_path"])
-        if not pretrained_checkpoint:
-            print("[E] {} not valid".format(args["checkpoint_path"]))
-            sys.exit(-1)
-
-    if not args["force_restart"]:
-        # continue training checkpoint
-        continue_checkpoint = tf.train.latest_checkpoint(paths["log"])
-        if continue_checkpoint:
-            restore_saver = build_restore_saver(
-                [global_step], scopes_to_remove=args["exclude_scopes"])
-            restore_saver.restore(sess, continue_checkpoint)
-        # else if the continue checkpoint does not exists
-        # and the pretrained checkpoint has been specified
-        # load the weights from the pretrained checkpoint
-        elif pretrained_checkpoint:
-            restore_saver = build_restore_saver(
-                [], scopes_to_remove=args["exclude_scopes"])
-            restore_saver.restore(sess, pretrained_checkpoint)
-        else:
-            print('[I] Unable to restore from checkpoint')
-
-
 def build_restore_saver(variables_to_add=[], scopes_to_remove=[]):
     """Return a saver that restores every trainable variable that's not
     under a scope to remove"""
