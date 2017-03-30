@@ -19,13 +19,14 @@ from ..interfaces import Input, InputType
 class MNIST(Input):
     """Routine for decoding the MNIST binary file format."""
 
-    def __init__(self):
+    def __init__(self, resize=(28, 28, 1)):
         # Global constants describing the MNIST data set.
         self._name = 'MNIST'
-        self._image_width = 28
-        self._image_height = 28
-        self._image_depth = 1
-        mnist.IMAGE_PIXELS = self._image_width * self._image_height * self._image_depth
+        self._original_shape = (28, 28, 1)
+        mnist.IMAGE_PIXELS = 28 * 28
+        self._image_width = resize[0]
+        self._image_height = resize[1]
+        self._image_depth = resize[2]
 
         self._num_classes = 10
         self._num_examples_per_epoch_for_train = 55000
@@ -97,8 +98,13 @@ class MNIST(Input):
         image.set_shape([mnist.IMAGE_PIXELS])
 
         # Reshape to a valid image
-        image = tf.reshape(image, (self._image_height, self._image_width,
-                                   self._image_depth))
+        image = tf.reshape(image, self._original_shape)
+        # Resize to the selected shape
+        image = tf.squeeze(
+            tf.image.resize_bilinear(
+                tf.expand_dims(image, axis=0),
+                [self._image_height, self._image_width]),
+            axis=[0])
 
         # Convert from [0, 255] -> [0, 1]
         image = tf.divide(tf.cast(image, tf.float32), 255.0)
@@ -117,7 +123,7 @@ class MNIST(Input):
             batch_size: Number of images per batch.
 
         Returns:
-            images: Images. 4D tensor of [batch_size, self._image_width, self._image_height, self._image_depth] size.
+            images: Images. 4D tensor of [batch_size, resize[0], resize[1], resize[2]] size.
             labels: Labels. 1D tensor of [batch_size] size.
         """
         InputType.check(input_type)
