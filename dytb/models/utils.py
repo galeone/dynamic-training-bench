@@ -27,12 +27,26 @@ def tf_log(summary, collection=MODEL_SUMMARIES):
     tf.add_to_collection(collection, summary)
 
 
+def training_process_variables():
+    """global variables - trainable variables:
+    it contains the variable defined by the optimizer and the others
+    defined durint the training process.
+    Those variables are useful when restoring a training process.
+    Those variables are not trainable. can be saved and restored.
+    """
+
+    return [
+        variable for variable in tf.global_variables()
+        if variable.name not in (var.name for var in tf.trainable_variables())
+    ]
+
+
 def variables_to_save(add_list=[]):
     """Returns a list of variables to save.
     add_list variables are always added to the list
     """
     return tf.trainable_variables() + tf.get_collection_ref(
-        REQUIRED_NON_TRAINABLES) + add_list
+        REQUIRED_NON_TRAINABLES) + add_list + training_process_variables()
 
 
 def variables_to_restore(add_list=[], exclude_scope_list=[]):
