@@ -14,13 +14,19 @@ class Evaluator(object, metaclass=ABCMeta):
     """Evaluator is the interface that an evaluator must implement"""
 
     @abstractmethod
-    def eval(self, checkpoint_path, dataset, input_type, batch_size):
+    def eval(self,
+             checkpoint_path,
+             dataset,
+             input_type,
+             batch_size,
+             augmentation_fn=None):
         """Eval the model, restoring weight found in checkpoint_path, using the dataset.
         Args:
             checkpoint_path: path of the trained model checkpoint directory
             dataset: implementation of the Input interface
             input_type: InputType enum
             batch_size: evaluate in batch of size batch_size
+            augmentation_fn: if present, applies the augmentation to the input data
 
         Returns:
             value: scalar value representing the evaluation of the model,
@@ -28,7 +34,12 @@ class Evaluator(object, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def stats(self, checkpoint_path, dataset, input_type, batch_size):
+    def stats(self,
+              checkpoint_path,
+              dataset,
+              input_type,
+              batch_size,
+              augmentation_fn=None):
         """Run the eval method on the model, see eval for arguments
         and return value description.
         Moreover, adds informations about the model and returns the whole information

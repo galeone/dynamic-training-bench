@@ -35,21 +35,28 @@ class RegressorEvaluator(Evaluator):
         """
         self._model = model
 
-    def eval(self, checkpoint_path, dataset, input_type, batch_size):
+    def eval(self,
+             checkpoint_path,
+             dataset,
+             input_type,
+             batch_size,
+             augmentation_fn=None):
         """Eval the model, restoring weight found in checkpoint_path, using the dataset.
         Args:
             checkpoint_path: path of the trained model checkpoint directory
             dataset: implementation of the Input interface
             input_type: InputType enum
             batch_size: evaluate in batch of size batch_size
+            augmentation_fn: if present, applies the augmentation to the input data
 
         Returns:
             value: scalar value representing the evaluation of the model,
                    on the dataset, fetching values of the specified input_type
         """
-        return self._error(checkpoint_path, dataset, input_type, batch_size)
+        return self._error(checkpoint_path, dataset, input_type, batch_size,
+                           augmentation_fn)
 
-    def stats(self, checkpoint_path, dataset, batch_size):
+    def stats(self, checkpoint_path, dataset, batch_size, augmentation_fn=None):
         """Run the eval method on the model, see eval for arguments
         and return value description.
         Moreover, adds informations about the model and returns the whole information
@@ -59,11 +66,12 @@ class RegressorEvaluator(Evaluator):
         """
 
         train_error = self.eval(checkpoint_path, dataset, InputType.train,
-                                batch_size)
+                                batch_size, augmentation_fn)
         validation_error = self.eval(checkpoint_path, dataset,
-                                     InputType.validation, batch_size)
+                                     InputType.validation, batch_size,
+                                     augmentation_fn)
         test_error = self.eval(checkpoint_path, dataset, InputType.test,
-                               batch_size)
+                               batch_size, augmentation_fn)
 
         return {
             "train": {
@@ -77,7 +85,12 @@ class RegressorEvaluator(Evaluator):
             }
         }
 
-    def _error(self, checkpoint_path, dataset, input_type, batch_size=200):
+    def _error(self,
+               checkpoint_path,
+               dataset,
+               input_type,
+               batch_size=200,
+               augmentation_fn=None):
         """
         Reads the checkpoint and use it to evaluate the model
         Args:
@@ -85,6 +98,7 @@ class RegressorEvaluator(Evaluator):
             dataset: python package containing the dataset to use
             input_type: InputType enum, the input type of the input examples
             batch_size: batch size for the evaluation in batches
+            augmentation_fn: if present, applies the augmentation to the input data
         Returns:
             average_error: the average error
         """
@@ -95,7 +109,9 @@ class RegressorEvaluator(Evaluator):
             # Get images and labels from the dataset
             with tf.device('/cpu:0'):
                 images, labels = dataset.inputs(
-                    input_type=input_type, batch_size=batch_size)
+                    input_type=input_type,
+                    batch_size=batch_size,
+                    augmentation_fn=augmentation_fn)
 
             # Build a Graph that computes the predictions from the inference model.
             _, predictions = self._model.get(
