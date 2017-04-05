@@ -146,14 +146,16 @@ def train(model,
         "augmentation"]["fn"]
 
     #### Training constants ####
-    steps_per_epoch = math.ceil(
-        dataset.num_examples(InputType.train) / args["batch_size"])
+    float_steps_per_epoch = dataset.num_examples(
+        InputType.train) / args["batch_size"]
+    steps_per_epoch = 1 if float_steps_per_epoch < 1. else math.ceil(
+        float_steps_per_epoch)
 
     steps = {
         "epoch": steps_per_epoch,
-        "log": math.ceil(steps_per_epoch / 10),
-        "max": steps_per_epoch * args["epochs"],
-        "decay": steps_per_epoch * args["lr_decay"]["epochs"]
+        "log": 1 if steps_per_epoch < 10 else steps_per_epoch // 10,
+        "max": int(float_steps_per_epoch * args["epochs"]),
+        "decay": int(float_steps_per_epoch * args["lr_decay"]["epochs"]),
     }
 
     #### Model logs and checkpoint constants ####
