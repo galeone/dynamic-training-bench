@@ -7,7 +7,6 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Train method and utilities"""
 
-import math
 import os
 import tensorflow as tf
 from .inputs.interfaces import InputType
@@ -148,7 +147,7 @@ def train(model,
     #### Training constants ####
     float_steps_per_epoch = dataset.num_examples(
         InputType.train) / args["batch_size"]
-    steps_per_epoch = 1 if float_steps_per_epoch < 1. else math.ceil(
+    steps_per_epoch = 1 if float_steps_per_epoch < 1. else round(
         float_steps_per_epoch)
 
     steps = {
