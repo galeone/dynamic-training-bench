@@ -42,3 +42,16 @@ class DetectorEvaluator(Evaluator):
             dict
         """
         raise ValueError("method not implemented")
+
+    @property
+    def model(self):
+        """Returns the model to evaluate"""
+        raise ValueError("method not implemented")
+
+    @model.setter
+    def model(self, model):
+        """Set the model to evaluate.
+        Args:
+            model: implementation of the Model interface
+        """
+        raise ValueError("method not implemented")

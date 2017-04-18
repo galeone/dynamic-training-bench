@@ -9,9 +9,8 @@
 
 import math
 import tensorflow as tf
-from . import metrics
 from .interfaces import Evaluator
-from ..inputs.interfaces import InputType, Input
+from ..inputs.interfaces import InputType
 from ..models.utils import variables_to_restore
 
 

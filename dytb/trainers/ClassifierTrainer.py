@@ -9,15 +9,15 @@
 
 import time
 import os
+from datetime import datetime
 import numpy as np
 import tensorflow as tf
-from datetime import datetime
 from .utils import builders, flow
 
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
 from ..evaluators.metrics import accuracy_op
-from ..models.utils import tf_log, variables_to_train
+from ..models.utils import tf_log, variables_to_train, count_trainable_parameters
 from ..models.collections import MODEL_SUMMARIES
 from ..models.visualization import log_io
 
@@ -73,6 +73,11 @@ class ClassifierTrainer(Trainer):
                 dataset.num_classes,
                 train_phase=True,
                 l2_penalty=args["regularizations"]["l2"])
+
+            num_of_parameters = count_trainable_parameters(print_model=True)
+            print("Model {}: trainable parameters: {}. Size: {} KB".format(
+                self._model.name, num_of_parameters, num_of_parameters * 4 /
+                1000))
 
             # Calculate loss.
             loss = self._model.loss(logits, labels)

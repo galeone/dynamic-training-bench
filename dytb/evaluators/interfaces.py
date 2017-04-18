@@ -34,12 +34,7 @@ class Evaluator(object, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def stats(self,
-              checkpoint_path,
-              dataset,
-              input_type,
-              batch_size,
-              augmentation_fn=None):
+    def stats(self, checkpoint_path, dataset, batch_size, augmentation_fn=None):
         """Run the eval method on the model, see eval for arguments
         and return value description.
         Moreover, adds informations about the model and returns the whole information

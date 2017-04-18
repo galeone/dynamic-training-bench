@@ -35,13 +35,17 @@ def _build_name(args, dataset):
     return name.rstrip("_")
 
 
-def _parse_hyperparameters(hyperparams={}):
+def _parse_hyperparameters(hyperparams=None):
     """Check if every parameter passed in hyperparams
     is a valid hyperparameter.
     Returns:
         hyperparams: the same dictionary with default values added if optionals
     Raises:
-        ValueError if hyperparams is not valid"""
+        ValueError if hyperparams is not valid
+    """
+
+    if hyperparams is None:
+        hyperparams = {}
 
     # Instantiate with default values if not specified
     args = {
@@ -84,19 +88,22 @@ def _parse_hyperparameters(hyperparams={}):
     return args
 
 
-def _parse_surgery(surgery={}):
+def _parse_surgery(surgery=None):
     """Check if every parameter passed in surgery is valid
     for network surgery purposes.
 
     Returns:
         surgery: the same dictionary with defautl values added if needed
     Raises:
-        ValueError if surgery values are not valid"""
+        ValueError if surgery values are not valid
+    """
+    if surgery is None:
+        surgery = {}
 
     args = {
         "checkpoint_path": surgery.get("checkpoint_path", ""),
-        "exclude_scopes": surgery.get("exclude_scopes", ""),
-        "trainable_scopes": surgery.get("trainable_scopes", ""),
+        "exclude_scopes": surgery.get("exclude_scopes", None),
+        "trainable_scopes": surgery.get("trainable_scopes", None),
     }
 
     if args["checkpoint_path"] != "":
@@ -110,8 +117,8 @@ def _parse_surgery(surgery={}):
 
 def train(model,
           dataset,
-          hyperparameters={},
-          surgery={},
+          hyperparameters=None,
+          surgery=None,
           force_restart=False,
           comment=""):
     """Train the model using the provided dataset and the specifiied hyperparameters.

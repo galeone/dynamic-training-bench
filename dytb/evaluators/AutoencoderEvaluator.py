@@ -9,9 +9,8 @@
 
 import math
 import tensorflow as tf
-from . import metrics
 from .interfaces import Evaluator
-from ..inputs.interfaces import InputType, Input
+from ..inputs.interfaces import InputType
 from ..models.utils import variables_to_restore
 
 
@@ -107,7 +106,7 @@ class AutoencoderEvaluator(Evaluator):
             tf.set_random_seed(69)
             # Get images and labels from the dataset
             with tf.device('/cpu:0'):
-                images, labels = dataset.inputs(
+                images, _ = dataset.inputs(
                     input_type=input_type,
                     batch_size=batch_size,
                     augmentation_fn=augmentation_fn)

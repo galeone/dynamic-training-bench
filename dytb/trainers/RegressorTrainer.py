@@ -7,12 +7,16 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Trainer for the Regressor model"""
 
+import time
+import os
+from datetime import datetime
+import numpy as np
 import tensorflow as tf
 from .utils import builders, flow
 
 from .interfaces import Trainer
 from ..inputs.interfaces import InputType
-from ..models.utils import tf_log, variables_to_train
+from ..models.utils import tf_log, variables_to_train, count_trainable_parameters
 from ..models.collections import MODEL_SUMMARIES
 from ..models.visualization import log_io
 
@@ -67,6 +71,11 @@ class RegressorTrainer(Trainer):
                 train_phase=True,
                 l2_penalty=args["regularizations"]["l2"])
 
+            num_of_parameters = count_trainable_parameters(print_model=True)
+            print("Model {}: trainable parameters: {}. Size: {} KB".format(
+                self._model.name, num_of_parameters, num_of_parameters * 4 /
+                1000))
+
             log_io(images)
 
             # Calculate loss.
@@ -78,7 +87,7 @@ class RegressorTrainer(Trainer):
             error = tf.summary.scalar('error', error_)
 
             # Create optimizer and log learning rate
-            optimizer = build_optimizer(args, steps, global_step)
+            optimizer = builders.build_optimizer(args, steps, global_step)
             train_op = optimizer.minimize(
                 loss,
                 global_step=global_step,

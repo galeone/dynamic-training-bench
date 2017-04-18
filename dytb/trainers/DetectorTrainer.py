@@ -24,3 +24,16 @@ class DetectorTrainer(Trainer):
             saves the latest checkpoints and the best model in its own folder
         """
         raise ValueError("method not implemented")
+
+    @property
+    def model(self):
+        """Returns the model to evaluate"""
+        raise ValueError("method not implemented")
+
+    @model.setter
+    def model(self, model):
+        """Set the model to evaluate.
+        Args:
+            model: implementation of the Model interface
+        """
+        raise ValueError("method not implemented")

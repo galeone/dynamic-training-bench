@@ -7,8 +7,6 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Utils for image processing"""
 
-import os
-import multiprocessing
 import tensorflow as tf
 
 

@@ -10,10 +10,9 @@
 import math
 import numpy as np
 import tensorflow as tf
-from . import metrics
 from .interfaces import Evaluator
 from .metrics import accuracy_op
-from ..inputs.interfaces import InputType, Input
+from ..inputs.interfaces import InputType
 from ..models.utils import variables_to_restore
 
 
@@ -149,7 +148,6 @@ class ClassifierEvaluator(Evaluator):
                             dataset.num_examples(input_type) / batch_size))
                     # Counts the number of correct predictions.
                     accuracy_sum = 0.0
-                    total_sample_count = num_iter * batch_size
                     step = 0
                     while step < num_iter and not coord.should_stop():
                         accuracy_sum += sess.run(accuracy)
@@ -228,7 +226,6 @@ class ClassifierEvaluator(Evaluator):
                             dataset.num_examples(input_type) / batch_size))
 
                     # Accumulate the confusion matrices for batch
-                    total_sample_count = num_iter * batch_size
                     step = 0
                     while step < num_iter and not coord.should_stop():
                         confusion_matrix += sess.run(confusion_matrix_op)

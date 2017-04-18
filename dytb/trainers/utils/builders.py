@@ -7,12 +7,10 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Utilities used by the trainers"""
 
-import math
 import os
 import tensorflow as tf
 
 from ...models.utils import variables_to_save, variables_to_restore, tf_log
-from ...models.visualization import on_grid
 
 
 def build_optimizer(args, steps, global_step):
@@ -47,20 +45,34 @@ def build_optimizer(args, steps, global_step):
     return optimizer
 
 
-def build_restore_saver(variables_to_add=[], scopes_to_remove=[]):
+def build_restore_saver(variables_to_add=None, scopes_to_remove=None):
     """Return a saver that restores every trainable variable that's not
-    under a scope to remove"""
+    under a scope to remove.
+    Args:
+        variables_to_add: list of variables to add
+        scopes_to_remove: list of scopes to remove
+    """
+    if variables_to_add is None:
+        variables_to_add = []
+
+    if scopes_to_remove is None:
+        scopes_to_remove = []
+
     restore_saver = tf.train.Saver(
         variables_to_restore(variables_to_add, scopes_to_remove))
     return restore_saver
 
 
-def build_train_savers(variables_to_add=[]):
+def build_train_savers(variables_to_add=None):
     """Add variables_to_add to the collection of variables to save.
+    Args:
+        variables_to_add: list of variables to add
     Returns:
         train_saver: saver to use to log the training model
         best_saver: saver used to save the best model
     """
+    if variables_to_add is None:
+        variables_to_add = []
     variables = variables_to_save(variables_to_add)
     train_saver = tf.train.Saver(variables, max_to_keep=2)
     best_saver = tf.train.Saver(variables, max_to_keep=1)

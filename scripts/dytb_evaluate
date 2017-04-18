@@ -10,12 +10,11 @@
 """ Evaluate the model """
 
 import pprint
-import tensorflow as tf
 import sys
+import tensorflow as tf
 
 from dytb.utils.CLIArgs import CLIArgs
 from dytb.evaluate import stats
-from dytb.inputs.interfaces import InputType
 
 
 def main():
@@ -23,7 +22,8 @@ def main():
     fetching the requested input type"""
     with tf.device(ARGS.eval_device):
         pprint.pprint(
-            stats(ARGS.checkpoint_path, MODEL, DATASET, ARGS.batch_size), indent=4)
+            stats(ARGS.checkpoint_path, MODEL, DATASET, ARGS.batch_size),
+            indent=4)
 
 
 if __name__ == '__main__':

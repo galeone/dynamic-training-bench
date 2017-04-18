@@ -7,9 +7,9 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Layers to easy create models and nice visualizations"""
 
-import tensorflow as tf
 import math
 import numbers
+import tensorflow as tf
 from .utils import legalize_name, tf_log
 from .visualization import on_grid
 from .collections import LOSSES, REQUIRED_NON_TRAINABLES
@@ -273,7 +273,7 @@ def direct_dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
     Raises:
         ValueError: If `keep_prob` is not in `(0, 1]`.
     """
-    with tf.name_scope(name, "direct_dropout", [x]) as name:
+    with tf.name_scope(name, "direct_dropout", [x]):
         x = tf.convert_to_tensor(x, name="x")
         if isinstance(keep_prob, numbers.Real) and not 0 < keep_prob <= 1:
             raise ValueError(

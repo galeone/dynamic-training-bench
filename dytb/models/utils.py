@@ -41,25 +41,42 @@ def training_process_variables():
     ]
 
 
-def variables_to_save(add_list=[]):
+def variables_to_save(add_list=None):
     """Returns a list of variables to save.
     add_list variables are always added to the list
+    Args:
+        add_list: a list of variables
+    Returns:
+        list: list of tensors to save
     """
+    if add_list is None:
+        add_list = []
     return tf.trainable_variables() + tf.get_collection_ref(
         REQUIRED_NON_TRAINABLES) + add_list + training_process_variables()
 
 
-def variables_to_restore(add_list=[], exclude_scope_list=[]):
+def variables_to_restore(add_list=None, exclude_scope_list=None):
     """Returns a list of variables to restore to made the model working
     properly.
     The list is made by the trainable variables + required non trainable variables
     such as statistics of batch norm layers.
     Remove from the list variables that are in the exclude_scope_list.
     Add variables in the add_list
+
+    Args:
+        add_list: a list of variables
+        exclude_scope_list: a list of scopes to exclude
+    Returns:
+        list: list of tensors to restore
     """
 
+    if add_list is None:
+        add_list = []
+    if exclude_scope_list is None:
+        exclude_scope_list = []
+
     variables = variables_to_save()
-    if len(exclude_scope_list) > 0:
+    if exclude_scope_list:
         variables[:] = [
             variable for variable in variables
             if not variable.name.startswith(
@@ -68,18 +85,20 @@ def variables_to_restore(add_list=[], exclude_scope_list=[]):
     return variables + add_list
 
 
-def variables_to_train(scope_list=[]):
+def variables_to_train(scope_list=None):
     """Returns a list of variables to train, filtered by the scopes.
+    Args:
+        scope_list: a list of scope to train
     Returns:
         the list of variables to train by the optimizer
     """
-    if len(scope_list) == 0:
+    if scope_list is None:
         return tf.trainable_variables()
-    variables_to_train = []
+    vars_to_train = []
     for scope in scope_list:
         variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
-        variables_to_train.extend(variables)
-    return variables_to_train
+        vars_to_train.extend(variables)
+    return vars_to_train
 
 
 def num_neurons_and_shape(layer):
@@ -119,3 +138,20 @@ def active_neurons(layer, off_value=0):
     binary_tensor = tf.cast(tf.greater(layer, off_value), tf.int32)
     return tf.reduce_sum(binary_tensor, [1, 2, 3]
                          if len(layer.get_shape()) == 4 else [1])
+
+
+def count_trainable_parameters(print_model=False):
+    """Count the number of trainable parameters is the current graph.
+    Returns:
+        count: the number of trainable parameters"""
+    total_parameters = 0
+    for variable in tf.trainable_variables():
+        # shape is an array of tf.Dimension
+        shape = variable.get_shape()
+        if print_model:
+            print(variable)
+        variable_parametes = 1
+        for dim in shape:
+            variable_parametes *= dim.value
+        total_parameters += variable_parametes
+    return total_parameters

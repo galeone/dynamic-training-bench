@@ -23,6 +23,9 @@ from ..trainers.RegressorTrainer import RegressorTrainer
 class Autoencoder(object, metaclass=ABCMeta):
     """Autoencoder is the interface that classifiers must implement"""
 
+    def __init__(self):
+        self._info = {}
+
     @abstractmethod
     def get(self, images, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
@@ -85,6 +88,9 @@ class Autoencoder(object, metaclass=ABCMeta):
 
 class Classifier(object, metaclass=ABCMeta):
     """Classifier is the interface that classifiers must implement"""
+
+    def __init__(self):
+        self._info = {}
 
     @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
@@ -150,6 +156,9 @@ class Classifier(object, metaclass=ABCMeta):
 
 class Detector(object, metaclass=ABCMeta):
     """Detector is the interface that detectors must implement"""
+
+    def __init__(self):
+        self._info = {}
 
     @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
@@ -218,6 +227,9 @@ class Detector(object, metaclass=ABCMeta):
 
 class Regressor(object, metaclass=ABCMeta):
     """Regressor is the interface that regressors must implement"""
+
+    def __init__(self):
+        self._info = {}
 
     @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):

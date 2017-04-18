@@ -9,7 +9,6 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Dynamically define the train bench via CLI"""
 
-import os
 import pprint
 import sys
 import time
