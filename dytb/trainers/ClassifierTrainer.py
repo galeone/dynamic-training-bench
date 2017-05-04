@@ -63,7 +63,8 @@ class ClassifierTrainer(Trainer):
                 images, labels = dataset.inputs(
                     input_type=InputType.train,
                     batch_size=args["batch_size"],
-                    augmentation_fn=args["regularizations"]["augmentation"])
+                    augmentation_fn=args["regularizations"]["augmentation"][
+                        "fn"])
             log_io(images)
 
             # Build a Graph that computes the logits predictions from the

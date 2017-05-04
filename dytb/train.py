@@ -49,32 +49,63 @@ def _parse_hyperparameters(hyperparams=None):
 
     # Instantiate with default values if not specified
     args = {
+        # The size of the trainign batch
         "batch_size":
-        hyperparams.get("batch_size", 50),
+        hyperparams.get("batch_size", 128),
+        # The number of epochs to train
+        # where an epoch is the training set cardinality * the augmentation factor
         "epochs":
         hyperparams.get("epochs", 150),
+        # Gradient descent parameters
         "gd":
-        hyperparams.get("gd", {
-            "optimizer": tf.train.MomentumOptimizer,
-            "args": {
-                "learning_rate": 1e-3,
-                "momentum": 0.9,
-                "use_nesterov": False
-            }
-        }),
+        hyperparams.get(
+            "gd",
+            {
+                # The optimizer to use
+                "optimizer": tf.train.MomentumOptimizer,
+                # The arguments of the optimizer
+                "args": {
+                    "learning_rate": 1e-3,
+                    "momentum": 0.9,
+                    "use_nesterov": False
+                }
+            }),
+        # The learning rate decay
         "lr_decay":
         hyperparams.get("lr_decay",
                         {"enabled": False,
                          "epochs": 25,
                          "factor": .1}),
+        # The regularization to apply
         "regularizations":
-        hyperparams.get("regularizations", {
-            "l2": 0.0,
-            "augmentation": {
-                "name": "identity",
-                "fn": lambda x: x
-            }
-        })
+        hyperparams.get(
+            "regularizations",
+            {
+                # L2 on the model weights
+                "l2": 0.0,
+                # The augmentation on the input data: online augmentation
+                "augmentation": {
+                    # The name of the augmentation: identity disables the augmentations
+                    "name": "identity",
+                    # The function of the augmentation: fn(x) where x is the orignnal sample
+                    "fn": lambda x: x,
+                    # The multiplicative factor of the training set: online data augmentation
+                    # can generate a potentially infinite number of training samples.
+                    # However, the generated samples starts to look "similar" after
+                    # being generated for a lot of times.
+                    # What we do applying augmentations is to pick samples from the input
+                    # distrubution.
+                    # If we have enough samples (in a single epoch), we have sampled the
+                    # distribution densely enough that the next epoch, altough the samples
+                    # are still online generated, will look similar to the previous one.
+
+                    # In short, this is a multiplicative factor that changes the effective
+                    # training set size:
+                    # 1 means no augmentation.
+                    # A rule of thumb is to set this value to a power of 10.
+                    "factor": 1,
+                }
+            })
     }
 
     # Check numeric fields
@@ -146,14 +177,9 @@ def train(model,
 
     name = _build_name(args, dataset)
 
-    # remove useless (for the training purpose) augmentation fn name
-    # it was useful only for building the name
-    args["regularizations"]["augmentation"] = args["regularizations"][
-        "augmentation"]["fn"]
-
     #### Training constants ####
-    float_steps_per_epoch = dataset.num_examples(
-        InputType.train) / args["batch_size"]
+    float_steps_per_epoch = dataset.num_examples(InputType.train) * args[
+        "regularizations"]["augmentation"]["factor"] / args["batch_size"]
     steps_per_epoch = 1 if float_steps_per_epoch < 1. else round(
         float_steps_per_epoch)
 
@@ -176,4 +202,10 @@ def train(model,
     if not tf.gfile.Exists(best_dir):
         tf.gfile.MakeDirs(best_dir)
 
+    if args["regularizations"]["augmentation"]["factor"] != 1:
+        print("Original training set size {}. Augmented training set size: {}".
+              format(
+                  dataset.num_examples(InputType.train), args["regularizations"]
+                  ["augmentation"]["factor"] * dataset.num_examples(
+                      InputType.train)))
     return model.trainer.train(dataset, args, steps, paths)

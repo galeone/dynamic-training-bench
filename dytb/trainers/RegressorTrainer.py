@@ -61,7 +61,8 @@ class RegressorTrainer(Trainer):
                 images, labels = dataset.inputs(
                     input_type=InputType.train,
                     batch_size=args["batch_size"],
-                    augmentation_fn=args["regularizations"]["augmentation"])
+                    augmentation_fn=args["regularizations"]["augmentation"][
+                        "fn"])
 
             # Build a Graph that computes the predictions predictions from the
             # inference model.

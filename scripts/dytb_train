@@ -32,7 +32,8 @@ def main():
                     "l2": ARGS.l2_penalty,
                     "augmentation": {
                         "name": "identity",
-                        "fn": lambda x: x
+                        "fn": lambda x: x,
+                        "factor": 1
                     }
                 },
                 "gd": {
