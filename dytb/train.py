@@ -10,6 +10,7 @@
 import os
 import tensorflow as tf
 from .inputs.interfaces import InputType
+from .trainer.Trainer import Trainer
 
 
 def _build_name(args, dataset):
@@ -105,7 +106,12 @@ def _parse_hyperparameters(hyperparams=None):
                     # A rule of thumb is to set this value to a power of 10.
                     "factor": 1,
                 }
-            })
+            }),
+        # seed is the graph level and op level seed.
+        # None means that random seed is used.
+        # Otherwise the specified value is used.
+        "seed":
+        hyperparams.get("seed", None),
     }
 
     # Check numeric fields
@@ -208,4 +214,4 @@ def train(model,
                   dataset.num_examples(InputType.train), args["regularizations"]
                   ["augmentation"]["factor"] * dataset.num_examples(
                       InputType.train)))
-    return model.trainer.train(dataset, args, steps, paths)
+    return Trainer(model, dataset, args, steps, paths).train()
