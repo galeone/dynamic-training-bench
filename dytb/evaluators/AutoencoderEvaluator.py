@@ -85,6 +85,21 @@ class AutoencoderEvaluator(Evaluator):
             }
         }
 
+    @property
+    def metric(self):
+        """Returns a dict with keys:
+        {
+            "fn": function
+            "name": name
+            "positive_trend_sign": sign that we like to see when things go well
+        }
+        """
+        return {
+            "fn": self._model.loss,
+            "name": "error",
+            "positive_trend_sign": -1
+        }
+
     def _error(self,
                checkpoint_path,
                dataset,
@@ -104,7 +119,6 @@ class AutoencoderEvaluator(Evaluator):
         InputType.check(input_type)
 
         with tf.Graph().as_default():
-            tf.set_random_seed(69)
             # Get images and labels from the dataset
             with tf.device('/cpu:0'):
                 images, _ = dataset.inputs(
@@ -114,7 +128,7 @@ class AutoencoderEvaluator(Evaluator):
 
             # Build a Graph that computes the predictions from the inference model.
             _, predictions = self._model.get(images, train_phase=False)
-            loss = self._model.loss(predictions, images)
+            loss = self.metric["fn"](predictions, images)
             saver = tf.train.Saver(variables_to_restore())
             average_error = float('inf')
             with tf.Session(config=tf.ConfigProto(
@@ -176,8 +190,6 @@ class AutoencoderEvaluator(Evaluator):
             evaluated_inputs = sess.run(inputs)
 
         with tf.Graph().as_default() as graph:
-            tf.set_random_seed(69)
-
             inputs_ = tf.placeholder(inputs.dtype, shape=inputs.shape)
 
             # Build a Graph that computes the predictions from the inference model.

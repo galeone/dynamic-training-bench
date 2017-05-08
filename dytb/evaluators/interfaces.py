@@ -54,3 +54,13 @@ class Evaluator(object, metaclass=ABCMeta):
         Args:
             model: implementation of the Model interface
         """
+
+    @abstractproperty
+    def metric(self):
+        """Returns a dict with keys:
+        {
+            "fn": function
+            "name": name
+            "positive_trend_sign": sign that we like to see when things go well
+        }
+        """

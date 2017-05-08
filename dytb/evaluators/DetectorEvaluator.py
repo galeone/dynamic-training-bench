@@ -10,6 +10,7 @@
 import numpy as np
 import tensorflow as tf
 from .interfaces import Evaluator
+from .metrics import iou_op
 from ..models.utils import variables_to_restore
 
 
@@ -32,6 +33,17 @@ class DetectorEvaluator(Evaluator):
             model: implementation of the Model interface
         """
         self._model = model
+
+    @property
+    def metric(self):
+        """Returns a dict with keys:
+        {
+            "fn": function
+            "name": name
+            "positive_trend_sign": sign that we like to see when things go well
+        }
+        """
+        return {"fn": iou_op, "name": "IoU", "positive_trend_sign": +1}
 
     def eval(self,
              checkpoint_path,
@@ -82,8 +94,6 @@ class DetectorEvaluator(Evaluator):
             evaluated_inputs = sess.run(inputs)
 
         with tf.Graph().as_default() as graph:
-            tf.set_random_seed(69)
-
             inputs_ = tf.placeholder(inputs.dtype, shape=inputs.shape)
 
             # Build a Graph that computes the predictions from the inference model.

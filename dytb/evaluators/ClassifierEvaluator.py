@@ -36,6 +36,21 @@ class ClassifierEvaluator(Evaluator):
         """
         self._model = model
 
+    @property
+    def metric(self):
+        """Returns a dict with keys:
+        {
+            "fn": function
+            "name": name
+            "positive_trend_sign": sign that we like to see when things go well
+        }
+        """
+        return {
+            "fn": accuracy_op,
+            "name": "accuracy",
+            "positive_trend_sign": +1
+        }
+
     def eval(self,
              checkpoint_path,
              dataset,
@@ -106,7 +121,6 @@ class ClassifierEvaluator(Evaluator):
         InputType.check(input_type)
 
         with tf.Graph().as_default():
-            tf.set_random_seed(69)
             # Get images and labels from the dataset
             with tf.device('/cpu:0'):
                 images, labels = dataset.inputs(
@@ -119,7 +133,7 @@ class ClassifierEvaluator(Evaluator):
                 images, dataset.num_classes, train_phase=False)
 
             # Accuracy op
-            accuracy = accuracy_op(predictions, labels)
+            accuracy = self.metric["fn"](predictions, labels)
 
             saver = tf.train.Saver(variables_to_restore())
             accuracy_value = 0.0
@@ -263,8 +277,6 @@ class ClassifierEvaluator(Evaluator):
         # Create a new graph to not making dirty the default graph after subsequent
         # calls
         with tf.Graph().as_default() as graph:
-            tf.set_random_seed(69)
-
             inputs_ = tf.placeholder(inputs.dtype, shape=inputs.shape)
 
             # Build a Graph that computes the predictions from the inference model.

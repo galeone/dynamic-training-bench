@@ -35,6 +35,21 @@ class RegressorEvaluator(Evaluator):
         """
         self._model = model
 
+    @property
+    def metric(self):
+        """Returns a dict with keys:
+        {
+            "fn": function
+            "name": name
+            "positive_trend_sign": sign that we like to see when things go well
+        }
+        """
+        return {
+            "fn": self._model.loss,
+            "name": "error",
+            "positive_trend_sign": -1
+        }
+
     def eval(self,
              checkpoint_path,
              dataset,
@@ -105,7 +120,6 @@ class RegressorEvaluator(Evaluator):
         InputType.check(input_type)
 
         with tf.Graph().as_default():
-            tf.set_random_seed(69)
             # Get images and labels from the dataset
             with tf.device('/cpu:0'):
                 images, labels = dataset.inputs(
@@ -116,7 +130,7 @@ class RegressorEvaluator(Evaluator):
             # Build a Graph that computes the predictions from the inference model.
             _, predictions = self._model.get(
                 images, dataset.num_classes, train_phase=False, l2_penalty=0.0)
-            loss = self._model.loss(predictions, labels)
+            loss = self.metric["fn"](predictions, labels)
             saver = tf.train.Saver(variables_to_restore())
 
             average_error = float('inf')
@@ -181,8 +195,6 @@ class RegressorEvaluator(Evaluator):
             evaluated_inputs = sess.run(inputs)
 
         with tf.Graph().as_default() as graph:
-            tf.set_random_seed(69)
-
             inputs_ = tf.placeholder(inputs.dtype, shape=inputs.shape)
 
             # Build a Graph that computes the predictions from the inference model.
