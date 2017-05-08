@@ -57,38 +57,29 @@ class Trainer(object):
             # it could be [label] or [label, attr1, attr2, ...]
             # or Tensor, where tensor is a standard tensorflow Tensor with
             # its own shape
-            return_type = list
             with tf.device('/cpu:0'):
-                inputs, targets = self._dataset.inputs(
+                inputs, *targets = self._dataset.inputs(
                     input_type=InputType.train,
                     batch_size=self._args["batch_size"],
                     augmentation_fn=self._args["regularizations"][
                         "augmentation"]["fn"])
-                if isinstance(targets, tf.Tensor):
-                    return_type = tf.Tensor
-                elif isinstance(targets, list):
-                    return_type = list
-                else:
-                    print(
-                        "{} second return value of inputs should be a list or a tensor but is {}".
-                        format(self._dataset.name, type(targets)))
-                    return
             log_io(inputs)
 
             # Build a Graph that computes the predictions from the
             # inference model.
             # Preditions is an array of predictions with the same cardinality of
             # targets
-            is_training_, predictions = self._model.get(
+            is_training_, *predictions = self._model.get(
                 inputs,
                 self._dataset.num_classes,
                 train_phase=True,
                 l2_penalty=self._args["regularizations"]["l2"])
-            if not isinstance(predictions, return_type):
-                print((
-                    "{} second return value must have the same type of the second"
-                    "return value of inputs ({}) but is:").format(
-                        self._model.name, return_type, type(predictions)))
+
+            if len(predictions) != len(targets):
+                print(("{}.get 2nd return value and {}.inputs 2nd return "
+                       "value must have the same cardinality but got: {} vs {}"
+                      ).format(self._model.name, self._dataset.name,
+                               len(predictions), len(targets)))
                 return
 
             num_of_parameters = count_trainable_parameters(print_model=True)
@@ -110,8 +101,8 @@ class Trainer(object):
 
             # TODO: more than 1 metric?
 
-            train_metric = self._model.evaluator.metric["fn"](predictions,
-                                                              targets)
+            train_metric = self._model.evaluator.metric["fn"](predictions[0],
+                                                              targets[0])
             # General validation summary
             metric_value_ = tf.placeholder(tf.float32, shape=())
             metric_summary = tf.summary.scalar(

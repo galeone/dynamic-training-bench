@@ -16,7 +16,7 @@ def build_batch(image, label, min_queue_examples, batch_size, shuffle):
     """Construct a queued batch of images and labels.
     Args:
         image: 3-D Tensor of [height, width, 3] of type.float32.
-        label: 1-D Tensor of type.int32
+        label: 1-D Tensor or a list of tensors like [label, attrA, ... ]
         min_queue_examples: int32, minimum number of samples to retain
            in the queue that provides of batches of examples.
         batch_size: Number of images per batch.
@@ -24,7 +24,7 @@ def build_batch(image, label, min_queue_examples, batch_size, shuffle):
 
     Returns:
         images: Images. 4D tensor of [batch_size, height, width, 3] size.
-        labels: Labels. 1D tensor of [batch_size] size.
+        labels: Labels. 1D tensor of [batch_size] size containing the elements of labels
     """
     # Create a queue that shuffles the examples, and then
     # read 'batch_size' images + labels from the example queue.
@@ -32,21 +32,24 @@ def build_batch(image, label, min_queue_examples, batch_size, shuffle):
     if num_preprocess_threads > 2:
         num_preprocess_threads -= 2
 
+    if isinstance(label, list):
+        row = [image] + label
+    else:
+        row = [image, label]
+
     if shuffle:
-        images, label_batch = tf.train.shuffle_batch(
-            [image, label],
+        return tf.train.shuffle_batch(
+            row,
             batch_size=batch_size,
             num_threads=num_preprocess_threads,
             capacity=min_queue_examples + 3 * batch_size,
             min_after_dequeue=min_queue_examples)
-    else:
-        images, label_batch = tf.train.batch(
-            [image, label],
-            batch_size=batch_size,
-            num_threads=num_preprocess_threads,
-            capacity=min_queue_examples + 3 * batch_size)
 
-    return images, label_batch
+    return tf.train.batch(
+        row,
+        batch_size=batch_size,
+        num_threads=num_preprocess_threads,
+        capacity=min_queue_examples + 3 * batch_size)
 
 
 def convert_to_tfrecords(dataset, name, data_dir):
@@ -59,28 +62,24 @@ def convert_to_tfrecords(dataset, name, data_dir):
     def _bytes_feature(value):
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-    images = dataset.images
-    labels = dataset.labels
-    num_examples = dataset.num_examples
-
-    if images.shape[0] != num_examples:
+    if dataset.images.shape[0] != dataset.num_examples:
         raise ValueError('Images size {} does not match label size {}.'.format(
-            images.shape[0], num_examples))
-    rows = images.shape[1]
-    cols = images.shape[2]
-    depth = images.shape[3]
+            dataset.images.shape[0], dataset.num_examples))
+    rows = dataset.images.shape[1]
+    cols = dataset.images.shape[2]
+    depth = dataset.images.shape[3]
 
     filename = os.path.join(data_dir, name + '.tfrecords')
     print('Writing', filename)
     writer = tf.python_io.TFRecordWriter(filename)
-    for index in range(num_examples):
-        image_raw = images[index].tostring()
+    for index in range(dataset.num_examples):
+        image_raw = dataset.images[index].tostring()
         example = tf.train.Example(features=tf.train.Features(
             feature={
                 'height': _int64_feature(rows),
                 'width': _int64_feature(cols),
                 'depth': _int64_feature(depth),
-                'label': _int64_feature(int(labels[index])),
+                'label': _int64_feature(int(dataset.labels[index])),
                 'image_raw': _bytes_feature(image_raw)
             }))
         writer.write(example.SerializeToString())
