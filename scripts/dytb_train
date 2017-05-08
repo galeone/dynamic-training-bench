@@ -45,6 +45,7 @@ def main():
                     "epochs": ARGS.lr_decay_epochs,
                     "factor": ARGS.lr_decay_factor
                 },
+                "seed": None,
             },
             force_restart=ARGS.restart,
             surgery={

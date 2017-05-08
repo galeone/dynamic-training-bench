@@ -54,7 +54,7 @@ class StackedDenoisingCAE(Autoencoder):
                     minval=-0.5,
                     maxval=0.5,
                     dtype=input_x.dtype,
-                    seed=69), -1.0, 1.0)
+                    seed=None), -1.0, 1.0)
             else:
                 input_x_noise = input_x
             input_padded_noise = self._pad(input_x_noise, filter_side)

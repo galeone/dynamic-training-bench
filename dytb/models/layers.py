@@ -22,7 +22,7 @@ def weight(name,
                factor=2.0,
                mode='FAN_IN',
                uniform=False,
-               seed=69,
+               seed=None,
                dtype=tf.float32),
            wd=0.0):
     """Returns a tensor with the requested shape, initialized
