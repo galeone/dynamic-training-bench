@@ -7,17 +7,12 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """Define the model interfaces"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 # Evaluators
 from ..evaluators.AutoencoderEvaluator import AutoencoderEvaluator
 from ..evaluators.ClassifierEvaluator import ClassifierEvaluator
 from ..evaluators.DetectorEvaluator import DetectorEvaluator
 from ..evaluators.RegressorEvaluator import RegressorEvaluator
-# Trainers
-from ..trainers.AutoencoderTrainer import AutoencoderTrainer
-from ..trainers.ClassifierTrainer import ClassifierTrainer
-from ..trainers.DetectorTrainer import DetectorTrainer
-from ..trainers.RegressorTrainer import RegressorTrainer
 
 
 class Autoencoder(object, metaclass=ABCMeta):
@@ -70,13 +65,6 @@ class Autoencoder(object, metaclass=ABCMeta):
             info: dict of training info
         """
         self._info = info
-
-    @property
-    def trainer(self):
-        """Returns the trainer associated to the model"""
-        obj = AutoencoderTrainer()
-        obj.model = self
-        return obj
 
     @property
     def evaluator(self):
@@ -138,13 +126,6 @@ class Classifier(object, metaclass=ABCMeta):
             info: dict of training info
         """
         self._info = info
-
-    @property
-    def trainer(self):
-        """Returns the trainer associated to the model"""
-        obj = ClassifierTrainer()
-        obj.model = self
-        return obj
 
     @property
     def evaluator(self):
@@ -211,13 +192,6 @@ class Detector(object, metaclass=ABCMeta):
         self._info = info
 
     @property
-    def trainer(self):
-        """Returns the trainer associated to the model"""
-        obj = DetectorTrainer()
-        obj.model = self
-        return obj
-
-    @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = DetectorEvaluator()
@@ -279,15 +253,66 @@ class Regressor(object, metaclass=ABCMeta):
         self._info = info
 
     @property
-    def trainer(self):
-        """Returns the trainer associated to the model"""
-        obj = RegressorTrainer()
-        obj.model = self
-        return obj
-
-    @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = RegressorEvaluator()
         obj.model = self
         return obj
+
+
+class Custom(object, metaclass=ABCMeta):
+    """Custom is the interface that custom models must implement"""
+
+    def __init__(self):
+        self._info = {}
+
+    @abstractmethod
+    def get(self, images, train_phase=False, l2_penalty=0.0):
+        """ define the model with its inputs.
+        Use this function to define the model in training and when exporting the model
+        in the protobuf format.
+
+        Args:
+            images: model input
+            train_phase: set it to True when defining the model, during train
+            l2_penalty: float value, weight decay (l2) penalty
+
+        Returns:
+            is_training_: tf.bool placeholder enable/disable training ops at run time
+            predictions: the model output
+        """
+
+    @abstractmethod
+    def loss(self, predictions, real_values):
+        """Return the loss operation between predictions and real_values
+        Args:
+            predictions: a list of predicted values eg [predicted_labels_batch, ...]
+            labels: a list of real_values, eg [ labels_batch, attributeA_batch, ...]
+
+        Returns:
+            Loss tensor of type float.
+        """
+
+    @abstractproperty
+    def evaluator(self):
+        """Returns the evaluator associated to the model"""
+
+    # Below implemented properties
+
+    @property
+    def name(self):
+        """Returns the name of the model"""
+        return self.__class__.__name__
+
+    @property
+    def info(self):
+        """Returns the inforation about the trained model"""
+        return self._info
+
+    @info.setter
+    def info(self, info):
+        """Save the training info
+        Args:
+            info: dict of training info
+        """
+        self._info = info
