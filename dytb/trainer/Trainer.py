@@ -82,6 +82,10 @@ class Trainer(object):
                                len(predictions), len(targets)))
                 return
 
+            if len(predictions) == 1:
+                predictions = predictions[0]
+                targets = targets[0]
+
             num_of_parameters = count_trainable_parameters(print_model=True)
             print("Model {}: trainable parameters: {}. Size: {} KB".format(
                 self._model.name, num_of_parameters, num_of_parameters * 4 /
@@ -99,10 +103,9 @@ class Trainer(object):
                 global_step=global_step,
                 var_list=variables_to_train(self._args["trainable_scopes"]))
 
-            # TODO: more than 1 metric?
+            train_metric = self._model.evaluator.metric["fn"](predictions,
+                                                              targets)
 
-            train_metric = self._model.evaluator.metric["fn"](predictions[0],
-                                                              targets[0])
             # General validation summary
             metric_value_ = tf.placeholder(tf.float32, shape=())
             metric_summary = tf.summary.scalar(
