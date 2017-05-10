@@ -35,6 +35,14 @@ class VGGBN(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope('64'):
                 with tf.variable_scope('conv1'):
@@ -46,7 +54,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv2'):
@@ -58,7 +67,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
             with tf.variable_scope('pool1'):
@@ -78,7 +88,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv4'):
@@ -90,7 +101,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
             with tf.variable_scope('pool2'):
@@ -110,7 +122,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv6'):
@@ -122,7 +135,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv7'):
@@ -134,7 +148,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
             with tf.variable_scope('pool3'):
@@ -154,7 +169,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv9'):
@@ -166,7 +182,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv10'):
@@ -178,7 +195,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
             with tf.variable_scope('pool4'):
@@ -198,7 +216,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv12'):
@@ -210,7 +229,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
                 with tf.variable_scope('conv13'):
@@ -222,7 +242,8 @@ class VGGBN(Classifier):
                                 'SAME',
                                 train_phase,
                                 bias_term=False,
-                                wd=l2_penalty), is_training_
+                                wd=l2_penalty,
+                                initializer=initializer), is_training_
                             if train_phase else False))
 
             with tf.variable_scope('pool5'):
@@ -239,12 +260,16 @@ class VGGBN(Classifier):
                         fc(pool5, [512, 512],
                            train_phase,
                            bias_term=False,
-                           wd=l2_penalty), is_training_
+                           wd=l2_penalty,
+                           initializer=initializer), is_training_
                         if train_phase else False))
 
             with tf.variable_scope('softmax_linear'):
                 # no batch norm in the classification head
-                logits = fc(fc1, [512, num_classes], train_phase)
+                logits = fc(
+                    fc1, [512, num_classes],
+                    train_phase,
+                    initializer=initializer)
         return logits
 
     def loss(self, logits, labels):

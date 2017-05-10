@@ -43,6 +43,15 @@ class StackedCAE(Autoencoder):
             is_training_: tf.bool placeholder enable/disable training ops at run time
             predictions: the model output
         """
+
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         num_layers = 9
         filter_side = 3
         filters_number = 9
@@ -62,7 +71,8 @@ class StackedCAE(Autoencoder):
                             'VALID',
                             train_phase,
                             activation=tf.nn.tanh,
-                            wd=l2_penalty)
+                            wd=l2_penalty,
+                            initializer=initializer)
                         if train_phase:
                             encoding = tf.nn.dropout(encoding, 0.5)
 
@@ -75,7 +85,8 @@ class StackedCAE(Autoencoder):
                             1,
                             'VALID',
                             train_phase,
-                            activation=tf.nn.tanh)
+                            activation=tf.nn.tanh,
+                            initializer=initializer)
 
                         tf.add_to_collection(LOSSES,
                                              self._mse(input_x, output_x))

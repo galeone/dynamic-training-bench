@@ -20,6 +20,7 @@ class Autoencoder(object, metaclass=ABCMeta):
 
     def __init__(self):
         self._info = {}
+        self._seed = None
 
     @abstractmethod
     def get(self, images, train_phase=False, l2_penalty=0.0):
@@ -67,6 +68,19 @@ class Autoencoder(object, metaclass=ABCMeta):
         self._info = info
 
     @property
+    def seed(self):
+        """Returns the seed used for weight initialization"""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        """Set the seed to use for weight initialization
+        Args:
+            seed
+        """
+        self._seed = seed
+
+    @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = AutoencoderEvaluator()
@@ -79,6 +93,7 @@ class Classifier(object, metaclass=ABCMeta):
 
     def __init__(self):
         self._info = {}
+        self._seed = None
 
     @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
@@ -128,6 +143,19 @@ class Classifier(object, metaclass=ABCMeta):
         self._info = info
 
     @property
+    def seed(self):
+        """Returns the seed used for weight initialization"""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        """Set the seed to use for weight initialization
+        Args:
+            seed
+        """
+        self._seed = seed
+
+    @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = ClassifierEvaluator()
@@ -140,6 +168,7 @@ class Detector(object, metaclass=ABCMeta):
 
     def __init__(self):
         self._info = {}
+        self._seed = None
 
     @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
@@ -192,6 +221,19 @@ class Detector(object, metaclass=ABCMeta):
         self._info = info
 
     @property
+    def seed(self):
+        """Returns the seed used for weight initialization"""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        """Set the seed to use for weight initialization
+        Args:
+            seed
+        """
+        self._seed = seed
+
+    @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = DetectorEvaluator()
@@ -204,6 +246,7 @@ class Regressor(object, metaclass=ABCMeta):
 
     def __init__(self):
         self._info = {}
+        self._seed = None
 
     @abstractmethod
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
@@ -253,6 +296,19 @@ class Regressor(object, metaclass=ABCMeta):
         self._info = info
 
     @property
+    def seed(self):
+        """Returns the seed used for weight initialization"""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        """Set the seed to use for weight initialization
+        Args:
+            seed
+        """
+        self._seed = seed
+
+    @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
         obj = RegressorEvaluator()
@@ -265,6 +321,7 @@ class Custom(object, metaclass=ABCMeta):
 
     def __init__(self):
         self._info = {}
+        self._seed = None
 
     @abstractmethod
     def get(self, images, train_phase=False, l2_penalty=0.0):
@@ -316,3 +373,16 @@ class Custom(object, metaclass=ABCMeta):
             info: dict of training info
         """
         self._info = info
+
+    @property
+    def seed(self):
+        """Returns the seed used for weight initialization"""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        """Set the seed to use for weight initialization
+        Args:
+            seed
+        """
+        self._seed = seed

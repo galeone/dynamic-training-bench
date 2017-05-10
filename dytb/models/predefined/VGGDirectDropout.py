@@ -38,6 +38,14 @@ class VGGDirectDropout(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         def direct_drop(layer, prob):
             """ Build a condition node if we are in train_phase. thus we can use the
             is_training_ placeholder to switch.
@@ -61,7 +69,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
                     direct_drop(conv1, 0.7)
 
                 with tf.variable_scope('conv2'):
@@ -71,7 +80,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
                     direct_drop(conv2, 0.6)
 
             with tf.variable_scope('pool1'):
@@ -89,7 +99,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv3 = direct_drop(conv3, 0.6)
 
@@ -100,7 +111,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv4 = direct_drop(conv4, 0.6)
 
@@ -119,7 +131,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv5 = direct_drop(conv5, 0.6)
 
@@ -130,7 +143,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv6 = direct_drop(conv6, 0.6)
 
@@ -141,7 +155,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv7 = direct_drop(conv7, 0.6)
 
@@ -160,7 +175,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv8 = direct_drop(conv8, 0.6)
 
@@ -171,7 +187,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv9 = direct_drop(conv9, 0.6)
 
@@ -182,7 +199,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv10 = direct_drop(conv10, 0.6)
 
@@ -201,7 +219,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv11 = direct_drop(conv11, 0.6)
 
@@ -212,7 +231,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv12 = direct_drop(conv12, 0.6)
 
@@ -223,7 +243,8 @@ class VGGDirectDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     conv13 = direct_drop(conv13, 0.6)
 
@@ -241,11 +262,15 @@ class VGGDirectDropout(Classifier):
                     pool5, [512, 512],
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
                 fc1 = direct_drop(fc1, 0.5)
 
             with tf.variable_scope('softmax_linear'):
-                logits = fc(fc1, [512, num_classes], train_phase)
+                logits = fc(
+                    fc1, [512, num_classes],
+                    train_phase,
+                    initializer=initializer)
         return logits
 
     def loss(self, logits, labels):

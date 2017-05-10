@@ -50,6 +50,7 @@ class Trainer(object):
         with tf.Graph().as_default():
             if self._args["seed"] is not None:
                 tf.set_random_seed(self._args["seed"])
+                self._model.seed = self._args["seed"]
             global_step = tf.Variable(0, trainable=False, name='global_step')
 
             # Get inputs and targets: inputs is an input batch

@@ -35,6 +35,14 @@ class LeNet(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope("conv1"):
                 conv1 = conv(
@@ -43,7 +51,8 @@ class LeNet(Classifier):
                     'SAME',
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
             with tf.variable_scope("pool1"):
                 pool1 = tf.nn.max_pool(
@@ -59,7 +68,8 @@ class LeNet(Classifier):
                     'SAME',
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
             with tf.variable_scope("pool2"):
                 pool2 = tf.nn.max_pool(
@@ -74,7 +84,8 @@ class LeNet(Classifier):
                     pool2, [7 * 7 * 64, 1024],
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
             with tf.variable_scope("softmax_linear"):
                 logits = fc(fc1, [1024, num_classes], train_phase)

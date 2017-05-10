@@ -43,6 +43,15 @@ class SingleLayerCAE(Autoencoder):
             is_training_: tf.bool placeholder enable/disable training ops at run time
             predictions: the model output
         """
+
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         filter_side = 3
         filters_number = 32
         with tf.variable_scope(self.__class__.__name__):
@@ -62,7 +71,8 @@ class SingleLayerCAE(Autoencoder):
                     'VALID',
                     train_phase,
                     activation=tf.nn.tanh,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
             with tf.variable_scope("decode"):
                 # the decoding convolution is a [3 x 3 x 32] x input_depth convolution
@@ -83,7 +93,8 @@ class SingleLayerCAE(Autoencoder):
                     1,
                     'VALID',
                     train_phase,
-                    activation=tf.nn.tanh)
+                    activation=tf.nn.tanh,
+                    initializer=initializer)
 
         # The is_training_ placeholder is not used, but we define and return it
         # in order to respect the expected output cardinality of the get method

@@ -85,7 +85,13 @@ def atrous_conv(input_x,
                 train_phase,
                 bias_term=True,
                 activation=tf.identity,
-                wd=0.0):
+                wd=0.0,
+                initializer=tf.contrib.layers.variance_scaling_initializer(
+                    factor=2.0,
+                    mode='FAN_IN',
+                    uniform=False,
+                    seed=None,
+                    dtype=tf.float32)):
     """ Define an atrous conv layer.
     Args:
          input_x: a 4D tensor
@@ -101,10 +107,11 @@ def atrous_conv(input_x,
              the layer is wrapped in a batch norm layer
          activation: activation function. Default linear
          wd: weight decay
+         initializer: the initializer to use
     Rerturns:
         op: the conv2d op"""
 
-    W = weight("W", shape, train_phase, wd=wd)
+    W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
     result = tf.nn.atrous_conv2d(input_x, W, rate, padding)
     if bias_term:
         b = bias("b", [shape[3]], train_phase)
@@ -146,7 +153,13 @@ def conv(input_x,
          train_phase,
          bias_term=True,
          activation=tf.identity,
-         wd=0.0):
+         wd=0.0,
+         initializer=tf.contrib.layers.variance_scaling_initializer(
+             factor=2.0,
+             mode='FAN_IN',
+             uniform=False,
+             seed=None,
+             dtype=tf.float32)):
     """ Define a conv layer.
     Args:
         input_x: a 4D tensor
@@ -159,11 +172,12 @@ def conv(input_x,
         activation: activation function. Default linear
         train_phase: boolean that enables/diables visualizations and train-only specific ops
         wd: weight decay
+        initializer: the initializer to use
     Rerturns:
         op: the conv2d op
     """
 
-    W = weight("W", shape, train_phase, wd=wd)
+    W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
     result = tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding)
     if bias_term:
         b = bias("b", [shape[3]], train_phase)
@@ -203,7 +217,13 @@ def fc(input_x,
        train_phase,
        bias_term=True,
        activation=tf.identity,
-       wd=0.0):
+       wd=0.0,
+       initializer=tf.contrib.layers.variance_scaling_initializer(
+           factor=2.0,
+           mode='FAN_IN',
+           uniform=False,
+           seed=None,
+           dtype=tf.float32)):
     """ Define a fully connected layer.
     Args:
         input_x: a 4d tensor
@@ -213,11 +233,12 @@ def fc(input_x,
              the layer is wrapped in a batch norm layer
         activation: activation function. Default linear
         wd: weight decay
+        initializer: the initializer to use
     Returns:
         fc: the fc layer
     """
 
-    W = weight("W", shape, train_phase, wd=wd)
+    W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
     result = tf.matmul(input_x, W)
     if bias_term:
         b = bias("b", [shape[1]], train_phase)

@@ -35,6 +35,14 @@ class VGG(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope('64'):
                 with tf.variable_scope('conv1'):
@@ -44,7 +52,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv2'):
                     conv2 = conv(
@@ -53,7 +62,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
             with tf.variable_scope('pool1'):
                 pool1 = tf.nn.max_pool(
@@ -70,7 +80,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv4'):
                     conv4 = conv(
@@ -79,7 +90,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
             with tf.variable_scope('pool2'):
                 pool2 = tf.nn.max_pool(
@@ -96,7 +108,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv6'):
                     conv6 = conv(
@@ -105,7 +118,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv7'):
                     conv7 = conv(
@@ -114,7 +128,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
             with tf.variable_scope('pool3'):
                 pool3 = tf.nn.max_pool(
@@ -131,7 +146,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv9'):
                     conv9 = conv(
@@ -140,7 +156,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv10'):
                     conv10 = conv(
@@ -149,7 +166,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
             with tf.variable_scope('pool4'):
                 pool4 = tf.nn.max_pool(
@@ -166,7 +184,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv12'):
                     conv12 = conv(
@@ -175,7 +194,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                 with tf.variable_scope('conv13'):
                     conv13 = conv(
@@ -184,7 +204,8 @@ class VGG(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
             with tf.variable_scope('pool5'):
                 pool5 = tf.nn.max_pool(
@@ -199,10 +220,14 @@ class VGG(Classifier):
                     pool5, [512, 512],
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
             with tf.variable_scope('softmax_linear'):
-                logits = fc(fc1, [512, num_classes], train_phase)
+                logits = fc(
+                    fc1, [512, num_classes],
+                    train_phase,
+                    initializer=initializer)
         return logits
 
     def loss(self, logits, labels):

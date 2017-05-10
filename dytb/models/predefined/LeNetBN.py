@@ -35,6 +35,14 @@ class LeNetBN(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.relu(
@@ -45,7 +53,8 @@ class LeNetBN(Classifier):
                             'SAME',
                             train_phase,
                             bias_term=False,
-                            wd=l2_penalty), is_training_
+                            wd=l2_penalty,
+                            initializer=initializer), is_training_
                         if train_phase else False))
 
             with tf.variable_scope("pool1"):
@@ -64,7 +73,8 @@ class LeNetBN(Classifier):
                             'SAME',
                             train_phase,
                             bias_term=False,
-                            wd=l2_penalty), is_training_
+                            wd=l2_penalty,
+                            initializer=initializer), is_training_
                         if train_phase else False))
 
             with tf.variable_scope("pool2"):
@@ -81,11 +91,15 @@ class LeNetBN(Classifier):
                         fc(pool2, [7 * 7 * 64, 1024],
                            train_phase,
                            bias_term=False,
-                           wd=l2_penalty), is_training_
+                           wd=l2_penalty,
+                           initializer=initializer), is_training_
                         if train_phase else False))
 
             with tf.variable_scope("softmax_linear"):
-                logits = fc(fc1, [1024, num_classes], train_phase)
+                logits = fc(
+                    fc1, [1024, num_classes],
+                    train_phase,
+                    initializer=initializer)
             return logits
 
     def loss(self, logits, labels):

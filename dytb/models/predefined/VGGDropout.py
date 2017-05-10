@@ -38,6 +38,14 @@ class VGGDropout(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         with tf.variable_scope(self.__class__.__name__):
             with tf.variable_scope('64'):
                 with tf.variable_scope('conv1'):
@@ -47,7 +55,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
                     if train_phase:
                         conv1 = tf.nn.dropout(conv1, 0.7)
 
@@ -58,7 +67,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv2 = tf.nn.dropout(conv2, 0.6)
@@ -78,7 +88,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv3 = tf.nn.dropout(conv3, 0.6)
@@ -90,7 +101,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv4 = tf.nn.dropout(conv4, 0.6)
@@ -110,7 +122,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv5 = tf.nn.dropout(conv5, 0.6)
@@ -122,7 +135,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv6 = tf.nn.dropout(conv6, 0.6)
@@ -134,7 +148,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv7 = tf.nn.dropout(conv7, 0.6)
@@ -154,7 +169,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv8 = tf.nn.dropout(conv8, 0.6)
@@ -166,7 +182,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv9 = tf.nn.dropout(conv9, 0.6)
@@ -178,7 +195,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv10 = tf.nn.dropout(conv10, 0.6)
@@ -198,7 +216,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv11 = tf.nn.dropout(conv11, 0.6)
@@ -210,7 +229,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv12 = tf.nn.dropout(conv12, 0.6)
@@ -222,7 +242,8 @@ class VGGDropout(Classifier):
                         'SAME',
                         train_phase,
                         activation=tf.nn.relu,
-                        wd=l2_penalty)
+                        wd=l2_penalty,
+                        initializer=initializer)
 
                     if train_phase:
                         conv13 = tf.nn.dropout(conv13, 0.6)
@@ -241,13 +262,17 @@ class VGGDropout(Classifier):
                     pool5, [512, 512],
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
                 if train_phase:
                     fc1 = tf.nn.dropout(fc1, 0.5)
 
             with tf.variable_scope('softmax_linear'):
-                logits = fc(fc1, [512, num_classes], train_phase)
+                logits = fc(
+                    fc1, [512, num_classes],
+                    train_phase,
+                    initializer=initializer)
         return logits
 
     def loss(self, logits, labels):

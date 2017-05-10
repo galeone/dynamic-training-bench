@@ -35,6 +35,14 @@ class LeNetDirectDropout(Classifier):
           Logits.
         """
 
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         def direct_drop(layer, prob):
             """ Build a condition node if we are in train_phase. thus we can use the
             is_training_ placeholder to switch.
@@ -57,7 +65,8 @@ class LeNetDirectDropout(Classifier):
                     'SAME',
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
                 conv1 = direct_drop(conv1, 0.7)
 
             with tf.variable_scope("pool1"):
@@ -74,7 +83,8 @@ class LeNetDirectDropout(Classifier):
                     'SAME',
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
                 conv2 = direct_drop(conv2, 0.6)
 
             with tf.variable_scope("pool2"):
@@ -90,12 +100,16 @@ class LeNetDirectDropout(Classifier):
                     pool2, [7 * 7 * 64, 1024],
                     train_phase,
                     activation=tf.nn.relu,
-                    wd=l2_penalty)
+                    wd=l2_penalty,
+                    initializer=initializer)
 
                 fc1 = direct_drop(fc1, 0.5)
 
             with tf.variable_scope("softmax_linear"):
-                logits = fc(fc1, [1024, num_classes], train_phase)
+                logits = fc(
+                    fc1, [1024, num_classes],
+                    train_phase,
+                    initializer=initializer)
         return logits
 
     def loss(self, logits, labels):

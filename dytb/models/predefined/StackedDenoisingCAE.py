@@ -43,6 +43,15 @@ class StackedDenoisingCAE(Autoencoder):
             is_training_: tf.bool placeholder enable/disable training ops at run time
             predictions: the model output
         """
+
+        # Initializer with seed
+        initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0,
+            mode='FAN_IN',
+            uniform=False,
+            seed=self.seed,
+            dtype=tf.float32)
+
         num_layers = 9
         filter_side = 3
         filters_number = 9
@@ -72,7 +81,8 @@ class StackedDenoisingCAE(Autoencoder):
                             'VALID',
                             train_phase,
                             activation=tf.nn.relu,
-                            wd=l2_penalty)
+                            wd=l2_penalty,
+                            initializer=initializer)
 
                         if train_phase:
                             encoding = tf.nn.dropout(encoding, 0.5)
@@ -86,7 +96,8 @@ class StackedDenoisingCAE(Autoencoder):
                             1,
                             'VALID',
                             train_phase,
-                            activation=tf.nn.tanh)
+                            activation=tf.nn.tanh,
+                            initializer=initializer)
 
                         last = layer == num_layers - 1
                         if train_phase and not last:
