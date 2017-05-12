@@ -105,7 +105,7 @@ class Trainer(object):
 
             train_metric = None
             for metric in self._model.evaluator.metrics:
-                if metric["model_selection"] is not None:
+                if metric["model_selection"]:
                     train_metric = metric
                 else:
                     tf_log(
