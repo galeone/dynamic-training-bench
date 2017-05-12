@@ -10,7 +10,7 @@
 from . import inputs
 from . import models
 
-__version__ = '0.5.7'
+__version__ = '0.5.8'
 __url__ = 'https://github.com/galeone/dynamic-training-bench'
 __author__ = 'Paolo Galeone'
 __email__ = 'nessuno@nerdz.eu'

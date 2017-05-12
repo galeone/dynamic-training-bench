@@ -37,19 +37,21 @@ class ClassifierEvaluator(Evaluator):
         self._model = model
 
     @property
-    def metric(self):
-        """Returns a dict with keys:
+    def metrics(self):
+        """Returns a list of dict with keys:
         {
             "fn": function
             "name": name
             "positive_trend_sign": sign that we like to see when things go well
+            "model_selection": boolean, True if the metric has to be measured to select the model
         }
         """
-        return {
+        return [{
             "fn": accuracy_op,
             "name": "accuracy",
-            "positive_trend_sign": +1
-        }
+            "positive_trend_sign": +1,
+            "model_selection": True,
+        }]
 
     def eval(self,
              checkpoint_path,
@@ -133,7 +135,7 @@ class ClassifierEvaluator(Evaluator):
                 images, dataset.num_classes, train_phase=False)
 
             # Accuracy op
-            accuracy = self.metric["fn"](predictions, labels)
+            accuracy = self.metrics[0]["fn"](predictions, labels)
 
             saver = tf.train.Saver(variables_to_restore())
             accuracy_value = 0.0

@@ -56,11 +56,12 @@ class Evaluator(object, metaclass=ABCMeta):
         """
 
     @abstractproperty
-    def metric(self):
-        """Returns a dict with keys:
+    def metrics(self):
+        """Returns a list of dict with keys:
         {
             "fn": function
             "name": name
             "positive_trend_sign": sign that we like to see when things go well
+            "model_selection": boolean, True if the metric has to be measured to select the model
         }
         """

@@ -36,19 +36,21 @@ class RegressorEvaluator(Evaluator):
         self._model = model
 
     @property
-    def metric(self):
-        """Returns a dict with keys:
+    def metrics(self):
+        """Returns a list of dict with keys:
         {
             "fn": function
             "name": name
             "positive_trend_sign": sign that we like to see when things go well
+            "model_selection": boolean, True if the metric has to be measured to select the model
         }
         """
-        return {
+        return [{
             "fn": self._model.loss,
             "name": "error",
-            "positive_trend_sign": -1
-        }
+            "positive_trend_sign": -1,
+            "model_selection": True,
+        }]
 
     def eval(self,
              checkpoint_path,
@@ -130,7 +132,7 @@ class RegressorEvaluator(Evaluator):
             # Build a Graph that computes the predictions from the inference model.
             _, predictions = self._model.get(
                 images, dataset.num_classes, train_phase=False, l2_penalty=0.0)
-            loss = self.metric["fn"](predictions, labels)
+            loss = self.metrics[0]["fn"](predictions, labels)
             saver = tf.train.Saver(variables_to_restore())
 
             average_error = float('inf')

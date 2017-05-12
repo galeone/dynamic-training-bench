@@ -103,13 +103,27 @@ class Trainer(object):
                 global_step=global_step,
                 var_list=variables_to_train(self._args["trainable_scopes"]))
 
-            train_metric = self._model.evaluator.metric["fn"](predictions,
-                                                              targets)
+            train_metric = None
+            for metric in self._model.evaluator.metrics:
+                if metric["model_selection"] is not None:
+                    train_metric = metric
+                else:
+                    tf_log(
+                        tf.summary.scalar(metric["name"], metric["fn"](
+                            predictions, targets)))
+
+            if train_metric is None:
+                print(
+                    "Please specify a metric in the evaluator with 'model_selection' not None"
+                )
+                return
+
+            train_metric_op = train_metric["fn"](predictions, targets)
 
             # General validation summary
             metric_value_ = tf.placeholder(tf.float32, shape=())
-            metric_summary = tf.summary.scalar(
-                self._model.evaluator.metric["name"], metric_value_)
+            metric_summary = tf.summary.scalar(train_metric["name"],
+                                               metric_value_)
 
             # read collection after that every op added its own
             # summaries in the train_summaries collection
@@ -203,7 +217,7 @@ class Trainer(object):
 
                         # train metric
                         ta_value = sess.run(
-                            train_metric, feed_dict={is_training_: False})
+                            train_metric_op, feed_dict={is_training_: False})
                         summary_line = sess.run(
                             metric_summary, feed_dict={metric_value_: ta_value})
                         train_log.add_summary(summary_line, global_step=step)
@@ -212,16 +226,14 @@ class Trainer(object):
                             '{} ({}): train {} = {:.3f} validation {} = {:.3f}'.
                             format(datetime.now(),
                                    int(step / self._steps["epoch"]),
-                                   self._model.evaluator.metric["name"],
-                                   ta_value, self._model.evaluator.metric[
+                                   train_metric["name"], ta_value, train_metric[
                                        "name"], metric_measured_value))
 
                         # save best model
                         sign = math.copysign(
                             1,
                             metric_measured_value - best_metric_measured_value)
-                        if sign == self._model.evaluator.metric[
-                                "positive_trend_sign"]:
+                        if sign == train_metric["positive_trend_sign"]:
                             best_metric_measured_value = metric_measured_value
                             best_saver.save(
                                 sess,

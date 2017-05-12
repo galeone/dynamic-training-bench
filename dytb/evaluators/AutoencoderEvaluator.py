@@ -86,19 +86,21 @@ class AutoencoderEvaluator(Evaluator):
         }
 
     @property
-    def metric(self):
-        """Returns a dict with keys:
+    def metrics(self):
+        """Returns a list of dict with keys:
         {
             "fn": function
             "name": name
             "positive_trend_sign": sign that we like to see when things go well
+            "model_selection": boolean, True if the metric has to be measured to select the model
         }
         """
-        return {
+        return [{
             "fn": self._model.loss,
             "name": "error",
-            "positive_trend_sign": -1
-        }
+            "positive_trend_sign": -1,
+            "model_selection": True,
+        }]
 
     def _error(self,
                checkpoint_path,
@@ -128,7 +130,7 @@ class AutoencoderEvaluator(Evaluator):
 
             # Build a Graph that computes the predictions from the inference model.
             _, predictions = self._model.get(images, train_phase=False)
-            loss = self.metric["fn"](predictions, images)
+            loss = self.metrics[0]["fn"](predictions, images)
             saver = tf.train.Saver(variables_to_restore())
             average_error = float('inf')
             with tf.Session(config=tf.ConfigProto(
