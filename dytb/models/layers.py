@@ -128,15 +128,17 @@ def atrous_conv(input_x,
         grid_side = math.floor(math.sqrt(shape[3]))
 
         pre_activation = on_grid(
-            tf.transpose(conv_results, perm=(
-                1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side, grid_side)
+            tf.transpose(conv_results,
+                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
+            grid_side)
 
         # log post-activation
         conv_results = tf.split(
             value=out[0], num_or_size_splits=shape[3], axis=2)
         post_activation = on_grid(
-            tf.transpose(conv_results, perm=(
-                1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side, grid_side)
+            tf.transpose(conv_results,
+                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
+            grid_side)
 
         tf_log(
             tf.summary.image(
@@ -194,15 +196,17 @@ def conv(input_x,
         grid_side = math.floor(math.sqrt(shape[3]))
 
         pre_activation = on_grid(
-            tf.transpose(conv_results, perm=(
-                1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side, grid_side)
+            tf.transpose(conv_results,
+                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
+            grid_side)
 
         # log post-activation
         conv_results = tf.split(
             value=out[0], num_or_size_splits=shape[3], axis=2)
         post_activation = on_grid(
-            tf.transpose(conv_results, perm=(
-                1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side, grid_side)
+            tf.transpose(conv_results,
+                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
+            grid_side)
 
         tf_log(
             tf.summary.image(

@@ -172,8 +172,8 @@ class CLIArgs(object):
         parser.add_argument(
             '--restart',
             action='store_true',
-            help=
-            'restart the training process DELETING the old checkpoint files')
+            help='restart the training process DELETING the old checkpoint files'
+        )
 
         # Learning rate decay arguments
         parser.add_argument(

@@ -31,12 +31,14 @@ class StackedDenoisingCAE(Autoencoder):
         return tf.pad(input_x, [[0, 0], [amount, amount], [amount, amount],
                                 [0, 0]])
 
-    def get(self, images, train_phase=False, l2_penalty=0.0):
+    def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
         Args:
             images: model input
+            num_classes: number of classes to predict. If the model doesn't use it,
+                         just pass any value.
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
         Returns:

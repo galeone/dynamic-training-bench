@@ -21,15 +21,18 @@ class Autoencoder(object, metaclass=ABCMeta):
     def __init__(self):
         self._info = {}
         self._seed = None
+        self._evaluator = None
 
     @abstractmethod
-    def get(self, images, train_phase=False, l2_penalty=0.0):
+    def get(self, inputs, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
 
         Args:
-            images: model input
+            inputs: model input
+            num_classes: number of classes to predict. If the model doesn't use it,
+                         just pass any value.
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
 
@@ -83,9 +86,12 @@ class Autoencoder(object, metaclass=ABCMeta):
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
-        obj = AutoencoderEvaluator()
-        obj.model = self
-        return obj
+        if self._evaluator is None:
+            obj = AutoencoderEvaluator()
+            obj.model = self
+            self._evaluator = obj
+
+        return self._evaluator
 
 
 class Classifier(object, metaclass=ABCMeta):
@@ -94,15 +100,16 @@ class Classifier(object, metaclass=ABCMeta):
     def __init__(self):
         self._info = {}
         self._seed = None
+        self._evaluator = None
 
     @abstractmethod
-    def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
+    def get(self, inputs, num_classes, train_phase=False, l2_penalty=0.0):
         """Define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
 
         Args:
-            images: model input
+            inputs: model input
             num_classes: number of classes to predict
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
@@ -158,9 +165,11 @@ class Classifier(object, metaclass=ABCMeta):
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
-        obj = ClassifierEvaluator()
-        obj.model = self
-        return obj
+        if self._evaluator is None:
+            obj = ClassifierEvaluator()
+            obj.model = self
+            self._evaluator = obj
+        return self._evaluator
 
 
 class Detector(object, metaclass=ABCMeta):
@@ -169,16 +178,18 @@ class Detector(object, metaclass=ABCMeta):
     def __init__(self):
         self._info = {}
         self._seed = None
+        self._evaluator = None
 
     @abstractmethod
-    def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
+    def get(self, inputs, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
 
         Args:
-            images: model input, tensor with batch_size elements
-            num_classes: number of classes to predict
+            inputs: model input, tensor with batch_size elements
+            num_classes: number of classes to predict. If the model doesn't use it,
+                         just pass any value.
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
 
@@ -236,9 +247,11 @@ class Detector(object, metaclass=ABCMeta):
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
-        obj = DetectorEvaluator()
-        obj.model = self
-        return obj
+        if self._evaluator is None:
+            obj = DetectorEvaluator()
+            obj.model = self
+            self._evaluator = obj
+        return self._evaluator
 
 
 class Regressor(object, metaclass=ABCMeta):
@@ -247,16 +260,18 @@ class Regressor(object, metaclass=ABCMeta):
     def __init__(self):
         self._info = {}
         self._seed = None
+        self._evaluator = None
 
     @abstractmethod
-    def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
+    def get(self, inputs, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
 
         Args:
-            images: model input
-            num_classes: number of classes to predict
+            inputs: model input
+            num_classes: number of classes to predict. If the model doesn't use it,
+                         just pass any value.
             train_phase: set it to True when defining the model, during train
             l2_penalty: float value, weight decay (l2) penalty
 
@@ -311,9 +326,11 @@ class Regressor(object, metaclass=ABCMeta):
     @property
     def evaluator(self):
         """Returns the evaluator associated to the model"""
-        obj = RegressorEvaluator()
-        obj.model = self
-        return obj
+        if self._evaluator is None:
+            obj = RegressorEvaluator()
+            obj.model = self
+            self._evaluator = obj
+        return self._evaluator
 
 
 class Custom(object, metaclass=ABCMeta):
@@ -322,17 +339,21 @@ class Custom(object, metaclass=ABCMeta):
     def __init__(self):
         self._info = {}
         self._seed = None
+        self._evaluator = None
 
     @abstractmethod
-    def get(self, images, train_phase=False, l2_penalty=0.0):
+    def get(self, inputs, num_classes, **kwargs):
         """ define the model with its inputs.
         Use this function to define the model in training and when exporting the model
         in the protobuf format.
 
         Args:
-            images: model input
-            train_phase: set it to True when defining the model, during train
-            l2_penalty: float value, weight decay (l2) penalty
+            inputs: model input
+            num_classes: number of classes to predict. If the model doesn't use it,
+                         just pass any value.
+            kwargs:
+                train_phase: set it to True when defining the model, during train
+                l2_penalty: float value, weight decay (l2) penalty
 
         Returns:
             is_training_: tf.bool placeholder enable/disable training ops at run time

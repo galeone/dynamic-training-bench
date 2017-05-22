@@ -10,7 +10,8 @@
 from .inputs.interfaces import InputType
 
 
-def evaluate(checkpoint_path,
+def evaluate(metric,
+             checkpoint_path,
              model,
              dataset,
              input_type,
@@ -18,6 +19,7 @@ def evaluate(checkpoint_path,
              augmentation_fn=None):
     """Eval the model, restoring weight found in checkpoint_path, using the dataset.
     Args:
+        metric: the metric to evaluate. The usual dictionary with the fn and its properties
         checkpoint_path: path of the trained model checkpoint directory
         model: implementation of the Model interface
         dataset: implementation of the Input interface
@@ -29,8 +31,9 @@ def evaluate(checkpoint_path,
                on the dataset, fetching values of the specified input_type
     """
     InputType.check(input_type)
-    return model.evaluator.eval(checkpoint_path, dataset, input_type,
-                                batch_size, augmentation_fn)
+    model.evaluator.dataset = dataset
+    return model.evaluator.eval(metric, checkpoint_path, input_type, batch_size,
+                                augmentation_fn)
 
 
 def stats(checkpoint_path, model, dataset, batch_size, augmentation_fn=None):
@@ -44,5 +47,5 @@ def stats(checkpoint_path, model, dataset, batch_size, augmentation_fn=None):
     Returns:
         dict: a dictionary with the statistics measured
     """
-    return model.evaluator.stats(checkpoint_path, dataset, batch_size,
-                                 augmentation_fn)
+    model.evaluator.dataset = dataset
+    return model.evaluator.stats(checkpoint_path, batch_size, augmentation_fn)

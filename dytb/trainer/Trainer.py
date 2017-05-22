@@ -35,6 +35,7 @@ class Trainer(object):
         """
         self._model = model
         self._dataset = dataset
+        self._model.evaluator.dataset = dataset
         self._args = args
         self._steps = steps
         self._paths = paths
@@ -103,30 +104,32 @@ class Trainer(object):
                 global_step=global_step,
                 var_list=variables_to_train(self._args["trainable_scopes"]))
 
-            train_metric = None
-            for metric in self._model.evaluator.metrics:
+            model_selection_idx = -1
+            # validation metrics arrays
+            metrics_to_measure = []
+            metric_values_ = []
+            metric_summaries = []
+            for idx, metric in enumerate(self._model.evaluator.metrics):
                 if metric["model_selection"]:
-                    train_metric = metric
-                else:
-                    tf_log(
-                        tf.summary.scalar(metric["name"], metric["fn"](
-                            predictions, targets)))
+                    model_selection_idx = idx
 
-            if train_metric is None:
+                if metric["tensorboard"]:
+                    # Build tensorboard scalar visualizations using placeholder
+                    metric_values_.append(tf.placeholder(tf.float32, shape=()))
+                    metric_summaries.append(
+                        tf.summary.scalar(metric["name"], metric_values_[idx]))
+
+                    metrics_to_measure.append(metric)
+
+            if model_selection_idx == -1:
                 print(
                     "Please specify a metric in the evaluator with 'model_selection' not None"
                 )
                 return
 
-            train_metric_op = train_metric["fn"](predictions, targets)
-
-            # General validation summary
-            metric_value_ = tf.placeholder(tf.float32, shape=())
-            metric_summary = tf.summary.scalar(train_metric["name"],
-                                               metric_value_)
-
             # read collection after that every op added its own
-            # summaries in the train_summaries collection
+            # summaries in the train_summaries collection.
+            # No metrics are addded to the MODEL_SUMMARIES collection
             train_summaries = tf.summary.merge(
                 tf.get_collection_ref(MODEL_SUMMARIES))
 
@@ -156,10 +159,10 @@ class Trainer(object):
 
                 # If a best model already exists (thus we're continuing a train
                 # process) then restore the best validation metric reached
-                # and place it into best_metric_measured_value
-                best_metric_measured_value = self._model.evaluator.eval(
+                # and place it into best_model_selection_measure
+                best_model_selection_measure = self._model.evaluator.eval(
+                    self._model.evaluator.metrics[model_selection_idx],
                     self._paths["best"],
-                    self._dataset,
                     input_type=InputType.validation,
                     batch_size=self._args["batch_size"])
 
@@ -202,39 +205,61 @@ class Trainer(object):
                         train_saver.save(
                             sess, checkpoint_path, global_step=step)
 
-                        # validation metric
-                        metric_measured_value = self._model.evaluator.eval(
-                            self._paths["log"],
-                            self._dataset,
-                            input_type=InputType.validation,
-                            batch_size=self._args["batch_size"])
+                        # arrays of validation measures
+                        validation_measured_metrics = []
+                        # ta value is the model selection metric evaluate on the training
+                        # set, useful just to output on the CLI
+                        ta_value = 0
+                        for idx, metric in enumerate(metrics_to_measure):
+                            # validation metrics
+                            validation_measured_metrics.append(
+                                self._model.evaluator.eval(
+                                    metric,
+                                    self._paths["log"],
+                                    input_type=InputType.validation,
+                                    batch_size=self._args["batch_size"]))
+                            validation_log.add_summary(
+                                sess.run(
+                                    metric_summaries[idx],
+                                    feed_dict={
+                                        metric_values_[idx]:
+                                        validation_measured_metrics[idx]
+                                    }),
+                                global_step=step)
 
-                        summary_line = sess.run(
-                            metric_summary,
-                            feed_dict={metric_value_: metric_measured_value})
-                        validation_log.add_summary(
-                            summary_line, global_step=step)
+                            # Repeat measurement on the training set
+                            measure = self._model.evaluator.eval(
+                                metric,
+                                self._paths["log"],
+                                input_type=InputType.train,
+                                batch_size=self._args["batch_size"])
+                            train_log.add_summary(
+                                sess.run(
+                                    metric_summaries[idx],
+                                    feed_dict={metric_values_[idx]: measure}),
+                                global_step=step)
 
-                        # train metric
-                        ta_value = sess.run(
-                            train_metric_op, feed_dict={is_training_: False})
-                        summary_line = sess.run(
-                            metric_summary, feed_dict={metric_value_: ta_value})
-                        train_log.add_summary(summary_line, global_step=step)
+                            # fill ta_value
+                            if idx == model_selection_idx:
+                                ta_value = measure
 
+                        name = self._model.evaluator.metrics[
+                            model_selection_idx]["name"]
                         print(
                             '{} ({}): train {} = {:.3f} validation {} = {:.3f}'.
                             format(datetime.now(),
-                                   int(step / self._steps["epoch"]),
-                                   train_metric["name"], ta_value, train_metric[
-                                       "name"], metric_measured_value))
+                                   int(step / self._steps["epoch"]), name,
+                                   ta_value, name, validation_measured_metrics[
+                                       model_selection_idx]))
 
                         # save best model
                         sign = math.copysign(
-                            1,
-                            metric_measured_value - best_metric_measured_value)
-                        if sign == train_metric["positive_trend_sign"]:
-                            best_metric_measured_value = metric_measured_value
+                            1, validation_measured_metrics[model_selection_idx]
+                            - best_model_selection_measure)
+                        if sign == self._model.evaluator.metrics[
+                                model_selection_idx]["positive_trend_sign"]:
+                            best_model_selection_measure = validation_measured_metrics[
+                                model_selection_idx]
                             best_saver.save(
                                 sess,
                                 os.path.join(self._paths["best"], 'model.ckpt'),
@@ -249,9 +274,7 @@ class Trainer(object):
                 coord.join(threads)
 
             stats = self._model.evaluator.stats(
-                self._paths["best"],
-                self._dataset,
-                batch_size=self._args["batch_size"])
+                self._paths["best"], batch_size=self._args["batch_size"])
             self._model.info = {
                 "args": self._args,
                 "paths": self._paths,

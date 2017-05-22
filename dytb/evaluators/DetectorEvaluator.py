@@ -9,30 +9,13 @@
 
 import numpy as np
 import tensorflow as tf
-from .interfaces import Evaluator
+from .Evaluator import Evaluator
 from .metrics import iou_op
 from ..models.utils import variables_to_restore
 
 
 class DetectorEvaluator(Evaluator):
     """DetectorEvaluator is the evaluation object for a Detector model"""
-
-    def __init__(self):
-        """Initialize the evaluator"""
-        self._model = None
-
-    @property
-    def model(self):
-        """Returns the model to evaluate"""
-        return self._model
-
-    @model.setter
-    def model(self, model):
-        """Set the model to evaluate.
-        Args:
-            model: implementation of the Model interface
-        """
-        self._model = model
 
     @property
     def metrics(self):
@@ -42,44 +25,19 @@ class DetectorEvaluator(Evaluator):
             "name": name
             "positive_trend_sign": sign that we like to see when things go well
             "model_selection": boolean, True if the metric has to be measured to select the model
+            "average": boolean, true if the metric should be computed as average over the batches.
+                       If false the results over the batches are just added
+            "tensorboard": boolean. True if the metric is a scalar and can be logged in tensoboard
         }
         """
         return [{
             "fn": iou_op,
             "name": "IoU",
             "positive_trend_sign": +1,
-            "model_selection": True
+            "model_selection": True,
+            "average": True,
+            "tensorboard": True,
         }]
-
-    def eval(self,
-             checkpoint_path,
-             dataset,
-             input_type,
-             batch_size,
-             augmentation_fn=None):
-        """Eval the model, restoring weight found in checkpoint_path, using the dataset.
-        Args:
-            checkpoint_path: path of the trained model checkpoint directory
-            dataset: implementation of the Input interface
-            input_type: InputType enum
-            batch_size: evaluate in batch of size batch_size
-            augmentation_fn: if present, applies the augmentation to the input data
-
-        Returns:
-            value: scalar value representing the evaluation of the model,
-                   on the dataset, fetching values of the specified input_type
-        """
-        raise ValueError("method not implemented")
-
-    def stats(self, checkpoint_path, dataset, batch_size, augmentation_fn=None):
-        """Run the eval method on the model, see eval for arguments
-        and return value description.
-        Moreover, adds informations about the model and returns the whole information
-        in a dictionary.
-        Returns:
-            dict
-        """
-        raise ValueError("method not implemented")
 
     def extract_features(self, checkpoint_path, inputs, layer_name):
         """Restore model parameters from checkpoint_path. Search in the model
