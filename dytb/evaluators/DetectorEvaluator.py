@@ -7,11 +7,8 @@
 #licenses expressed under Section 1.12 of the MPL v2.
 """ Evaluate Detection models """
 
-import numpy as np
-import tensorflow as tf
 from .Evaluator import Evaluator
 from .metrics import iou_op
-from ..models.utils import variables_to_restore
 
 
 class DetectorEvaluator(Evaluator):
@@ -38,47 +35,3 @@ class DetectorEvaluator(Evaluator):
             "average": True,
             "tensorboard": True,
         }]
-
-    def extract_features(self, checkpoint_path, inputs, layer_name):
-        """Restore model parameters from checkpoint_path. Search in the model
-        the layer with name `layer_name`. If found places `inputs` as input to the model
-        and returns the values extracted by the layer.
-        Args:
-            checkpoint_path: path of the trained model checkpoint directory
-            inputs: a Tensor with a shape compatible with the model's input
-            layer_name: a string, the name of the layer to extract from model
-        Returns:
-            features: a numpy ndarray that contains the extracted features
-        """
-
-        # Evaluate the inputs in the current default graph
-        # then user a placeholder to inject the computed values into the new graph
-        with tf.Session(config=tf.ConfigProto(
-                allow_soft_placement=True)) as sess:
-            evaluated_inputs = sess.run(inputs)
-
-        with tf.Graph().as_default() as graph:
-            inputs_ = tf.placeholder(inputs.dtype, shape=inputs.shape)
-
-            # Build a Graph that computes the predictions from the inference model.
-            _ = self._model.get(inputs, train_phase=False)
-
-            # This will raise an exception if layer_name is not found
-            layer = graph.get_tensor_by_name(layer_name)
-
-            saver = tf.train.Saver(variables_to_restore())
-            features = np.zeros(layer.shape)
-            with tf.Session(config=tf.ConfigProto(
-                    allow_soft_placement=True)) as sess:
-                ckpt = tf.train.get_checkpoint_state(checkpoint_path)
-                if ckpt and ckpt.model_checkpoint_path:
-                    # Restores from checkpoint
-                    saver.restore(sess, ckpt.model_checkpoint_path)
-                else:
-                    print('[!] No checkpoint file found')
-                    return features
-
-                features = sess.run(
-                    layer, feed_dict={inputs_: evaluated_inputs})
-
-            return features
