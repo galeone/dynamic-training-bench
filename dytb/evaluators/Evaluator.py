@@ -21,6 +21,7 @@ class Evaluator(object, metaclass=ABCMeta):
     def __init__(self):
         self._model = None
         self._dataset = None
+        self._visualizations = []
 
     @property
     def model(self):
@@ -48,16 +49,35 @@ class Evaluator(object, metaclass=ABCMeta):
         """
         self._dataset = dataset
 
+    @property
+    def visualizations(self):
+        """Returns a list of dict with keys:
+        {
+            "fn": function(inputs, predictions, targets) that returns an image
+            "name": name
+        }
+        """
+        return self._visualizations
+
+    @visualizations.setter
+    def visualizations(self, visualizations):
+        """Set the visualization list to disply
+        Args:
+            visualizations: the list of visualizations
+        """
+        self._visualizations = visualizations
+
     @abstractproperty
     def metrics(self):
         """Returns a list of dict with keys:
         {
-            "fn": function
+            "fn": function(predictions, targets)
             "name": name
             "positive_trend_sign": sign that we like to see when things go well
             "model_selection": boolean, True if the metric has to be measured to select the model
             "average": boolean, true if the metric should be computed as average over the batches.
                        If false the results over the batches are just added
+            "tensorboard": boolean. True if the metric is a scalar and can be logged in tensoboard
         }
         """
 
@@ -76,7 +96,7 @@ class Evaluator(object, metaclass=ABCMeta):
             augmentation_fn: if present, applies the augmentation to the input data
 
         Returns:
-            values: list of scalar values representing the evaluation of the model on every metric,
+            value: scalar value representing the evaluation of the metric on the restored model
                    on the dataset, fetching values of the specified input_type.
         """
         InputType.check(input_type)
@@ -183,6 +203,90 @@ class Evaluator(object, metaclass=ABCMeta):
                 for metric in self.metrics
             },
         }
+
+    def visualize(self,
+                  viz,
+                  checkpoint_path,
+                  input_type,
+                  batch_size,
+                  augmentation_fn=None):
+        """Restore the model, restoring weight found in checkpoint_path, using the dataset.
+        Execute the function **for a single step**.
+        Args:
+            viz: the function to evaluate, a single element of self.visualizations
+            checkpoint_path: path of the trained model checkpoint directory
+            input_type: InputType enum
+            batch_size: evaluate in batch of size batch_size
+            augmentation_fn: if present, applies the augmentation to the input data
+
+        Returns:
+            image: a numpy batch of images
+        """
+        InputType.check(input_type)
+
+        with tf.Graph().as_default():
+            # Get inputs and targets: inputs is an input batch
+            # target could be either an array of elements or a tensor.
+            # it could be [label] or [label, attr1, attr2, ...]
+            # or Tensor, where tensor is a standard tensorflow Tensor with
+            # its own shape
+            with tf.device('/cpu:0'):
+                inputs, *targets = self.dataset.inputs(
+                    input_type=input_type,
+                    batch_size=batch_size,
+                    augmentation_fn=augmentation_fn)
+
+            # Build a Graph that computes the predictions from the
+            # inference model.
+            # Preditions is an array of predictions with the same cardinality of
+            # targets
+            _, *predictions = self._model.get(
+                inputs,
+                self.dataset.num_classes,
+                train_phase=False,
+                l2_penalty=0.0)
+
+            if len(predictions) != len(targets):
+                print(("{}.get 2nd return value and {}.inputs 2nd return "
+                       "value must have the same cardinality but got: {} vs {}"
+                      ).format(self._model.name, self.dataset.name,
+                               len(predictions), len(targets)))
+                return
+
+            if len(predictions) == 1:
+                predictions = predictions[0]
+                targets = targets[0]
+
+            viz_fn = viz["fn"](inputs, predictions, targets)
+
+            saver = tf.train.Saver(variables_to_restore())
+            with tf.Session(config=tf.ConfigProto(
+                    allow_soft_placement=True)) as sess:
+                ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+                if ckpt and ckpt.model_checkpoint_path:
+                    saver.restore(sess, ckpt.model_checkpoint_path)
+                else:
+                    print('[!] No checkpoint file found')
+                    return None
+
+                # Start the queue runners
+                coord = tf.train.Coordinator()
+                try:
+                    threads = []
+                    for queue_runner in tf.get_collection(
+                            tf.GraphKeys.QUEUE_RUNNERS):
+                        threads.extend(
+                            queue_runner.create_threads(
+                                sess, coord=coord, daemon=True, start=True))
+
+                    return sess.run(viz_fn)
+                except Exception as exc:
+                    coord.request_stop(exc)
+                finally:
+                    coord.request_stop()
+
+                coord.join(threads)
+        return None
 
     def extract_features(self,
                          checkpoint_path,

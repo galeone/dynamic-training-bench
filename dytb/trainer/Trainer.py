@@ -18,7 +18,7 @@ from .utils import builders, flow
 from ..inputs.interfaces import InputType
 from ..models.utils import tf_log, variables_to_train, count_trainable_parameters
 from ..models.collections import MODEL_SUMMARIES
-from ..models.visualization import log_io
+from ..models.visualization import log_images
 
 
 class Trainer(object):
@@ -64,7 +64,6 @@ class Trainer(object):
                     batch_size=self._args["batch_size"],
                     augmentation_fn=self._args["regularizations"][
                         "augmentation"]["fn"])
-            log_io(inputs)
 
             # Build a Graph that computes the predictions from the
             # inference model.
@@ -86,6 +85,14 @@ class Trainer(object):
             if len(predictions) == 1:
                 predictions = predictions[0]
                 targets = targets[0]
+
+                # autoencoder, usually
+                if predictions.shape == inputs.shape:
+                    log_images("input_output", inputs, predictions)
+                else:
+                    log_images("input", inputs)
+            else:
+                log_images("input", inputs)
 
             num_of_parameters = count_trainable_parameters(print_model=True)
             print("Model {}: trainable parameters: {}. Size: {} KB".format(
@@ -126,6 +133,17 @@ class Trainer(object):
                     "Please specify a metric in the evaluator with 'model_selection' not None"
                 )
                 return
+
+            # visualizations
+            visualizations_to_measure = []
+            visualization_values_ = []
+            visualization_summaries = []
+            for idx, viz in enumerate(self._model.evaluator.visualizations):
+                visualization_values_.append(
+                    tf.placeholder(tf.float32, shape=None))
+                visualization_summaries.append(
+                    tf.summary.image(viz["name"], visualization_values_[idx]))
+                visualizations_to_measure.append(viz)
 
             # read collection after that every op added its own
             # summaries in the train_summaries collection.
@@ -243,8 +261,39 @@ class Trainer(object):
                             if idx == model_selection_idx:
                                 ta_value = measure
 
+                        # visualization
+                        for idx, viz in enumerate(visualizations_to_measure):
+                            # validation metrics
+                            measured_viz = self._model.evaluator.visualize(
+                                viz,
+                                self._paths["log"],
+                                input_type=InputType.validation,
+                                batch_size=self._args["batch_size"])
+                            validation_log.add_summary(
+                                sess.run(
+                                    visualization_summaries[idx],
+                                    feed_dict={
+                                        visualization_values_[idx]: measured_viz
+                                    }),
+                                global_step=step)
+
+                            # Repeat measurement on the training set
+                            measured_viz = self._model.evaluator.visualize(
+                                viz,
+                                self._paths["log"],
+                                input_type=InputType.train,
+                                batch_size=self._args["batch_size"])
+                            train_log.add_summary(
+                                sess.run(
+                                    visualization_summaries[idx],
+                                    feed_dict={
+                                        visualization_values_[idx]: measured_viz
+                                    }),
+                                global_step=step)
+
                         name = self._model.evaluator.metrics[
                             model_selection_idx]["name"]
+
                         print(
                             '{} ({}): train {} = {:.3f} validation {} = {:.3f}'.
                             format(datetime.now(),
@@ -264,7 +313,10 @@ class Trainer(object):
                                 sess,
                                 os.path.join(self._paths["best"], 'model.ckpt'),
                                 global_step=step)
-                # end of for
+                        # end of metrics
+
+                        # end of visualizations
+                        # end of for
                 validation_log.close()
                 train_log.close()
 

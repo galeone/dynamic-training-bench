@@ -71,11 +71,12 @@ def on_grid(kernel, grid_side, pad=1):
     return tf.image.convert_image_dtype(x7, dtype=tf.uint8)
 
 
-def log_io(inputs, outputs=None):
-    """Log inputs and outputs batch of images.
+def log_images(name, inputs, outputs=None):
+    """Log inputs and outputs batch of images. Display images in grids
     Args:
+        name: name of the summary
         inputs: tensor with shape [batch_size, height, widht, depth]
-        outputs: if present must be the same dimensions as inputs
+        outputs: if present must have the same dimensions as inputs
     """
 
     with tf.variable_scope('visualization'):
@@ -86,7 +87,7 @@ def log_io(inputs, outputs=None):
             grid_side)
 
         if outputs is None:
-            tf_log(tf.summary.image('inputs', inputs, max_outputs=1))
+            tf_log(tf.summary.image(name, inputs, max_outputs=1))
             return
 
         inputs = tf.pad(inputs, [[0, 0], [0, 0], [0, 10], [0, 0]])
@@ -95,6 +96,4 @@ def log_io(inputs, outputs=None):
             grid_side)
         tf_log(
             tf.summary.image(
-                'input_output',
-                tf.concat([inputs, outputs], axis=2),
-                max_outputs=1))
+                name, tf.concat([inputs, outputs], axis=2), max_outputs=1))
