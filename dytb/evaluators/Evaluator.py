@@ -257,9 +257,14 @@ class Evaluator(object, metaclass=ABCMeta):
                 predictions = predictions[0]
                 targets = targets[0]
 
-            viz_fn = viz["fn"](inputs, predictions, targets)
-
             saver = tf.train.Saver(variables_to_restore())
+
+            viz_fn = viz["fn"](inputs, predictions, targets)
+            init = [
+                tf.variables_initializer(tf.global_variables() +
+                                         tf.local_variables()),
+                tf.tables_initializer()
+            ]
             with tf.Session(config=tf.ConfigProto(
                     allow_soft_placement=True)) as sess:
                 ckpt = tf.train.get_checkpoint_state(checkpoint_path)
@@ -279,6 +284,7 @@ class Evaluator(object, metaclass=ABCMeta):
                             queue_runner.create_threads(
                                 sess, coord=coord, daemon=True, start=True))
 
+                    sess.run(init)
                     return sess.run(viz_fn)
                 except Exception as exc:
                     coord.request_stop(exc)
