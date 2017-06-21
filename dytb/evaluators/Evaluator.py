@@ -164,7 +164,15 @@ class Evaluator(object, metaclass=ABCMeta):
                     metric_value_sum = 0.0
                     while step < num_iter and not coord.should_stop():
                         step += 1
-                        metric_value_sum += sess.run(metric_fn)
+                        value = sess.run(metric_fn)
+                        # metrics can sometimes have NaN
+                        # (think about a metric that excludes a certain class and the input batch
+                        # has only element of that class into)
+                        # NaN, not being a number, are excluded from the calculation of the metric
+                        if math.isnan(value):
+                            step -= 1
+                        else:
+                            metric_value_sum += value
                     avg_metric_value = metric_value_sum / step if metric[
                         "average"] else metric_value_sum
                 except Exception as exc:
