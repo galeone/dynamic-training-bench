@@ -334,7 +334,7 @@ class Evaluator(object, metaclass=ABCMeta):
 
             # Build a Graph that computes the predictions from the inference model.
             _ = self._model.get(
-                inputs, num_classes, train_phase=False, l2_penalty=0.0)
+                inputs_, num_classes, train_phase=False, l2_penalty=0.0)
 
             # This will raise an exception if layer_name is not found
             layer = graph.get_tensor_by_name(layer_name)
