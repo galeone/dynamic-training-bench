@@ -169,7 +169,7 @@ class Evaluator(object, metaclass=ABCMeta):
                         # (think about a metric that excludes a certain class and the input batch
                         # has only element of that class into)
                         # NaN, not being a number, are excluded from the calculation of the metric
-                        if math.isnan(value):
+                        if np.any(np.isnan(value)):
                             step -= 1
                         else:
                             metric_value_sum += value
