@@ -238,13 +238,13 @@ class CLIArgs(object):
         parser.add_argument(
             '--exclude_scopes',
             help='comma separated list of scopes of variables to exclude from the checkpoint restoring.',
-            default=[],
+            default=None,
             type=lambda scope_list: [scope.strip() for scope in scope_list.split(',')])
 
         parser.add_argument(
             '--trainable_scopes',
             help='comma separated list of scopes of variables to train. If empty every variable is trained',
-            default=[],
+            default=None,
             type=lambda scope_list: [scope.strip() for scope in scope_list.split(',')])
 
         parser.add_argument(
