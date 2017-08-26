@@ -5,7 +5,7 @@
 #file, you can obtain one at http://mozilla.org/MPL/2.0/.
 #Exhibit B is not attached; this software is compatible with the
 #licenses expressed under Section 1.12 of the MPL v2.
-"""Trainer for the  model"""
+"""Trainer for the model"""
 
 import time
 import os
@@ -82,6 +82,7 @@ class Trainer(object):
                                len(predictions), len(targets)))
                 return
 
+            loss = None
             if len(predictions) == 1:
                 predictions = predictions[0]
                 targets = targets[0]
@@ -89,6 +90,8 @@ class Trainer(object):
                 # autoencoder, usually
                 if predictions.shape == inputs.shape:
                     log_images("input_output", inputs, predictions)
+                    # Autoencoders use inputs instead of targets
+                    loss = self._model.loss(predictions, inputs)
                 else:
                     log_images("input", inputs)
             else:
@@ -99,8 +102,10 @@ class Trainer(object):
                 self._model.name, num_of_parameters, num_of_parameters * 4 /
                 1000))
 
-            # Calculate loss.
-            loss = self._model.loss(predictions, targets)
+            # Calculate loss is not already handled by autoencoder definition
+            # that has a particular input/output relation
+            if loss is None:
+                loss = self._model.loss(predictions, targets)
             tf_log(tf.summary.scalar('loss', loss))
 
             # Create optimizer and log learning rate
