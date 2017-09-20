@@ -15,6 +15,12 @@ from .visualization import on_grid
 from .collections import LOSSES, REQUIRED_NON_TRAINABLES
 
 
+def _shape_list(shape):
+    if isinstance(shape, tf.TensorShape):
+        return shape.as_list()
+    return shape
+
+
 def weight(name,
            shape,
            train_phase,
@@ -38,6 +44,7 @@ def weight(name,
       Returns:
         weights: the weight tensor initialized.
     """
+    shape = _shape_list(shape)
     weights = tf.get_variable(
         name, shape=shape, initializer=initializer, dtype=tf.float32)
 
@@ -75,6 +82,7 @@ def bias(name,
     Returns:
         bias: the vias variable correctly initialized
     """
+    shape = _shape_list(shape)
     return weight(name, shape, train_phase, initializer=initializer, wd=0.0)
 
 
@@ -110,7 +118,7 @@ def atrous_conv(input_x,
          initializer: the initializer to use
     Rerturns:
         op: the conv2d op"""
-
+    shape = _shape_list(shape)
     W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
     result = tf.nn.atrous_conv2d(input_x, W, rate, padding)
     if bias_term:
@@ -178,7 +186,7 @@ def conv(input_x,
     Rerturns:
         op: the conv2d op
     """
-
+    shape = _shape_list(shape)
     W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
     result = tf.nn.conv2d(input_x, W, [1, stride, stride, 1], padding)
     if bias_term:
@@ -203,6 +211,80 @@ def conv(input_x,
         # log post-activation
         conv_results = tf.split(
             value=out[0], num_or_size_splits=shape[3], axis=2)
+        post_activation = on_grid(
+            tf.transpose(conv_results,
+                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
+            grid_side)
+
+        tf_log(
+            tf.summary.image(
+                legalize_name(result.name + '/pre_post_activation'),
+                tf.concat([pre_activation, post_activation], axis=2),
+                max_outputs=1))
+    return out
+
+
+def conv_transpose(input_x,
+                   shape,
+                   stride,
+                   padding,
+                   output_shape,
+                   train_phase,
+                   bias_term=True,
+                   activation=tf.identity,
+                   wd=0.0,
+                   initializer=tf.contrib.layers.variance_scaling_initializer(
+                       factor=2.0,
+                       mode='FAN_IN',
+                       uniform=False,
+                       seed=None,
+                       dtype=tf.float32)):
+    """ Define a conv_transpose layer.
+    Args:
+        input_x: a 4D tensor
+        shape: weight shape: [height, width, output_channels, in_channels]
+        stride: a single value supposing equal stride along X and Y
+        padding: 'VALID' or 'SAME'
+        output_shape: a 4D tensor, that's the expected output of the conv_transpose operation
+                     (this parameter is needed because the shape of the output can't necessarily be
+                     computed from the shape of the input)
+        train_phase: boolean that enables/diables visualizations and train-only specific ops
+        bias_term: a boolean to add (if True) the bias term. Usually disable when
+                   the layer is wrapped in a batch norm layer
+        activation: activation function. Default linear
+        train_phase: boolean that enables/diables visualizations and train-only specific ops
+        wd: weight decay
+        initializer: the initializer to use
+    Rerturns:
+        op: the conv2d_transpose op
+    """
+    shape = _shape_list(shape)
+    output_shape = _shape_list(output_shape)
+    W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
+    result = tf.nn.conv2d_transpose(input_x, W, output_shape,
+                                    [1, stride, stride, 1], padding)
+    if bias_term:
+        b = bias("b", [shape[2]], train_phase)
+        result = tf.nn.bias_add(result, b)
+
+    # apply nonlinearity
+    out = activation(result)
+
+    if train_phase:
+        # log convolution result pre-activation function
+        # on a single image, the first of the batch
+        conv_results = tf.split(
+            value=result[0], num_or_size_splits=shape[2], axis=2)
+        grid_side = math.floor(math.sqrt(shape[2]))
+
+        pre_activation = on_grid(
+            tf.transpose(conv_results,
+                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
+            grid_side)
+
+        # log post-activation
+        conv_results = tf.split(
+            value=out[0], num_or_size_splits=shape[2], axis=2)
         post_activation = on_grid(
             tf.transpose(conv_results,
                          perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
@@ -241,7 +323,7 @@ def fc(input_x,
     Returns:
         fc: the fc layer
     """
-
+    shape = _shape_list(shape)
     W = weight("W", shape, train_phase, initializer=initializer, wd=wd)
     result = tf.matmul(input_x, W)
     if bias_term:
