@@ -84,9 +84,9 @@ Train measuring predefined metrics it's extremely easy, let's see a complete exa
 ```python
 import pprint
 import tensorflow as tf
-from dytb.inputs import Cifar10
+from dytb.inputs.predefined import Cifar10
 from dytb.train import train
-from dytb.models.VGG import VGG
+from dytb.models.predefined.VGG import VGG
 
 # Instantiate the model
 vgg = VGG()
@@ -108,7 +108,13 @@ with tf.device(device):
                 "l2": 1e-5,
                 "augmentation": {
                     "name": "FlipLR",
-                    "fn": tf.image.random_flip_left_right
+                    "fn": tf.image.random_flip_left_right,
+                    # factor is the estimated amount of augmentation
+                    # that "fn" introduces.
+                    # In this case, "fn" doubles the training set size
+                    # Thus, an epoch is now seen as the original training
+                    # training set size * 2
+                    "factor": 2,
                 }
             },
             "gd": {
