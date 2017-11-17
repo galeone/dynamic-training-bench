@@ -144,6 +144,11 @@ class Evaluator(object, metaclass=ABCMeta):
                 metric_fn = metric["fn"](predictions, targets)
 
             saver = tf.train.Saver(variables_to_restore())
+            init = [
+                tf.variables_initializer(
+                    tf.global_variables() + tf.local_variables()),
+                tf.tables_initializer()
+            ]
             with tf.Session(config=tf.ConfigProto(
                     allow_soft_placement=True)) as sess:
                 ckpt = tf.train.get_checkpoint_state(checkpoint_path)
@@ -163,6 +168,7 @@ class Evaluator(object, metaclass=ABCMeta):
                         threads.extend(
                             queue_runner.create_threads(
                                 sess, coord=coord, daemon=True, start=True))
+                    sess.run(init)
 
                     num_iter = int(
                         math.ceil(
@@ -347,6 +353,11 @@ class Evaluator(object, metaclass=ABCMeta):
             layer = graph.get_tensor_by_name(layer_name)
 
             saver = tf.train.Saver(variables_to_restore())
+            init = [
+                tf.variables_initializer(
+                    tf.global_variables() + tf.local_variables()),
+                tf.tables_initializer()
+            ]
             features = np.zeros(layer.shape)
             with tf.Session(config=tf.ConfigProto(
                     allow_soft_placement=True)) as sess:
@@ -357,7 +368,7 @@ class Evaluator(object, metaclass=ABCMeta):
                 else:
                     print('[!] No checkpoint file found')
                     return features
-
+                sess.run(init)
                 features = sess.run(
                     layer, feed_dict={
                         inputs_: evaluated_inputs
