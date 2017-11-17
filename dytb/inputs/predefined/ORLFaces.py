@@ -102,8 +102,8 @@ class ORLFaces(Input):
         image.set_shape([self._image_width * self._image_height])
 
         #`Reshape to a valid image
-        image = tf.reshape(image, (self._image_height, self._image_width,
-                                   self._image_depth))
+        image = tf.reshape(
+            image, (self._image_height, self._image_width, self._image_depth))
 
         # Convert from [0, 255] -> [0, 1] floats.
         image = tf.divide(tf.cast(image, tf.float32), 255.0)
@@ -179,7 +179,8 @@ class ORLFaces(Input):
                   'bytes.')
             with zipfile.ZipFile(filepath) as zip_f:
                 zip_f.extractall(
-                    os.path.join(dest_directory, filename.split('.')[-2]))
+                    os.path.join(dest_directory,
+                                 filename.split('.')[-2]))
 
         # Convert to Examples and write the result to TFRecords.
         if not tf.gfile.Exists(os.path.join(self._data_dir, 'faces.tfrecords')):
@@ -187,7 +188,8 @@ class ORLFaces(Input):
             labels = []
 
             for pgm in glob.glob("{}/*/*.pgm".format(
-                    os.path.join(dest_directory, filename.split('.')[-2]))):
+                    os.path.join(dest_directory,
+                                 filename.split('.')[-2]))):
                 images.append(
                     np.expand_dims(np.asarray(Image.open(pgm)), axis=2))
                 labels.append(int(pgm.split("/")[-2].strip("s")))

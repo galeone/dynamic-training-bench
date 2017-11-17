@@ -99,8 +99,8 @@ class Trainer(object):
 
             num_of_parameters = count_trainable_parameters(print_model=True)
             print("Model {}: trainable parameters: {}. Size: {} KB".format(
-                self._model.name, num_of_parameters, num_of_parameters * 4 /
-                1000))
+                self._model.name, num_of_parameters,
+                num_of_parameters * 4 / 1000))
 
             # Calculate loss is not already handled by autoencoder definition
             # that has a particular input/output relation
@@ -158,8 +158,8 @@ class Trainer(object):
 
             # Build an initialization operation to run below.
             init = [
-                tf.variables_initializer(tf.global_variables() +
-                                         tf.local_variables()),
+                tf.variables_initializer(
+                    tf.global_variables() + tf.local_variables()),
                 tf.tables_initializer()
             ]
 
@@ -196,7 +196,9 @@ class Trainer(object):
                 for step in range(old_gs, self._steps["max"] + 1):
                     start_time = time.time()
                     _, loss_value = sess.run(
-                        [train_op, loss], feed_dict={is_training_: True})
+                        [train_op, loss], feed_dict={
+                            is_training_: True
+                        })
 
                     duration = time.time() - start_time
 
@@ -216,7 +218,9 @@ class Trainer(object):
                                               examples_per_sec, sec_per_batch))
                         # log train values
                         summary_lines = sess.run(
-                            train_summaries, feed_dict={is_training_: True})
+                            train_summaries, feed_dict={
+                                is_training_: True
+                            })
                         train_log.add_summary(summary_lines, global_step=step)
 
                     # Save the model checkpoint at the end of every epoch
@@ -259,7 +263,9 @@ class Trainer(object):
                             train_log.add_summary(
                                 sess.run(
                                     metric_summaries[idx],
-                                    feed_dict={metric_values_[idx]: measure}),
+                                    feed_dict={
+                                        metric_values_[idx]: measure
+                                    }),
                                 global_step=step)
 
                             # fill ta_value
@@ -308,8 +314,9 @@ class Trainer(object):
 
                         # save best model
                         sign = math.copysign(
-                            1, validation_measured_metrics[model_selection_idx]
-                            - best_model_selection_measure)
+                            1,
+                            validation_measured_metrics[model_selection_idx] -
+                            best_model_selection_measure)
                         if sign == self._model.evaluator.metrics[
                                 model_selection_idx]["positive_trend_sign"]:
                             best_model_selection_measure = validation_measured_metrics[

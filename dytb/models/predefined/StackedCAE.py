@@ -28,8 +28,8 @@ class StackedCAE(Autoencoder):
         # calculate the padding amount for each side
         amount = filter_side - 1
         # pad the input on top, bottom, left, right, with amount zeros
-        return tf.pad(input_x, [[0, 0], [amount, amount], [amount, amount],
-                                [0, 0]])
+        return tf.pad(input_x,
+                      [[0, 0], [amount, amount], [amount, amount], [0, 0]])
 
     def get(self, images, num_classes, train_phase=False, l2_penalty=0.0):
         """ define the model with its inputs.
@@ -90,8 +90,8 @@ class StackedCAE(Autoencoder):
                             activation=tf.nn.tanh,
                             initializer=initializer)
 
-                        tf.add_to_collection(LOSSES,
-                                             self._mse(input_x, output_x))
+                        tf.add_to_collection(LOSSES, self._mse(
+                            input_x, output_x))
                         input_x = tf.stop_gradient(output_x)
                         input_padded = self._pad(input_x, filter_side)
 

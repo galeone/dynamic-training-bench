@@ -118,8 +118,9 @@ class CLIArgs(object):
                 self._args.model)()
         else:
             model = getattr(
-                importlib.import_module('dytb.models.predefined.' +
-                                        self._args.model), self._args.model)()
+                importlib.import_module(
+                    'dytb.models.predefined.' + self._args.model),
+                self._args.model)()
 
         # Instantiate the input object
         # Give the precedente to local datasets
@@ -129,8 +130,8 @@ class CLIArgs(object):
                 self._args.dataset)()
         else:
             dataset = getattr(
-                importlib.import_module('dytb.inputs.predefined.' +
-                                        self._args.dataset),
+                importlib.import_module(
+                    'dytb.inputs.predefined.' + self._args.dataset),
                 self._args.dataset)()
 
         return model, dataset

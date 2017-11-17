@@ -73,10 +73,11 @@ def _parse_hyperparameters(hyperparams=None):
             }),
         # The learning rate decay
         "lr_decay":
-        hyperparams.get("lr_decay",
-                        {"enabled": False,
-                         "epochs": 25,
-                         "factor": .1}),
+        hyperparams.get("lr_decay", {
+            "enabled": False,
+            "epochs": 25,
+            "factor": .1
+        }),
         # The regularization to apply
         "regularizations":
         hyperparams.get(
@@ -211,7 +212,7 @@ def train(model,
     if args["regularizations"]["augmentation"]["factor"] != 1:
         print("Original training set size {}. Augmented training set size: {}".
               format(
-                  dataset.num_examples(InputType.train), args["regularizations"]
-                  ["augmentation"]["factor"] * dataset.num_examples(
-                      InputType.train)))
+                  dataset.num_examples(InputType.train),
+                  args["regularizations"]["augmentation"]["factor"] *
+                  dataset.num_examples(InputType.train)))
     return Trainer(model, dataset, args, steps, paths).train()

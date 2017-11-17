@@ -188,15 +188,16 @@ class PASCALVOC2012Classification(Input):
         # Now self._data dir contains VOCDevkit folder
         # Build train.csv and val.csv file in self._data_dir
         csv_header = ["filename", "y_min", "x_min", "y_max", "x_max", "label"]
-        if os.path.exists(
-                os.path.join(self._data_dir, 'train.csv')) and os.path.exists(
+        if os.path.exists(os.path.join(
+                self._data_dir, 'train.csv')) and os.path.exists(
                     os.path.join(self._data_dir, 'val.csv')):
             return
 
         base_dir = os.path.join(
             self._data_dir,
             'VOCdevkit',
-            'VOC2012',)
+            'VOC2012',
+        )
 
         for current_set in ['train', 'val']:
             csv_path = os.path.join(self._data_dir,
@@ -207,9 +208,10 @@ class PASCALVOC2012Classification(Input):
                 writer.writeheader()
                 for current_class in self.CLASSES:
                     lines = open(
-                        os.path.join(base_dir, 'ImageSets', 'Main', '{}_{}.txt'.
-                                     format(current_class, current_set))).read(
-                                     ).strip().split("\n")
+                        os.path.join(
+                            base_dir, 'ImageSets', 'Main', '{}_{}.txt'.format(
+                                current_class,
+                                current_set))).read().strip().split("\n")
                     for line in lines:
                         splitted = line.split()
                         if len(splitted) < 1:

@@ -276,8 +276,8 @@ class Evaluator(object, metaclass=ABCMeta):
 
             viz_fn = viz["fn"](inputs, predictions, targets)
             init = [
-                tf.variables_initializer(tf.global_variables() +
-                                         tf.local_variables()),
+                tf.variables_initializer(
+                    tf.global_variables() + tf.local_variables()),
                 tf.tables_initializer()
             ]
             with tf.Session(config=tf.ConfigProto(
@@ -359,6 +359,8 @@ class Evaluator(object, metaclass=ABCMeta):
                     return features
 
                 features = sess.run(
-                    layer, feed_dict={inputs_: evaluated_inputs})
+                    layer, feed_dict={
+                        inputs_: evaluated_inputs
+                    })
 
             return features
