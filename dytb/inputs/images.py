@@ -65,34 +65,41 @@ def scale_image(image):
     return image
 
 
-def read_image_jpg(image_path, depth=3):
+def read_image_jpg(image_path, depth=3, scale=True):
     """Reads the image from image_path (tf.string tensor) [jpg image].
-    Cast the result to float32 and scale it in [-1,1] (see scale_image)
+    Cast the result to float32 and if scale=True scale it in [-1,1]
+    using scale_image. Otherwise the values are in [0,1]
     Reuturn:
         the decoded jpeg image, casted to float32
     """
-    return scale_image(
-        tf.image.convert_image_dtype(
-            tf.image.decode_jpeg(tf.read_file(image_path), channels=depth),
-            dtype=tf.float32))
+
+    image = tf.image.convert_image_dtype(
+        tf.image.decode_jpeg(tf.read_file(image_path), channels=depth),
+        dtype=tf.float32)
+    if scale:
+        image = scale_image(image)
+    return image
 
 
-def read_image_png(image_path, depth=3):
+def read_image_png(image_path, depth=3, scale=True):
     """Reads the image from image_path (tf.string tensor) [jpg image].
-    Cast the result to float32 and scale it in [-1,1] (see scale_image)
+    Cast the result to float32 and if scale=True scale it in [-1,1]
+    using scale_image. Otherwise the values are in [0,1]
     Reuturn:
         the decoded jpeg image, casted to float32
     """
-    return scale_image(
-        tf.image.convert_image_dtype(
-            tf.image.decode_png(tf.read_file(image_path), channels=depth),
-            dtype=tf.float32))
+    image = tf.image.convert_image_dtype(
+        tf.image.decode_png(tf.read_file(image_path), channels=depth),
+        dtype=tf.float32)
+    if scale:
+        image = scale_image(image)
+    return image
 
 
-def read_image(image_path, channel, image_type):
+def read_image(image_path, channel, image_type, scale=True):
     """Wrapper around read_image_{jpg,png}"""
     if image_type == "jpg":
-        image = read_image_jpg(image_path, channel)
+        image = read_image_jpg(image_path, channel, scale)
     else:
-        image = read_image_png(image_path, channel)
+        image = read_image_png(image_path, channel, scale)
     return image
