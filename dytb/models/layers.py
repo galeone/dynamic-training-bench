@@ -51,14 +51,15 @@ def weight(name,
     # show weights of the first layer
     first = len(shape) == 4 and shape[2] in (1, 3, 4)
     if first and train_phase:
-        num_kernels = shape[3]
-        # check if is a perfect square
-        grid_side = math.floor(math.sqrt(num_kernels))
-        tf_log(
-            tf.summary.image(
-                legalize_name(name),
-                on_grid(weights[:, :, :, 0:grid_side**2], grid_side,
-                        grid_side)))
+        with tf.variable_scope("visualization"):
+            num_kernels = shape[3]
+            # check if is a perfect square
+            grid_side = math.floor(math.sqrt(num_kernels))
+            tf_log(
+                tf.summary.image(
+                    legalize_name(name),
+                    on_grid(weights[:, :, :, 0:grid_side**2], grid_side,
+                            grid_side)))
 
     if train_phase:
         # Add weight decay to W
@@ -129,30 +130,31 @@ def atrous_conv(input_x,
     out = activation(result)
 
     if train_phase:
-        # log convolution result pre-activation function
-        # on a single image, the first of the batch
-        conv_results = tf.split(
-            value=result[0], num_or_size_splits=shape[3], axis=2)
-        grid_side = math.floor(math.sqrt(shape[3]))
+        with tf.variable_scope("visualization"):
+            # log convolution result pre-activation function
+            # on a single image, the first of the batch
+            conv_results = tf.split(
+                value=result[0], num_or_size_splits=shape[3], axis=2)
+            grid_side = math.floor(math.sqrt(shape[3]))
 
-        pre_activation = on_grid(
-            tf.transpose(conv_results,
-                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
-            grid_side)
+            pre_activation = on_grid(
+                tf.transpose(conv_results, perm=(1, 2, 3,
+                                                 0))[:, :, :, 0:grid_side**2],
+                grid_side, grid_side)
 
-        # log post-activation
-        conv_results = tf.split(
-            value=out[0], num_or_size_splits=shape[3], axis=2)
-        post_activation = on_grid(
-            tf.transpose(conv_results,
-                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
-            grid_side)
+            # log post-activation
+            conv_results = tf.split(
+                value=out[0], num_or_size_splits=shape[3], axis=2)
+            post_activation = on_grid(
+                tf.transpose(conv_results, perm=(1, 2, 3,
+                                                 0))[:, :, :, 0:grid_side**2],
+                grid_side, grid_side)
 
-        tf_log(
-            tf.summary.image(
-                legalize_name(result.name + '/pre_post_activation'),
-                tf.concat([pre_activation, post_activation], axis=2),
-                max_outputs=1))
+            tf_log(
+                tf.summary.image(
+                    legalize_name(result.name + '/pre_post_activation'),
+                    tf.concat([pre_activation, post_activation], axis=2),
+                    max_outputs=1))
     return out
 
 
@@ -197,30 +199,31 @@ def conv(input_x,
     out = activation(result)
 
     if train_phase:
-        # log convolution result pre-activation function
-        # on a single image, the first of the batch
-        conv_results = tf.split(
-            value=result[0], num_or_size_splits=shape[3], axis=2)
-        grid_side = math.floor(math.sqrt(shape[3]))
+        with tf.variable_scope("visualization"):
+            # log convolution result pre-activation function
+            # on a single image, the first of the batch
+            conv_results = tf.split(
+                value=result[0], num_or_size_splits=shape[3], axis=2)
+            grid_side = math.floor(math.sqrt(shape[3]))
 
-        pre_activation = on_grid(
-            tf.transpose(conv_results,
-                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
-            grid_side)
+            pre_activation = on_grid(
+                tf.transpose(conv_results, perm=(1, 2, 3,
+                                                 0))[:, :, :, 0:grid_side**2],
+                grid_side, grid_side)
 
-        # log post-activation
-        conv_results = tf.split(
-            value=out[0], num_or_size_splits=shape[3], axis=2)
-        post_activation = on_grid(
-            tf.transpose(conv_results,
-                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
-            grid_side)
+            # log post-activation
+            conv_results = tf.split(
+                value=out[0], num_or_size_splits=shape[3], axis=2)
+            post_activation = on_grid(
+                tf.transpose(conv_results, perm=(1, 2, 3,
+                                                 0))[:, :, :, 0:grid_side**2],
+                grid_side, grid_side)
 
-        tf_log(
-            tf.summary.image(
-                legalize_name(result.name + '/pre_post_activation'),
-                tf.concat([pre_activation, post_activation], axis=2),
-                max_outputs=1))
+            tf_log(
+                tf.summary.image(
+                    legalize_name(result.name + '/pre_post_activation'),
+                    tf.concat([pre_activation, post_activation], axis=2),
+                    max_outputs=1))
     return out
 
 
@@ -271,30 +274,31 @@ def conv_transpose(input_x,
     out = activation(result)
 
     if train_phase:
-        # log convolution result pre-activation function
-        # on a single image, the first of the batch
-        conv_results = tf.split(
-            value=result[0], num_or_size_splits=shape[2], axis=2)
-        grid_side = math.floor(math.sqrt(shape[2]))
+        with tf.variable_scope("visualization"):
+            # log convolution result pre-activation function
+            # on a single image, the first of the batch
+            conv_results = tf.split(
+                value=result[0], num_or_size_splits=shape[2], axis=2)
+            grid_side = math.floor(math.sqrt(shape[2]))
 
-        pre_activation = on_grid(
-            tf.transpose(conv_results,
-                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
-            grid_side)
+            pre_activation = on_grid(
+                tf.transpose(conv_results, perm=(1, 2, 3,
+                                                 0))[:, :, :, 0:grid_side**2],
+                grid_side, grid_side)
 
-        # log post-activation
-        conv_results = tf.split(
-            value=out[0], num_or_size_splits=shape[2], axis=2)
-        post_activation = on_grid(
-            tf.transpose(conv_results,
-                         perm=(1, 2, 3, 0))[:, :, :, 0:grid_side**2], grid_side,
-            grid_side)
+            # log post-activation
+            conv_results = tf.split(
+                value=out[0], num_or_size_splits=shape[2], axis=2)
+            post_activation = on_grid(
+                tf.transpose(conv_results, perm=(1, 2, 3,
+                                                 0))[:, :, :, 0:grid_side**2],
+                grid_side, grid_side)
 
-        tf_log(
-            tf.summary.image(
-                legalize_name(result.name + '/pre_post_activation'),
-                tf.concat([pre_activation, post_activation], axis=2),
-                max_outputs=1))
+            tf_log(
+                tf.summary.image(
+                    legalize_name(result.name + '/pre_post_activation'),
+                    tf.concat([pre_activation, post_activation], axis=2),
+                    max_outputs=1))
     return out
 
 
