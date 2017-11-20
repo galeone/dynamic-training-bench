@@ -24,7 +24,7 @@ from ..interfaces import Input, InputType
 class ORLFaces(Input):
     """ORL Faces database input"""
 
-    def __init__(self):
+    def __init__(self, add_input_to_label=False):
         # Global constants describing the ORL Faces data set.
         self._name = 'ORL-Faces'
         self._image_width = 92
@@ -40,6 +40,7 @@ class ORLFaces(Input):
             os.path.dirname(os.path.abspath(__file__)), 'data', 'ORLFaces')
         self._data_url = 'http://www.cl.cam.ac.uk/Research/DTG/attarchive/pub/data/att_faces.zip'
         self._maybe_download_and_extract()
+        self._add_input_to_label = add_input_to_label
 
     def num_examples(self, input_type):
         """Returns the number of examples per the specified input_type
@@ -149,7 +150,8 @@ class ORLFaces(Input):
             # Generate a batch of images and labels by building up a queue of examples.
             return build_batch(
                 read_input["image"],
-                read_input["label"],
+                read_input["label"] if not self._add_input_to_label else
+                [read_input["label"], read_input["image"]],
                 min_queue_examples,
                 batch_size,
                 shuffle=input_type == InputType.train)

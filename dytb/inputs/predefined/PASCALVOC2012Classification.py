@@ -25,7 +25,7 @@ from ..interfaces.InputType import InputType
 class PASCALVOC2012Classification(Input):
     """Routine for decoding the PASCAL VOC 2012 binary file format."""
 
-    def __init__(self):
+    def __init__(self, add_input_to_label=False):
         # Global constants describing the PASCAL VOC 2012 data set.
         # resize image to a fixed size
         # the resize dimension is an hyperparameter
@@ -54,6 +54,7 @@ class PASCALVOC2012Classification(Input):
             os.path.dirname(os.path.abspath(__file__)), 'data', 'PASCALVOC2012')
         self._data_url = 'http://pjreddie.com/media/files/VOCtrainval_11-May-2012.tar'
         self._maybe_download_and_extract()
+        self._add_input_to_label = add_input_to_label
 
     @property
     def name(self):
@@ -155,7 +156,7 @@ class PASCALVOC2012Classification(Input):
 
             return build_batch(
                 image,
-                label,
+                label if not self._add_input_to_label else [label, image],
                 min_queue_examples,
                 batch_size,
                 shuffle=input_type == InputType.train)
