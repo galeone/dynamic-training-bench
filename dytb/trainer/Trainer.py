@@ -18,7 +18,6 @@ from .utils import builders, flow
 from ..inputs.interfaces import InputType
 from ..models.utils import tf_log, variables_to_train, count_trainable_parameters
 from ..models.collections import MODEL_SUMMARIES
-from ..models.visualization import log_images
 
 
 class Trainer(object):
@@ -82,30 +81,17 @@ class Trainer(object):
                                len(predictions), len(targets)))
                 return
 
-            loss = None
             if len(predictions) == 1:
                 predictions = predictions[0]
                 targets = targets[0]
-
-                # autoencoder, usually
-                if predictions.shape == inputs.shape:
-                    log_images("input_output", inputs, predictions)
-                    # Autoencoders use inputs instead of targets
-                    loss = self._model.loss(predictions, inputs)
-                else:
-                    log_images("input", inputs)
-            else:
-                log_images("input", inputs)
 
             num_of_parameters = count_trainable_parameters(print_model=True)
             print("Model {}: trainable parameters: {}. Size: {} KB".format(
                 self._model.name, num_of_parameters,
                 num_of_parameters * 4 / 1000))
 
-            # Calculate loss is not already handled by autoencoder definition
-            # that has a particular input/output relation
-            if loss is None:
-                loss = self._model.loss(predictions, targets)
+            # Calculate & log loss
+            loss = self._model.loss(predictions, targets)
             tf_log(tf.summary.scalar('loss', loss))
 
             # Create optimizer and log learning rate
