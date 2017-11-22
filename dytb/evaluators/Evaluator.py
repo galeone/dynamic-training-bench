@@ -130,18 +130,11 @@ class Evaluator(object, metaclass=ABCMeta):
                                len(predictions), len(targets)))
                 return
 
-            metric_fn = None
             if len(predictions) == 1:
                 predictions = predictions[0]
                 targets = targets[0]
 
-                # handle particular input/output relation of
-                # autoencoders
-                if predictions.shape == inputs.shape:
-                    metric_fn = metric["fn"](predictions, inputs)
-
-            if metric_fn is None:
-                metric_fn = metric["fn"](predictions, targets)
+            metric_fn = metric["fn"](predictions, targets)
 
             saver = tf.train.Saver(variables_to_restore())
             init = [
