@@ -128,7 +128,7 @@ def _parse_hyperparameters(hyperparams=None):
     def _check_keys(dict_key, available_keys, sub_key=None):
         inserted_keys = args[dict_key] if not sub_key else args[dict_key][
             sub_key]
-        diff = inserted_keys - available_keys
+        diff = inserted_keys.keys() - available_keys
         if diff:
             raise ValueError(
                 "{} are not valid keys for {}. Valid keys are: {}".format(
