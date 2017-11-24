@@ -11,9 +11,12 @@
 # but required variables for the current model
 REQUIRED_NON_TRAINABLES = 'required_vars_collection'
 
-# name of the collection that holds the summaries
-# related to the model (and the train phase)
-MODEL_SUMMARIES = 'model_summaries'
+# name of the collection that holds the scalar summaries
+SCALAR_SUMMARIES = 'scalar_summaries'
+
+# name of the collection that holds the media summaries
+# media = not scalar
+MEDIA_SUMMARIES = 'media_summaries'
 
 # losses collection
 LOSSES = 'losses'

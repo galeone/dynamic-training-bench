@@ -17,7 +17,8 @@ from .utils import builders, flow
 
 from ..inputs.interfaces import InputType
 from ..models.utils import tf_log, variables_to_train, count_trainable_parameters
-from ..models.collections import MODEL_SUMMARIES
+from ..models.collections import SCALAR_SUMMARIES, MEDIA_SUMMARIES
+from ..models.visualization import log_images
 
 
 class Trainer(object):
@@ -85,6 +86,9 @@ class Trainer(object):
                 predictions = predictions[0]
                 targets = targets[0]
 
+            if len(inputs.shape) == 4 and inputs.shape[3].value in (1, 3, 4):
+                log_images("inputs", inputs)
+
             num_of_parameters = count_trainable_parameters(print_model=True)
             print("Model {}: trainable parameters: {}. Size: {} KB".format(
                 self._model.name, num_of_parameters,
@@ -138,9 +142,16 @@ class Trainer(object):
 
             # read collection after that every op added its own
             # summaries in the train_summaries collection.
-            # No metrics are addded to the MODEL_SUMMARIES collection
-            train_summaries = tf.summary.merge(
-                tf.get_collection_ref(MODEL_SUMMARIES))
+            # No metrics are addded to the SCALAR_SUMMARIES collection
+            # SCALAR SUMMARIES are logged each dataset_size/10 iteration
+            scalar_summaries = tf.summary.merge(
+                tf.get_collection_ref(SCALAR_SUMMARIES))
+
+            # MEDIA SUMMARIES are logged each dataset_size iteration
+            # because when the logged data is big, the wasted space for data vis
+            # is too high. Hence log images at the end of every epoch
+            media_summaries = tf.summary.merge(
+                tf.get_collection_ref(MEDIA_SUMMARIES))
 
             # Build an initialization operation to run below.
             init = [
@@ -204,7 +215,7 @@ class Trainer(object):
                                               examples_per_sec, sec_per_batch))
                         # log train values
                         summary_lines = sess.run(
-                            train_summaries, feed_dict={
+                            scalar_summaries, feed_dict={
                                 is_training_: True
                             })
                         train_log.add_summary(summary_lines, global_step=step)
@@ -217,6 +228,14 @@ class Trainer(object):
                                                        'model.ckpt')
                         train_saver.save(
                             sess, checkpoint_path, global_step=step)
+
+                        # execute media summaries and the end of every epoch
+                        # keeping the model in train mode
+                        summary_lines = sess.run(
+                            media_summaries, feed_dict={
+                                is_training_: True
+                            })
+                        train_log.add_summary(summary_lines, global_step=step)
 
                         # arrays of validation measures
                         validation_measured_metrics = []

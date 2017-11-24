@@ -10,6 +10,7 @@
 import math
 import tensorflow as tf
 from .utils import tf_log
+from .collections import MEDIA_SUMMARIES
 
 
 # Adapeted from
@@ -87,7 +88,9 @@ def log_images(name, inputs, outputs=None):
             grid_side)
 
         if outputs is None:
-            tf_log(tf.summary.image(name, inputs, max_outputs=1))
+            tf_log(
+                tf.summary.image(name, inputs, max_outputs=1),
+                collection=MEDIA_SUMMARIES)
             return
 
         inputs = tf.pad(inputs, [[0, 0], [0, 0], [0, 10], [0, 0]])
@@ -96,4 +99,5 @@ def log_images(name, inputs, outputs=None):
             grid_side)
         tf_log(
             tf.summary.image(
-                name, tf.concat([inputs, outputs], axis=2), max_outputs=1))
+                name, tf.concat([inputs, outputs], axis=2), max_outputs=1),
+            collection=MEDIA_SUMMARIES)

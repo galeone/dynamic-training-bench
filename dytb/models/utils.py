@@ -9,7 +9,7 @@
 
 import re
 import tensorflow as tf
-from .collections import MODEL_SUMMARIES, REQUIRED_NON_TRAINABLES
+from .collections import SCALAR_SUMMARIES, REQUIRED_NON_TRAINABLES
 
 
 def legalize_name(name):
@@ -22,7 +22,7 @@ def legalize_name(name):
     return re.sub(r"[^\w|/]", "_", name)
 
 
-def tf_log(summary, collection=MODEL_SUMMARIES):
+def tf_log(summary, collection=SCALAR_SUMMARIES):
     """Add tf.summary object to collection named collection"""
     tf.add_to_collection(collection, summary)
 

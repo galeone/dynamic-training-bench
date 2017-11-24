@@ -12,7 +12,7 @@ import numbers
 import tensorflow as tf
 from .utils import legalize_name, tf_log
 from .visualization import on_grid
-from .collections import LOSSES, REQUIRED_NON_TRAINABLES
+from .collections import LOSSES, REQUIRED_NON_TRAINABLES, MEDIA_SUMMARIES
 
 
 def _shape_list(shape):
@@ -59,7 +59,8 @@ def weight(name,
                 tf.summary.image(
                     legalize_name(name),
                     on_grid(weights[:, :, :, 0:grid_side**2], grid_side,
-                            grid_side)))
+                            grid_side)),
+                collection=MEDIA_SUMMARIES)
 
     if train_phase:
         # Add weight decay to W
@@ -154,7 +155,8 @@ def atrous_conv(input_x,
                 tf.summary.image(
                     legalize_name(result.name + '/pre_post_activation'),
                     tf.concat([pre_activation, post_activation], axis=2),
-                    max_outputs=1))
+                    max_outputs=1),
+                collection=MEDIA_SUMMARIES)
     return out
 
 
@@ -223,7 +225,8 @@ def conv(input_x,
                 tf.summary.image(
                     legalize_name(result.name + '/pre_post_activation'),
                     tf.concat([pre_activation, post_activation], axis=2),
-                    max_outputs=1))
+                    max_outputs=1),
+                collection=MEDIA_SUMMARIES)
     return out
 
 
@@ -298,7 +301,8 @@ def conv_transpose(input_x,
                 tf.summary.image(
                     legalize_name(result.name + '/pre_post_activation'),
                     tf.concat([pre_activation, post_activation], axis=2),
-                    max_outputs=1))
+                    max_outputs=1),
+                collection=MEDIA_SUMMARIES)
     return out
 
 
