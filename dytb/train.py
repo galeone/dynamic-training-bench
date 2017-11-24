@@ -135,7 +135,7 @@ def _parse_hyperparameters(hyperparams=None):
                     diff, dict_key, available_keys))
 
     _check_keys("gd", {"optimizer", "args"})
-    _check_keys("lr", {"enabled", "epochs", "factor"})
+    _check_keys("lr_decay", {"enabled", "epochs", "factor"})
     _check_keys("regularizations", {"l2", "augmentation"})
     _check_keys("regularizations", {"name", "fn", "factor"}, "augmentation")
 
