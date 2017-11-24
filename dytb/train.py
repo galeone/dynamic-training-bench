@@ -48,6 +48,16 @@ def _parse_hyperparameters(hyperparams=None):
     if hyperparams is None:
         hyperparams = {}
 
+    hp_available_keys = {
+        "batch_size", "epochs", "gd", "lr_decay", "regularizations", "seed"
+    }
+
+    difference = hyperparams.keys() - hp_available_keys
+    if difference:
+        raise ValueError(
+            "{} are not valid keys for {}. Valid keys are: {}".format(
+                difference, "hyperparameters", hp_available_keys))
+
     # Instantiate with default values if not specified
     args = {
         # The size of the trainign batch
@@ -114,6 +124,20 @@ def _parse_hyperparameters(hyperparams=None):
         "seed":
         hyperparams.get("seed", None),
     }
+
+    def _check_keys(dict_key, available_keys, sub_key=None):
+        inserted_keys = hyperparams[dict_key] if not sub_key else hyperparams[
+            dict_key][sub_key]
+        diff = inserted_keys - available_keys
+        if diff:
+            raise ValueError(
+                "{} are not valid keys for {}. Valid keys are: {}".format(
+                    diff, dict_key, available_keys))
+
+    _check_keys("gd", {"optimizer", "args"})
+    _check_keys("lr", {"enabled", "epochs", "factor"})
+    _check_keys("regularizations", {"l2", "augmentation"})
+    _check_keys("regularizations", {"name", "fn", "factor"}, "augmentation")
 
     # Check numeric fields
     if args["epochs"] <= 0:
