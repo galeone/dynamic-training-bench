@@ -3,7 +3,7 @@ Dynamic Training Bench: DyTB
 
 Stop wasting your time rewriting the training, evaluation & visualization procedures for your ML model: let DyTB do the work for you!
 
-DyTB is compatible with: **Tensorflow 1.x & Python >= 3.4**
+DyTB is compatible with: **Tensorflow 1.x & Python >= 3.5**
 
 # Features
 
