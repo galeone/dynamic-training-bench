@@ -78,8 +78,7 @@ def variables_to_restore(add_list=None, exclude_scope_list=None):
     variables = variables_to_save()
     if exclude_scope_list:
         variables[:] = [
-            variable for variable in variables
-            if not variable.name.startswith(
+            variable for variable in variables if not variable.name.startswith(
                 tuple(scope for scope in exclude_scope_list))
         ]
     return variables + add_list

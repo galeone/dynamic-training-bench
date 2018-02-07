@@ -13,14 +13,13 @@ import tensorflow as tf
 from .builders import build_restore_saver
 
 
-def restore_or_restart(args, paths, sess, global_step):
+def restore_or_restart(args, paths, sess):
     """Restore actual session or restart the training.
     If SESS.checkpoint_path is setted, start a new train
     loading the weight from the lastest checkpoint in that path
     Args:
         sess: session
         paths: dict of paths
-        global_step: global_step tensor
     """
 
     # first check if exists and checkpoint_path passed
@@ -39,7 +38,7 @@ def restore_or_restart(args, paths, sess, global_step):
         continue_checkpoint = tf.train.latest_checkpoint(paths["log"])
         if continue_checkpoint:
             restore_saver = build_restore_saver(
-                [global_step], scopes_to_remove=args["exclude_scopes"])
+                None, scopes_to_remove=args["exclude_scopes"])
             restore_saver.restore(sess, continue_checkpoint)
         # else if the continue checkpoint does not exists
         # and the pretrained checkpoint has been specified

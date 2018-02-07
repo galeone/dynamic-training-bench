@@ -170,10 +170,8 @@ class Trainer(object):
                 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
                 # Create the savers.
-                train_saver, best_saver = builders.build_train_savers(
-                    [global_step])
-                flow.restore_or_restart(self._args, self._paths, sess,
-                                        global_step)
+                train_saver, best_saver = builders.build_train_savers()
+                flow.restore_or_restart(self._args, self._paths, sess)
                 train_log, validation_log = builders.build_loggers(
                     sess.graph, self._paths)
 
